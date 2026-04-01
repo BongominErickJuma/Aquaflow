@@ -1,0 +1,2900 @@
+import {
+  LoaderCircle,
+  Check,
+  ChevronDown,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import { ModuleTabs } from "../components/layout/ModuleTabs";
+import { useAuth } from "../features/auth/AuthProvider";
+import { ApiError } from "../lib/api/auth";
+import {
+  createDowntimeAlert,
+  createMachine,
+  createMachineUsageLog,
+  createMaintenanceLog,
+  createMaintenanceSchedule,
+  createUtilityConsumptionLog,
+  deleteDowntimeAlert,
+  deleteMachine,
+  deleteMachineUsageLog,
+  deleteMaintenanceLog,
+  deleteMaintenanceSchedule,
+  deleteUtilityConsumptionLog,
+  fetchDowntimeAlert,
+  fetchDowntimeAlerts,
+  fetchMachine,
+  fetchMachineUsageLog,
+  fetchMachineUsageLogs,
+  fetchMachines,
+  fetchMaintenanceLog,
+  fetchMaintenanceLogs,
+  fetchMaintenanceSchedule,
+  fetchMaintenanceSchedules,
+  fetchUtilityConsumptionLog,
+  fetchUtilityConsumptionLogs,
+  updateDowntimeAlert,
+  updateMachine,
+  updateMachineUsageLog,
+  updateMaintenanceLog,
+  updateMaintenanceSchedule,
+  updateUtilityConsumptionLog,
+} from "../lib/api/production";
+import type {
+  DowntimeAlertPayload,
+  DowntimeAlertRecord,
+  DowntimeSeverity,
+  DowntimeStatus,
+  MachinePayload,
+  MachineRecord,
+  MachineStatus,
+  MachineUsageLogPayload,
+  MachineUsageLogRecord,
+  MaintenanceFrequency,
+  MaintenanceLogPayload,
+  MaintenanceLogRecord,
+  MaintenanceLogStatus,
+  MaintenanceSchedulePayload,
+  MaintenanceScheduleRecord,
+  UtilityConsumptionLogPayload,
+  UtilityConsumptionLogRecord,
+  UtilityType,
+} from "../types/production";
+
+const fieldClassName =
+  "w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300";
+const textAreaClassName = `${fieldClassName} min-h-[108px] resize-y`;
+const primaryButtonClassName =
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-[linear-gradient(135deg,#1f87ad,#0f6d8d)] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(32,141,183,0.22)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70";
+const secondaryButtonClassName =
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70";
+const dangerButtonClassName =
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70";
+const iconButtonClassName =
+  "inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70";
+const recordCardClassName =
+  "group relative flex h-[220px] min-w-[280px] max-w-[280px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4";
+const recordEditButtonClassName = `${iconButtonClassName} absolute right-4 top-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto`;
+
+type ActiveModal =
+  | "machine"
+  | "usage"
+  | "schedule"
+  | "maintenanceLog"
+  | "downtime"
+  | "utility"
+  | null;
+
+const machineStatuses: MachineStatus[] = [
+  "operational",
+  "maintenance",
+  "downtime",
+  "inactive",
+];
+const maintenanceFrequencies: MaintenanceFrequency[] = [
+  "daily",
+  "weekly",
+  "monthly",
+  "quarterly",
+  "yearly",
+  "custom",
+];
+const maintenanceLogStatuses: MaintenanceLogStatus[] = [
+  "completed",
+  "partial",
+  "cancelled",
+];
+const downtimeSeverities: DowntimeSeverity[] = [
+  "low",
+  "medium",
+  "high",
+  "critical",
+];
+const downtimeStatuses: DowntimeStatus[] = ["open", "resolved"];
+const utilityTypes: UtilityType[] = [
+  "electricity",
+  "water",
+  "diesel",
+  "fuel",
+  "other",
+];
+
+function createEmptyMachineForm(): MachinePayload {
+  return {
+    name: "",
+    code: "",
+    machine_type: "",
+    manufacturer: "",
+    model_number: "",
+    serial_number: "",
+    installation_date: null,
+    location_name: "",
+    status: "operational",
+    notes: "",
+  };
+}
+
+function buildMachineForm(record: MachineRecord | null): MachinePayload {
+  if (!record) {
+    return createEmptyMachineForm();
+  }
+
+  return {
+    name: record.name,
+    code: record.code,
+    machine_type: record.machine_type,
+    manufacturer: record.manufacturer,
+    model_number: record.model_number,
+    serial_number: record.serial_number,
+    installation_date: record.installation_date,
+    location_name: record.location_name,
+    status: record.status,
+    notes: record.notes,
+  };
+}
+
+function createEmptyUsageForm(): MachineUsageLogPayload {
+  return {
+    machine: 0,
+    usage_date: "",
+    hours_used: "",
+    operator_name: "",
+    purpose: "",
+    notes: "",
+  };
+}
+
+function buildUsageForm(
+  record: MachineUsageLogRecord | null,
+): MachineUsageLogPayload {
+  if (!record) {
+    return createEmptyUsageForm();
+  }
+
+  return {
+    machine: record.machine,
+    usage_date: record.usage_date,
+    hours_used: record.hours_used,
+    operator_name: record.operator_name,
+    purpose: record.purpose,
+    notes: record.notes,
+  };
+}
+
+function createEmptyScheduleForm(): MaintenanceSchedulePayload {
+  return {
+    machine: 0,
+    title: "",
+    maintenance_type: "",
+    frequency: "monthly",
+    interval_days: null,
+    next_due_date: "",
+    last_completed_date: null,
+    is_active: true,
+    notes: "",
+  };
+}
+
+function buildScheduleForm(
+  record: MaintenanceScheduleRecord | null,
+): MaintenanceSchedulePayload {
+  if (!record) {
+    return createEmptyScheduleForm();
+  }
+
+  return {
+    machine: record.machine,
+    title: record.title,
+    maintenance_type: record.maintenance_type,
+    frequency: record.frequency,
+    interval_days: record.interval_days,
+    next_due_date: record.next_due_date,
+    last_completed_date: record.last_completed_date,
+    is_active: record.is_active,
+    notes: record.notes,
+  };
+}
+
+function createEmptyMaintenanceLogForm(): MaintenanceLogPayload {
+  return {
+    machine: 0,
+    schedule: null,
+    maintenance_date: "",
+    maintenance_type: "",
+    status: "completed",
+    performed_by_name: "",
+    cost: "0.00",
+    downtime_hours: "0.00",
+    notes: "",
+  };
+}
+
+function buildMaintenanceLogForm(
+  record: MaintenanceLogRecord | null,
+): MaintenanceLogPayload {
+  if (!record) {
+    return createEmptyMaintenanceLogForm();
+  }
+
+  return {
+    machine: record.machine,
+    schedule: record.schedule,
+    maintenance_date: record.maintenance_date,
+    maintenance_type: record.maintenance_type,
+    status: record.status,
+    performed_by_name: record.performed_by_name,
+    cost: record.cost,
+    downtime_hours: record.downtime_hours,
+    notes: record.notes,
+  };
+}
+
+function createEmptyDowntimeForm(): DowntimeAlertPayload {
+  return {
+    machine: 0,
+    title: "",
+    severity: "medium",
+    status: "open",
+    start_time: "",
+    end_time: null,
+    cause: "",
+    resolution_notes: "",
+  };
+}
+
+function buildDowntimeForm(
+  record: DowntimeAlertRecord | null,
+): DowntimeAlertPayload {
+  if (!record) {
+    return createEmptyDowntimeForm();
+  }
+
+  return {
+    machine: record.machine,
+    title: record.title,
+    severity: record.severity,
+    status: record.status,
+    start_time: formatDateTimeInput(record.start_time),
+    end_time: formatDateTimeInput(record.end_time),
+    cause: record.cause,
+    resolution_notes: record.resolution_notes,
+  };
+}
+
+function createEmptyUtilityForm(): UtilityConsumptionLogPayload {
+  return {
+    machine: null,
+    utility_type: "electricity",
+    log_date: "",
+    quantity: "",
+    unit_name: "",
+    cost: "0.00",
+    notes: "",
+  };
+}
+
+function PickerField({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: Array<{ label: string; value: string }>;
+  onChange: (value: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label ??
+    options[0]?.label ??
+    "Select";
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("mousedown", handlePointerDown);
+    return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isOpen]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <span className="truncate">{selectedLabel}</span>
+        <ChevronDown
+          className={[
+            "h-4 w-4 shrink-0 text-slate-400 transition",
+            isOpen ? "rotate-180" : "",
+          ].join(" ")}
+        />
+      </button>
+
+      {isOpen ? (
+        <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
+          <div className="space-y-1">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                className={[
+                  "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                  value === option.value
+                    ? "bg-sky-50 text-sky-700"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                ].join(" ")}
+              >
+                <span>{option.label}</span>
+                {value === option.value ? <Check className="h-4 w-4" /> : null}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function buildUtilityForm(
+  record: UtilityConsumptionLogRecord | null,
+): UtilityConsumptionLogPayload {
+  if (!record) {
+    return createEmptyUtilityForm();
+  }
+
+  return {
+    machine: record.machine,
+    utility_type: record.utility_type,
+    log_date: record.log_date,
+    quantity: record.quantity,
+    unit_name: record.unit_name,
+    cost: record.cost,
+    notes: record.notes,
+  };
+}
+
+function FieldMessage({ message }: { message: string }) {
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      {message}
+    </div>
+  );
+}
+
+function FormPanel({
+  label,
+  title,
+  children,
+}: {
+  label: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="panel p-6">
+      <p className="section-label">{label}</p>
+      <h2 className="mt-2 text-2xl font-semibold text-slate-900">{title}</h2>
+      <div className="mt-6">{children}</div>
+    </section>
+  );
+}
+
+function EmptyState({
+  title,
+  description,
+  className = "",
+}: {
+  title: string;
+  description: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50/70 px-5 py-6 ${className}`.trim()}
+    >
+      <p className="text-lg font-semibold text-slate-900">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+    </div>
+  );
+}
+
+function ModalShell({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/32 px-4 py-6 backdrop-blur-sm">
+      <div className="panel scrollbar-hidden max-h-[90vh] w-full max-w-3xl overflow-y-auto p-6">
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="text-2xl font-semibold text-slate-900">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+          >
+            Close
+          </button>
+        </div>
+        <div className="mt-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) {
+    return "Not set";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat("en-UG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(parsed);
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) {
+    return "Not set";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat("en-UG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsed);
+}
+
+function formatDateTimeInput(value: string | null | undefined) {
+  if (!value) {
+    return "";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+  const offset = parsed.getTimezoneOffset();
+  const localDate = new Date(parsed.getTime() - offset * 60_000);
+  return localDate.toISOString().slice(0, 16);
+}
+
+function titleCase(value: string) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+export function ProductionPage() {
+  const { user } = useAuth();
+  const isAdmin =
+    user?.role.code === "admin" || user?.role.code === "superuser";
+
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const [activeTab, setActiveTab] = useState("downtime");
+
+  const tabs = [
+    { id: "downtime", label: "Downtime Alerts" },
+    { id: "machines", label: "Machines" },
+    { id: "schedules", label: "Schedules" },
+    { id: "usage", label: "Usage Logs" },
+    { id: "maintenance", label: "Maintenance Logs" },
+    { id: "utility", label: "Utility Logs" },
+  ];
+  const [isLoading, setIsLoading] = useState(true);
+  const [pageError, setPageError] = useState("");
+
+  const [machines, setMachines] = useState<MachineRecord[]>([]);
+  const [usageLogs, setUsageLogs] = useState<MachineUsageLogRecord[]>([]);
+  const [maintenanceSchedules, setMaintenanceSchedules] = useState<
+    MaintenanceScheduleRecord[]
+  >([]);
+  const [maintenanceLogs, setMaintenanceLogs] = useState<
+    MaintenanceLogRecord[]
+  >([]);
+  const [downtimeAlerts, setDowntimeAlerts] = useState<DowntimeAlertRecord[]>(
+    [],
+  );
+  const [utilityLogs, setUtilityLogs] = useState<UtilityConsumptionLogRecord[]>(
+    [],
+  );
+
+  const [machineForm, setMachineForm] = useState<MachinePayload>(
+    createEmptyMachineForm(),
+  );
+  const [usageForm, setUsageForm] = useState<MachineUsageLogPayload>(
+    createEmptyUsageForm(),
+  );
+  const [scheduleForm, setScheduleForm] = useState<MaintenanceSchedulePayload>(
+    createEmptyScheduleForm(),
+  );
+  const [maintenanceLogForm, setMaintenanceLogForm] =
+    useState<MaintenanceLogPayload>(createEmptyMaintenanceLogForm());
+  const [downtimeForm, setDowntimeForm] = useState<DowntimeAlertPayload>(
+    createEmptyDowntimeForm(),
+  );
+  const [utilityForm, setUtilityForm] = useState<UtilityConsumptionLogPayload>(
+    createEmptyUtilityForm(),
+  );
+
+  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(
+    null,
+  );
+  const [selectedUsageId, setSelectedUsageId] = useState<number | null>(null);
+  const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(
+    null,
+  );
+  const [selectedMaintenanceLogId, setSelectedMaintenanceLogId] = useState<
+    number | null
+  >(null);
+  const [selectedDowntimeId, setSelectedDowntimeId] = useState<number | null>(
+    null,
+  );
+  const [selectedUtilityId, setSelectedUtilityId] = useState<number | null>(
+    null,
+  );
+
+  const [machineError, setMachineError] = useState("");
+  const [usageError, setUsageError] = useState("");
+  const [scheduleError, setScheduleError] = useState("");
+  const [maintenanceLogError, setMaintenanceLogError] = useState("");
+  const [downtimeError, setDowntimeError] = useState("");
+  const [utilityError, setUtilityError] = useState("");
+
+  const [isMachinePending, setIsMachinePending] = useState(false);
+  const [isUsagePending, setIsUsagePending] = useState(false);
+  const [isSchedulePending, setIsSchedulePending] = useState(false);
+  const [isMaintenanceLogPending, setIsMaintenanceLogPending] = useState(false);
+  const [isDowntimePending, setIsDowntimePending] = useState(false);
+  const [isUtilityPending, setIsUtilityPending] = useState(false);
+
+  async function reloadProductionData() {
+    const [
+      nextMachines,
+      nextUsageLogs,
+      nextSchedules,
+      nextLogs,
+      nextDowntime,
+      nextUtilities,
+    ] = await Promise.all([
+      fetchMachines(),
+      fetchMachineUsageLogs(),
+      fetchMaintenanceSchedules(),
+      fetchMaintenanceLogs(),
+      fetchDowntimeAlerts(),
+      fetchUtilityConsumptionLogs(),
+    ]);
+
+    setMachines(nextMachines);
+    setUsageLogs(nextUsageLogs);
+    setMaintenanceSchedules(nextSchedules);
+    setMaintenanceLogs(nextLogs);
+    setDowntimeAlerts(nextDowntime);
+    setUtilityLogs(nextUtilities);
+  }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      setIsLoading(true);
+      setPageError("");
+
+      try {
+        await reloadProductionData();
+      } catch (error) {
+        if (isMounted) {
+          setPageError(
+            error instanceof ApiError
+              ? error.message
+              : "Unable to load production data right now.",
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedMachineId) return;
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const record = await fetchMachine(selectedMachineId);
+        if (isMounted) setMachineForm(buildMachineForm(record));
+      } catch {
+        if (isMounted) {
+          setMachineForm(
+            buildMachineForm(
+              machines.find((item) => item.id === selectedMachineId) ?? null,
+            ),
+          );
+        }
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedMachineId, machines]);
+
+  useEffect(() => {
+    if (!selectedUsageId) return;
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const record = await fetchMachineUsageLog(selectedUsageId);
+        if (isMounted) setUsageForm(buildUsageForm(record));
+      } catch {
+        if (isMounted) {
+          setUsageForm(
+            buildUsageForm(
+              usageLogs.find((item) => item.id === selectedUsageId) ?? null,
+            ),
+          );
+        }
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedUsageId, usageLogs]);
+
+  useEffect(() => {
+    if (!selectedScheduleId) return;
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const record = await fetchMaintenanceSchedule(selectedScheduleId);
+        if (isMounted) setScheduleForm(buildScheduleForm(record));
+      } catch {
+        if (isMounted) {
+          setScheduleForm(
+            buildScheduleForm(
+              maintenanceSchedules.find(
+                (item) => item.id === selectedScheduleId,
+              ) ?? null,
+            ),
+          );
+        }
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedScheduleId, maintenanceSchedules]);
+
+  useEffect(() => {
+    if (!selectedMaintenanceLogId) return;
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const record = await fetchMaintenanceLog(selectedMaintenanceLogId);
+        if (isMounted) setMaintenanceLogForm(buildMaintenanceLogForm(record));
+      } catch {
+        if (isMounted) {
+          setMaintenanceLogForm(
+            buildMaintenanceLogForm(
+              maintenanceLogs.find(
+                (item) => item.id === selectedMaintenanceLogId,
+              ) ?? null,
+            ),
+          );
+        }
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedMaintenanceLogId, maintenanceLogs]);
+
+  useEffect(() => {
+    if (!selectedDowntimeId) return;
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const record = await fetchDowntimeAlert(selectedDowntimeId);
+        if (isMounted) setDowntimeForm(buildDowntimeForm(record));
+      } catch {
+        if (isMounted) {
+          setDowntimeForm(
+            buildDowntimeForm(
+              downtimeAlerts.find((item) => item.id === selectedDowntimeId) ??
+                null,
+            ),
+          );
+        }
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDowntimeId, downtimeAlerts]);
+
+  useEffect(() => {
+    if (!selectedUtilityId) return;
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const record = await fetchUtilityConsumptionLog(selectedUtilityId);
+        if (isMounted) setUtilityForm(buildUtilityForm(record));
+      } catch {
+        if (isMounted) {
+          setUtilityForm(
+            buildUtilityForm(
+              utilityLogs.find((item) => item.id === selectedUtilityId) ?? null,
+            ),
+          );
+        }
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedUtilityId, utilityLogs]);
+
+  const resetMachineState = () => {
+    setSelectedMachineId(null);
+    setMachineForm(createEmptyMachineForm());
+    setMachineError("");
+  };
+  const resetUsageState = () => {
+    setSelectedUsageId(null);
+    setUsageForm(createEmptyUsageForm());
+    setUsageError("");
+  };
+  const resetScheduleState = () => {
+    setSelectedScheduleId(null);
+    setScheduleForm(createEmptyScheduleForm());
+    setScheduleError("");
+  };
+  const resetMaintenanceLogState = () => {
+    setSelectedMaintenanceLogId(null);
+    setMaintenanceLogForm(createEmptyMaintenanceLogForm());
+    setMaintenanceLogError("");
+  };
+  const resetDowntimeState = () => {
+    setSelectedDowntimeId(null);
+    setDowntimeForm(createEmptyDowntimeForm());
+    setDowntimeError("");
+  };
+  const resetUtilityState = () => {
+    setSelectedUtilityId(null);
+    setUtilityForm(createEmptyUtilityForm());
+    setUtilityError("");
+  };
+
+  const closeModal = () => {
+    resetMachineState();
+    resetUsageState();
+    resetScheduleState();
+    resetMaintenanceLogState();
+    resetDowntimeState();
+    resetUtilityState();
+    setActiveModal(null);
+  };
+
+  const handleMachineSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMachineError("");
+    setIsMachinePending(true);
+    try {
+      const payload = {
+        ...machineForm,
+        name: machineForm.name.trim(),
+        code: machineForm.code.trim(),
+        machine_type: machineForm.machine_type.trim(),
+        manufacturer: machineForm.manufacturer.trim(),
+        model_number: machineForm.model_number.trim(),
+        serial_number: machineForm.serial_number?.trim() || null,
+        location_name: machineForm.location_name.trim(),
+        notes: machineForm.notes.trim(),
+      };
+      if (selectedMachineId) {
+        await updateMachine(selectedMachineId, payload);
+      } else {
+        await createMachine(payload);
+      }
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setMachineError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to save the machine right now.",
+      );
+    } finally {
+      setIsMachinePending(false);
+    }
+  };
+
+  const handleMachineDelete = async () => {
+    if (!selectedMachineId) return;
+    setMachineError("");
+    setIsMachinePending(true);
+    try {
+      await deleteMachine(selectedMachineId);
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setMachineError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to delete the machine right now.",
+      );
+    } finally {
+      setIsMachinePending(false);
+    }
+  };
+
+  const handleUsageSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setUsageError("");
+    setIsUsagePending(true);
+    try {
+      const payload = {
+        ...usageForm,
+        operator_name: usageForm.operator_name.trim(),
+        purpose: usageForm.purpose.trim(),
+        notes: usageForm.notes.trim(),
+      };
+      if (selectedUsageId) {
+        await updateMachineUsageLog(selectedUsageId, payload);
+      } else {
+        await createMachineUsageLog(payload);
+      }
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setUsageError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to save the usage log right now.",
+      );
+    } finally {
+      setIsUsagePending(false);
+    }
+  };
+
+  const handleUsageDelete = async () => {
+    if (!selectedUsageId) return;
+    setUsageError("");
+    setIsUsagePending(true);
+    try {
+      await deleteMachineUsageLog(selectedUsageId);
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setUsageError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to delete the usage log right now.",
+      );
+    } finally {
+      setIsUsagePending(false);
+    }
+  };
+
+  const handleScheduleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setScheduleError("");
+    setIsSchedulePending(true);
+    try {
+      const payload = {
+        ...scheduleForm,
+        title: scheduleForm.title.trim(),
+        maintenance_type: scheduleForm.maintenance_type.trim(),
+        interval_days:
+          scheduleForm.frequency === "custom"
+            ? scheduleForm.interval_days
+            : null,
+        notes: scheduleForm.notes.trim(),
+      };
+      if (selectedScheduleId) {
+        await updateMaintenanceSchedule(selectedScheduleId, payload);
+      } else {
+        await createMaintenanceSchedule(payload);
+      }
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setScheduleError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to save the maintenance schedule right now.",
+      );
+    } finally {
+      setIsSchedulePending(false);
+    }
+  };
+
+  const handleScheduleDelete = async () => {
+    if (!selectedScheduleId) return;
+    setScheduleError("");
+    setIsSchedulePending(true);
+    try {
+      await deleteMaintenanceSchedule(selectedScheduleId);
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setScheduleError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to delete the maintenance schedule right now.",
+      );
+    } finally {
+      setIsSchedulePending(false);
+    }
+  };
+
+  const handleMaintenanceLogSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    setMaintenanceLogError("");
+    setIsMaintenanceLogPending(true);
+    try {
+      const payload = {
+        ...maintenanceLogForm,
+        schedule: maintenanceLogForm.schedule || null,
+        maintenance_type: maintenanceLogForm.maintenance_type.trim(),
+        performed_by_name: maintenanceLogForm.performed_by_name.trim(),
+        notes: maintenanceLogForm.notes.trim(),
+      };
+      if (selectedMaintenanceLogId) {
+        await updateMaintenanceLog(selectedMaintenanceLogId, payload);
+      } else {
+        await createMaintenanceLog(payload);
+      }
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setMaintenanceLogError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to save the maintenance log right now.",
+      );
+    } finally {
+      setIsMaintenanceLogPending(false);
+    }
+  };
+
+  const handleMaintenanceLogDelete = async () => {
+    if (!selectedMaintenanceLogId) return;
+    setMaintenanceLogError("");
+    setIsMaintenanceLogPending(true);
+    try {
+      await deleteMaintenanceLog(selectedMaintenanceLogId);
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setMaintenanceLogError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to delete the maintenance log right now.",
+      );
+    } finally {
+      setIsMaintenanceLogPending(false);
+    }
+  };
+
+  const handleDowntimeSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setDowntimeError("");
+    setIsDowntimePending(true);
+    try {
+      const payload = {
+        ...downtimeForm,
+        title: downtimeForm.title.trim(),
+        end_time: downtimeForm.end_time || null,
+        cause: downtimeForm.cause.trim(),
+        resolution_notes: downtimeForm.resolution_notes.trim(),
+      };
+      if (selectedDowntimeId) {
+        await updateDowntimeAlert(selectedDowntimeId, payload);
+      } else {
+        await createDowntimeAlert(payload);
+      }
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setDowntimeError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to save the downtime record right now.",
+      );
+    } finally {
+      setIsDowntimePending(false);
+    }
+  };
+
+  const handleDowntimeDelete = async () => {
+    if (!selectedDowntimeId) return;
+    setDowntimeError("");
+    setIsDowntimePending(true);
+    try {
+      await deleteDowntimeAlert(selectedDowntimeId);
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setDowntimeError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to delete the downtime record right now.",
+      );
+    } finally {
+      setIsDowntimePending(false);
+    }
+  };
+
+  const handleUtilitySubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setUtilityError("");
+    setIsUtilityPending(true);
+    try {
+      const payload = {
+        ...utilityForm,
+        machine: utilityForm.machine || null,
+        unit_name: utilityForm.unit_name.trim(),
+        notes: utilityForm.notes.trim(),
+      };
+      if (selectedUtilityId) {
+        await updateUtilityConsumptionLog(selectedUtilityId, payload);
+      } else {
+        await createUtilityConsumptionLog(payload);
+      }
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setUtilityError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to save the utility log right now.",
+      );
+    } finally {
+      setIsUtilityPending(false);
+    }
+  };
+
+  const handleUtilityDelete = async () => {
+    if (!selectedUtilityId) return;
+    setUtilityError("");
+    setIsUtilityPending(true);
+    try {
+      await deleteUtilityConsumptionLog(selectedUtilityId);
+      await reloadProductionData();
+      closeModal();
+    } catch (error) {
+      setUtilityError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to delete the utility log right now.",
+      );
+    } finally {
+      setIsUtilityPending(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <section className="panel flex min-h-[320px] items-center justify-center p-8">
+        <div className="flex items-center gap-3 text-slate-600">
+          <LoaderCircle className="h-5 w-5 animate-spin text-sky-700" />
+          <span>Loading production workspace...</span>
+        </div>
+      </section>
+    );
+  }
+
+  if (pageError) {
+    return (
+      <section className="panel max-w-3xl p-8">
+        <p className="section-label">Production</p>
+        <h1 className="mt-3 text-3xl font-semibold text-slate-900">
+          Production workspace
+        </h1>
+        <div className="mt-6 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          {pageError}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div className="module-page">
+      <section className="rounded-[32px] border border-white/70 bg-[radial-gradient(circle_at_top_left,#ffffff,rgba(224,242,254,0.92)_52%,rgba(240,249,255,0.95))] py-6 pl-6 pr-0 shadow-[0_25px_80px_rgba(148,163,184,0.14)]">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
+              Production
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
+                Equipment and operations support
+              </h1>
+              <p className="max-w-2xl text-sm leading-7 text-slate-600">
+                This module focuses on machines, usage, maintenance, downtime,
+                and utilities only. It stays operational and manual, without
+                drifting into batch planning or analytics.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="hero-metric-card">
+              <p className="hero-metric-label">Machines</p>
+              <p className="hero-metric-value">{machines.length}</p>
+            </div>
+            <div className="hero-metric-card">
+              <p className="hero-metric-label">Downtime</p>
+              <p className="hero-metric-value">
+                {downtimeAlerts.filter((item) => item.status === "open").length}
+              </p>
+            </div>
+            <div className="hero-metric-card">
+              <p className="hero-metric-label">Schedules</p>
+              <p className="hero-metric-value">
+                {maintenanceSchedules.filter((item) => item.is_active).length}
+              </p>
+            </div>
+            <div className="hero-metric-card">
+              <p className="hero-metric-label">Utilities</p>
+              <p className="hero-metric-value">{utilityLogs.length}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <ModuleTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+      <div className="module-page-stage">
+        <div className="space-y-6">
+          {activeTab === "downtime" ? (
+            <section className="panel p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="section-label">Downtime Alerts</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                    Live equipment interruptions
+                  </h2>
+                </div>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetDowntimeState();
+                      setActiveModal("downtime");
+                    }}
+                    className={iconButtonClassName}
+                    aria-label="Add downtime alert"
+                    title="Add downtime alert"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                {downtimeAlerts.length === 0 ? (
+                  <EmptyState
+                    title="No downtime alerts yet"
+                    description="Log interruptions and outages here."
+                    className={`${recordCardClassName} justify-center`}
+                  />
+                ) : (
+                  downtimeAlerts.map((record) => (
+                    <div key={record.id} className={recordCardClassName}>
+                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                        <p className="font-semibold text-slate-900">
+                          {record.title}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {record.machine_name}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {titleCase(record.severity)} /{" "}
+                          {titleCase(record.status)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Started {formatDateTime(record.start_time)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Downtime:{" "}
+                          {record.downtime_hours == null
+                            ? "Open"
+                            : `${record.downtime_hours} hrs`}
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedDowntimeId(record.id);
+                            setDowntimeForm(buildDowntimeForm(record));
+                            setActiveModal("downtime");
+                          }}
+                          className={recordEditButtonClassName}
+                          aria-label={`Edit ${record.title}`}
+                          title={`Edit ${record.title}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "machines" ? (
+            <section className="panel p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="section-label">Machines</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                    Equipment registry
+                  </h2>
+                </div>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetMachineState();
+                      setActiveModal("machine");
+                    }}
+                    className={iconButtonClassName}
+                    aria-label="Add machine"
+                    title="Add machine"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                {machines.length === 0 ? (
+                  <EmptyState
+                    title="No machines yet"
+                    description="Register equipment before logging usage or maintenance."
+                    className={`${recordCardClassName} justify-center`}
+                  />
+                ) : (
+                  machines.map((record) => (
+                    <div key={record.id} className={recordCardClassName}>
+                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                        <p className="font-semibold text-slate-900">
+                          {record.name}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {record.code} / {record.machine_type}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {record.location_name || "No location recorded"}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {titleCase(record.status)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {record.manufacturer || "No manufacturer"}
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedMachineId(record.id);
+                            setMachineForm(buildMachineForm(record));
+                            setActiveModal("machine");
+                          }}
+                          className={recordEditButtonClassName}
+                          aria-label={`Edit ${record.name}`}
+                          title={`Edit ${record.name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "schedules" ? (
+            <section className="panel p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="section-label">Schedules</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                    Maintenance schedules
+                  </h2>
+                </div>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetScheduleState();
+                      setActiveModal("schedule");
+                    }}
+                    className={iconButtonClassName}
+                    aria-label="Add maintenance schedule"
+                    title="Add maintenance schedule"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                {maintenanceSchedules.length === 0 ? (
+                  <EmptyState
+                    title="No maintenance schedules yet"
+                    description="Set up recurring maintenance plans for each machine here."
+                    className={`${recordCardClassName} justify-center`}
+                  />
+                ) : (
+                  maintenanceSchedules.map((record) => (
+                    <div key={record.id} className={recordCardClassName}>
+                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                        <p className="font-semibold text-slate-900">
+                          {record.title}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {record.machine_name}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {record.maintenance_type}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {titleCase(record.frequency)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Next due {formatDate(record.next_due_date)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {record.is_active
+                            ? "Active schedule"
+                            : "Inactive schedule"}
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedScheduleId(record.id);
+                            setScheduleForm(buildScheduleForm(record));
+                            setActiveModal("schedule");
+                          }}
+                          className={recordEditButtonClassName}
+                          aria-label={`Edit ${record.title}`}
+                          title={`Edit ${record.title}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          ) : null}
+        </div>
+
+        <div className="space-y-6">
+          {activeTab === "usage" ? (
+            <section className="panel p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="section-label">Usage Logs</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                    Machine usage
+                  </h2>
+                </div>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetUsageState();
+                      setActiveModal("usage");
+                    }}
+                    className={iconButtonClassName}
+                    aria-label="Add usage log"
+                    title="Add usage log"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                {usageLogs.length === 0 ? (
+                  <EmptyState
+                    title="No usage logs yet"
+                    description="Capture daily or shift usage for each machine here."
+                    className={`${recordCardClassName} justify-center`}
+                  />
+                ) : (
+                  usageLogs.map((record) => (
+                    <div key={record.id} className={recordCardClassName}>
+                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                        <p className="font-semibold text-slate-900">
+                          {record.machine_name}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {formatDate(record.usage_date)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {record.hours_used} hrs used
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {record.operator_name || "No operator name"}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {record.purpose || "No purpose recorded"}
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUsageId(record.id);
+                            setUsageForm(buildUsageForm(record));
+                            setActiveModal("usage");
+                          }}
+                          className={recordEditButtonClassName}
+                          aria-label={`Edit usage for ${record.machine_name}`}
+                          title={`Edit usage for ${record.machine_name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "maintenance" ? (
+            <section className="panel p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="section-label">Maintenance Logs</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                    Completed maintenance work
+                  </h2>
+                </div>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetMaintenanceLogState();
+                      setActiveModal("maintenanceLog");
+                    }}
+                    className={iconButtonClassName}
+                    aria-label="Add maintenance log"
+                    title="Add maintenance log"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                {maintenanceLogs.length === 0 ? (
+                  <EmptyState
+                    title="No maintenance logs yet"
+                    description="Capture completed service work, costs, and downtime here."
+                    className={`${recordCardClassName} justify-center`}
+                  />
+                ) : (
+                  maintenanceLogs.map((record) => (
+                    <div key={record.id} className={recordCardClassName}>
+                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                        <p className="font-semibold text-slate-900">
+                          {record.machine_name}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {record.schedule_title || "No linked schedule"}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {record.maintenance_type}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {formatDate(record.maintenance_date)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {titleCase(record.status)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Cost {record.cost}
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedMaintenanceLogId(record.id);
+                            setMaintenanceLogForm(
+                              buildMaintenanceLogForm(record),
+                            );
+                            setActiveModal("maintenanceLog");
+                          }}
+                          className={recordEditButtonClassName}
+                          aria-label={`Edit maintenance log for ${record.machine_name}`}
+                          title={`Edit maintenance log for ${record.machine_name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "utility" ? (
+            <section className="panel p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="section-label">Utility Logs</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                    Consumption tracking
+                  </h2>
+                </div>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetUtilityState();
+                      setActiveModal("utility");
+                    }}
+                    className={iconButtonClassName}
+                    aria-label="Add utility log"
+                    title="Add utility log"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                {utilityLogs.length === 0 ? (
+                  <EmptyState
+                    title="No utility logs yet"
+                    description="Track machine or facility utility consumption here."
+                    className={`${recordCardClassName} justify-center`}
+                  />
+                ) : (
+                  utilityLogs.map((record) => (
+                    <div key={record.id} className={recordCardClassName}>
+                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                        <p className="font-semibold text-slate-900">
+                          {titleCase(record.utility_type)}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {record.machine_name || "Facility level"}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {formatDate(record.log_date)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {record.quantity} {record.unit_name}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Cost {record.cost}
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUtilityId(record.id);
+                            setUtilityForm(buildUtilityForm(record));
+                            setActiveModal("utility");
+                          }}
+                          className={recordEditButtonClassName}
+                          aria-label={`Edit ${record.utility_type} log`}
+                          title={`Edit ${record.utility_type} log`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </div>
+
+      {activeModal === "machine" ? (
+        <ModalShell
+          title={selectedMachineId ? "Edit machine" : "Add machine"}
+          onClose={closeModal}
+        >
+          <FormPanel label="Machines" title="Machine form">
+            <form className="space-y-4" onSubmit={handleMachineSubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Name
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={machineForm.name}
+                    onChange={(event) =>
+                      setMachineForm((current) => ({
+                        ...current,
+                        name: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Code
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={machineForm.code}
+                    onChange={(event) =>
+                      setMachineForm((current) => ({
+                        ...current,
+                        code: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Machine type
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={machineForm.machine_type}
+                    onChange={(event) =>
+                      setMachineForm((current) => ({
+                        ...current,
+                        machine_type: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Status
+                  </span>
+                  <PickerField
+                    value={machineForm.status}
+                    options={machineStatuses.map((value) => ({
+                      label: titleCase(value),
+                      value,
+                    }))}
+                    onChange={(value) =>
+                      setMachineForm((current) => ({
+                        ...current,
+                        status: value as MachineStatus,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Manufacturer
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={machineForm.manufacturer}
+                    onChange={(event) =>
+                      setMachineForm((current) => ({
+                        ...current,
+                        manufacturer: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Model number
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={machineForm.model_number}
+                    onChange={(event) =>
+                      setMachineForm((current) => ({
+                        ...current,
+                        model_number: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Serial number
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={machineForm.serial_number ?? ""}
+                    onChange={(event) =>
+                      setMachineForm((current) => ({
+                        ...current,
+                        serial_number: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Installation date
+                  </span>
+                  <input
+                    type="date"
+                    className={fieldClassName}
+                    value={machineForm.installation_date ?? ""}
+                    onChange={(event) =>
+                      setMachineForm((current) => ({
+                        ...current,
+                        installation_date: event.target.value || null,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Location name
+                </span>
+                <input
+                  className={fieldClassName}
+                  value={machineForm.location_name}
+                  onChange={(event) =>
+                    setMachineForm((current) => ({
+                      ...current,
+                      location_name: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Notes
+                </span>
+                <textarea
+                  className={textAreaClassName}
+                  value={machineForm.notes}
+                  onChange={(event) =>
+                    setMachineForm((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <FieldMessage message={machineError} />
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className={secondaryButtonClassName}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleMachineDelete()}
+                  disabled={!selectedMachineId || isMachinePending}
+                  className={dangerButtonClassName}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isMachinePending}
+                  className={primaryButtonClassName}
+                >
+                  {isMachinePending ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      Saving
+                    </>
+                  ) : (
+                    "Save machine"
+                  )}
+                </button>
+              </div>
+            </form>
+          </FormPanel>
+        </ModalShell>
+      ) : null}
+
+      {activeModal === "usage" ? (
+        <ModalShell
+          title={selectedUsageId ? "Edit usage log" : "Add usage log"}
+          onClose={closeModal}
+        >
+          <FormPanel label="Usage Logs" title="Machine usage form">
+            <form className="space-y-4" onSubmit={handleUsageSubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Machine
+                  </span>
+                  <PickerField
+                    value={usageForm.machine ? String(usageForm.machine) : ""}
+                    options={[
+                      { label: "Select machine", value: "" },
+                      ...machines.map((record) => ({
+                        label: record.name,
+                        value: String(record.id),
+                      })),
+                    ]}
+                    onChange={(value) =>
+                      setUsageForm((current) => ({
+                        ...current,
+                        machine: value ? Number(value) : 0,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Usage date
+                  </span>
+                  <input
+                    type="date"
+                    className={fieldClassName}
+                    value={usageForm.usage_date}
+                    onChange={(event) =>
+                      setUsageForm((current) => ({
+                        ...current,
+                        usage_date: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Hours used
+                  </span>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    className={fieldClassName}
+                    value={usageForm.hours_used}
+                    onChange={(event) =>
+                      setUsageForm((current) => ({
+                        ...current,
+                        hours_used: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Operator name
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={usageForm.operator_name}
+                    onChange={(event) =>
+                      setUsageForm((current) => ({
+                        ...current,
+                        operator_name: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Purpose
+                </span>
+                <input
+                  className={fieldClassName}
+                  value={usageForm.purpose}
+                  onChange={(event) =>
+                    setUsageForm((current) => ({
+                      ...current,
+                      purpose: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Notes
+                </span>
+                <textarea
+                  className={textAreaClassName}
+                  value={usageForm.notes}
+                  onChange={(event) =>
+                    setUsageForm((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <FieldMessage message={usageError} />
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className={secondaryButtonClassName}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleUsageDelete()}
+                  disabled={!selectedUsageId || isUsagePending}
+                  className={dangerButtonClassName}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isUsagePending}
+                  className={primaryButtonClassName}
+                >
+                  {isUsagePending ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      Saving
+                    </>
+                  ) : (
+                    "Save usage log"
+                  )}
+                </button>
+              </div>
+            </form>
+          </FormPanel>
+        </ModalShell>
+      ) : null}
+
+      {activeModal === "schedule" ? (
+        <ModalShell
+          title={
+            selectedScheduleId
+              ? "Edit maintenance schedule"
+              : "Add maintenance schedule"
+          }
+          onClose={closeModal}
+        >
+          <FormPanel
+            label="Maintenance Schedules"
+            title="Maintenance schedule form"
+          >
+            <form className="space-y-4" onSubmit={handleScheduleSubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Machine
+                  </span>
+                  <PickerField
+                    value={
+                      scheduleForm.machine ? String(scheduleForm.machine) : ""
+                    }
+                    options={[
+                      { label: "Select machine", value: "" },
+                      ...machines.map((record) => ({
+                        label: record.name,
+                        value: String(record.id),
+                      })),
+                    ]}
+                    onChange={(value) =>
+                      setScheduleForm((current) => ({
+                        ...current,
+                        machine: value ? Number(value) : 0,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Title
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={scheduleForm.title}
+                    onChange={(event) =>
+                      setScheduleForm((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Maintenance type
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={scheduleForm.maintenance_type}
+                    onChange={(event) =>
+                      setScheduleForm((current) => ({
+                        ...current,
+                        maintenance_type: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Frequency
+                  </span>
+                  <PickerField
+                    value={scheduleForm.frequency}
+                    options={maintenanceFrequencies.map((value) => ({
+                      label: titleCase(value),
+                      value,
+                    }))}
+                    onChange={(value) =>
+                      setScheduleForm((current) => ({
+                        ...current,
+                        frequency: value as MaintenanceFrequency,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Next due date
+                  </span>
+                  <input
+                    type="date"
+                    className={fieldClassName}
+                    value={scheduleForm.next_due_date}
+                    onChange={(event) =>
+                      setScheduleForm((current) => ({
+                        ...current,
+                        next_due_date: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Last completed date
+                  </span>
+                  <input
+                    type="date"
+                    className={fieldClassName}
+                    value={scheduleForm.last_completed_date ?? ""}
+                    onChange={(event) =>
+                      setScheduleForm((current) => ({
+                        ...current,
+                        last_completed_date: event.target.value || null,
+                      }))
+                    }
+                  />
+                </label>
+
+                {scheduleForm.frequency === "custom" ? (
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Interval days
+                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      className={fieldClassName}
+                      value={scheduleForm.interval_days ?? ""}
+                      onChange={(event) =>
+                        setScheduleForm((current) => ({
+                          ...current,
+                          interval_days: event.target.value
+                            ? Number(event.target.value)
+                            : null,
+                        }))
+                      }
+                      required
+                    />
+                  </label>
+                ) : null}
+
+                <label className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={scheduleForm.is_active}
+                    onChange={(event) =>
+                      setScheduleForm((current) => ({
+                        ...current,
+                        is_active: event.target.checked,
+                      }))
+                    }
+                  />
+                  Active schedule
+                </label>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Notes
+                </span>
+                <textarea
+                  className={textAreaClassName}
+                  value={scheduleForm.notes}
+                  onChange={(event) =>
+                    setScheduleForm((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <FieldMessage message={scheduleError} />
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className={secondaryButtonClassName}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleScheduleDelete()}
+                  disabled={!selectedScheduleId || isSchedulePending}
+                  className={dangerButtonClassName}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSchedulePending}
+                  className={primaryButtonClassName}
+                >
+                  {isSchedulePending ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      Saving
+                    </>
+                  ) : (
+                    "Save schedule"
+                  )}
+                </button>
+              </div>
+            </form>
+          </FormPanel>
+        </ModalShell>
+      ) : null}
+
+      {activeModal === "maintenanceLog" ? (
+        <ModalShell
+          title={
+            selectedMaintenanceLogId
+              ? "Edit maintenance log"
+              : "Add maintenance log"
+          }
+          onClose={closeModal}
+        >
+          <FormPanel label="Maintenance Logs" title="Maintenance log form">
+            <form className="space-y-4" onSubmit={handleMaintenanceLogSubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Machine
+                  </span>
+                  <PickerField
+                    value={
+                      maintenanceLogForm.machine
+                        ? String(maintenanceLogForm.machine)
+                        : ""
+                    }
+                    options={[
+                      { label: "Select machine", value: "" },
+                      ...machines.map((record) => ({
+                        label: record.name,
+                        value: String(record.id),
+                      })),
+                    ]}
+                    onChange={(value) =>
+                      setMaintenanceLogForm((current) => ({
+                        ...current,
+                        machine: value ? Number(value) : 0,
+                        schedule: null,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Schedule
+                  </span>
+                  <PickerField
+                    value={
+                      maintenanceLogForm.schedule
+                        ? String(maintenanceLogForm.schedule)
+                        : ""
+                    }
+                    options={[
+                      { label: "No linked schedule", value: "" },
+                      ...maintenanceSchedules
+                        .filter(
+                          (item) => item.machine === maintenanceLogForm.machine,
+                        )
+                        .map((record) => ({
+                          label: record.title,
+                          value: String(record.id),
+                        })),
+                    ]}
+                    onChange={(value) =>
+                      setMaintenanceLogForm((current) => ({
+                        ...current,
+                        schedule: value ? Number(value) : null,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Maintenance date
+                  </span>
+                  <input
+                    type="date"
+                    className={fieldClassName}
+                    value={maintenanceLogForm.maintenance_date}
+                    onChange={(event) =>
+                      setMaintenanceLogForm((current) => ({
+                        ...current,
+                        maintenance_date: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Maintenance type
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={maintenanceLogForm.maintenance_type}
+                    onChange={(event) =>
+                      setMaintenanceLogForm((current) => ({
+                        ...current,
+                        maintenance_type: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Status
+                  </span>
+                  <PickerField
+                    value={maintenanceLogForm.status}
+                    options={maintenanceLogStatuses.map((value) => ({
+                      label: titleCase(value),
+                      value,
+                    }))}
+                    onChange={(value) =>
+                      setMaintenanceLogForm((current) => ({
+                        ...current,
+                        status: value as MaintenanceLogStatus,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Performed by
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={maintenanceLogForm.performed_by_name}
+                    onChange={(event) =>
+                      setMaintenanceLogForm((current) => ({
+                        ...current,
+                        performed_by_name: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Cost
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={fieldClassName}
+                    value={maintenanceLogForm.cost}
+                    onChange={(event) =>
+                      setMaintenanceLogForm((current) => ({
+                        ...current,
+                        cost: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Downtime hours
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={fieldClassName}
+                    value={maintenanceLogForm.downtime_hours}
+                    onChange={(event) =>
+                      setMaintenanceLogForm((current) => ({
+                        ...current,
+                        downtime_hours: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Notes
+                </span>
+                <textarea
+                  className={textAreaClassName}
+                  value={maintenanceLogForm.notes}
+                  onChange={(event) =>
+                    setMaintenanceLogForm((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <FieldMessage message={maintenanceLogError} />
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className={secondaryButtonClassName}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleMaintenanceLogDelete()}
+                  disabled={
+                    !selectedMaintenanceLogId || isMaintenanceLogPending
+                  }
+                  className={dangerButtonClassName}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+                <button
+                  type="submit"
+                  disabled={isMaintenanceLogPending}
+                  className={primaryButtonClassName}
+                >
+                  {isMaintenanceLogPending ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      Saving
+                    </>
+                  ) : (
+                    "Save maintenance log"
+                  )}
+                </button>
+              </div>
+            </form>
+          </FormPanel>
+        </ModalShell>
+      ) : null}
+
+      {activeModal === "downtime" ? (
+        <ModalShell
+          title={
+            selectedDowntimeId ? "Edit downtime alert" : "Add downtime alert"
+          }
+          onClose={closeModal}
+        >
+          <FormPanel label="Downtime Alerts" title="Downtime record form">
+            <form className="space-y-4" onSubmit={handleDowntimeSubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Machine
+                  </span>
+                  <PickerField
+                    value={
+                      downtimeForm.machine ? String(downtimeForm.machine) : ""
+                    }
+                    options={[
+                      { label: "Select machine", value: "" },
+                      ...machines.map((record) => ({
+                        label: record.name,
+                        value: String(record.id),
+                      })),
+                    ]}
+                    onChange={(value) =>
+                      setDowntimeForm((current) => ({
+                        ...current,
+                        machine: value ? Number(value) : 0,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Title
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={downtimeForm.title}
+                    onChange={(event) =>
+                      setDowntimeForm((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Severity
+                  </span>
+                  <PickerField
+                    value={downtimeForm.severity}
+                    options={downtimeSeverities.map((value) => ({
+                      label: titleCase(value),
+                      value,
+                    }))}
+                    onChange={(value) =>
+                      setDowntimeForm((current) => ({
+                        ...current,
+                        severity: value as DowntimeSeverity,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Status
+                  </span>
+                  <PickerField
+                    value={downtimeForm.status}
+                    options={downtimeStatuses.map((value) => ({
+                      label: titleCase(value),
+                      value,
+                    }))}
+                    onChange={(value) =>
+                      setDowntimeForm((current) => ({
+                        ...current,
+                        status: value as DowntimeStatus,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Start time
+                  </span>
+                  <input
+                    type="datetime-local"
+                    className={fieldClassName}
+                    value={downtimeForm.start_time}
+                    onChange={(event) =>
+                      setDowntimeForm((current) => ({
+                        ...current,
+                        start_time: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    End time
+                  </span>
+                  <input
+                    type="datetime-local"
+                    className={fieldClassName}
+                    value={downtimeForm.end_time ?? ""}
+                    onChange={(event) =>
+                      setDowntimeForm((current) => ({
+                        ...current,
+                        end_time: event.target.value || null,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Cause
+                </span>
+                <textarea
+                  className={textAreaClassName}
+                  value={downtimeForm.cause}
+                  onChange={(event) =>
+                    setDowntimeForm((current) => ({
+                      ...current,
+                      cause: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Resolution notes
+                </span>
+                <textarea
+                  className={textAreaClassName}
+                  value={downtimeForm.resolution_notes}
+                  onChange={(event) =>
+                    setDowntimeForm((current) => ({
+                      ...current,
+                      resolution_notes: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <FieldMessage message={downtimeError} />
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className={secondaryButtonClassName}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleDowntimeDelete()}
+                  disabled={!selectedDowntimeId || isDowntimePending}
+                  className={dangerButtonClassName}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isDowntimePending}
+                  className={primaryButtonClassName}
+                >
+                  {isDowntimePending ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      Saving
+                    </>
+                  ) : (
+                    "Save downtime record"
+                  )}
+                </button>
+              </div>
+            </form>
+          </FormPanel>
+        </ModalShell>
+      ) : null}
+
+      {activeModal === "utility" ? (
+        <ModalShell
+          title={selectedUtilityId ? "Edit utility log" : "Add utility log"}
+          onClose={closeModal}
+        >
+          <FormPanel label="Utility Logs" title="Utility consumption form">
+            <form className="space-y-4" onSubmit={handleUtilitySubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Machine
+                  </span>
+                  <PickerField
+                    value={
+                      utilityForm.machine ? String(utilityForm.machine) : ""
+                    }
+                    options={[
+                      { label: "Facility level", value: "" },
+                      ...machines.map((record) => ({
+                        label: record.name,
+                        value: String(record.id),
+                      })),
+                    ]}
+                    onChange={(value) =>
+                      setUtilityForm((current) => ({
+                        ...current,
+                        machine: value ? Number(value) : null,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Utility type
+                  </span>
+                  <PickerField
+                    value={utilityForm.utility_type}
+                    options={utilityTypes.map((value) => ({
+                      label: titleCase(value),
+                      value,
+                    }))}
+                    onChange={(value) =>
+                      setUtilityForm((current) => ({
+                        ...current,
+                        utility_type: value as UtilityType,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Log date
+                  </span>
+                  <input
+                    type="date"
+                    className={fieldClassName}
+                    value={utilityForm.log_date}
+                    onChange={(event) =>
+                      setUtilityForm((current) => ({
+                        ...current,
+                        log_date: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Quantity
+                  </span>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    className={fieldClassName}
+                    value={utilityForm.quantity}
+                    onChange={(event) =>
+                      setUtilityForm((current) => ({
+                        ...current,
+                        quantity: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Unit name
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={utilityForm.unit_name}
+                    onChange={(event) =>
+                      setUtilityForm((current) => ({
+                        ...current,
+                        unit_name: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Cost
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={fieldClassName}
+                    value={utilityForm.cost}
+                    onChange={(event) =>
+                      setUtilityForm((current) => ({
+                        ...current,
+                        cost: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Notes
+                </span>
+                <textarea
+                  className={textAreaClassName}
+                  value={utilityForm.notes}
+                  onChange={(event) =>
+                    setUtilityForm((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <FieldMessage message={utilityError} />
+
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className={secondaryButtonClassName}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleUtilityDelete()}
+                  disabled={!selectedUtilityId || isUtilityPending}
+                  className={dangerButtonClassName}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isUtilityPending}
+                  className={primaryButtonClassName}
+                >
+                  {isUtilityPending ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      Saving
+                    </>
+                  ) : (
+                    "Save utility log"
+                  )}
+                </button>
+              </div>
+            </form>
+          </FormPanel>
+        </ModalShell>
+      ) : null}
+    </div>
+  );
+}
