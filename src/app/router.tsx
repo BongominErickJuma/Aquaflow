@@ -9,6 +9,7 @@ import { FinancePage } from "../pages/FinancePage";
 import { InventoryPage } from "../pages/InventoryPage";
 import { LoginPage } from "../pages/LoginPage";
 import { MembersPage } from "../pages/MembersPage";
+import { NotificationsPage } from "../pages/NotificationsPage";
 import { ProductionPage } from "../pages/ProductionPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { SalesPage } from "../pages/SalesPage";
@@ -66,6 +67,10 @@ export const router = createBrowserRouter([
           {
             path: "finance",
             element: <FinancePage />,
+          },
+          {
+            path: "notifications",
+            element: <NotificationsPage />,
           },
           {
             path: "settings/profile",

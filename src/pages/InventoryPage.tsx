@@ -88,6 +88,57 @@ const recordCardClassName =
   "group relative flex h-[220px] min-w-[280px] max-w-[280px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4";
 const recordEditButtonClassName = `${iconButtonClassName} absolute right-4 top-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto`;
 
+const inventoryMilestoneFlow = [
+  {
+    id: "units",
+    label: "Units",
+    detail:
+      "Define the measurement units here. Before this, there is nothing to prepare. Next, add suppliers.",
+  },
+  {
+    id: "suppliers",
+    label: "Suppliers",
+    detail:
+      "Add and update suppliers here. Before this, make sure the units are ready. Next, create storage locations.",
+  },
+  {
+    id: "locations",
+    label: "Storage Locations",
+    detail:
+      "Set up storage locations here. Before this, confirm suppliers are in place. Next, add raw materials.",
+  },
+  {
+    id: "raw",
+    label: "Raw Materials",
+    detail:
+      "Create and edit raw materials here. Before this, storage locations should already exist. Next, add finished products.",
+  },
+  {
+    id: "finished",
+    label: "Finished Products",
+    detail:
+      "Set up finished products here. Before this, make sure raw materials are ready. Next, create stock items.",
+  },
+  {
+    id: "stock",
+    label: "Stock Items",
+    detail:
+      "Create stock items here and link them to locations. Before this, finished products should be in place. Next, record stock movements.",
+  },
+  {
+    id: "movements",
+    label: "Stock Movements",
+    detail:
+      "Capture stock movement entries here. Before this, the stock items should already exist. Next, review reorder alerts.",
+  },
+  {
+    id: "alerts",
+    label: "Reorder Alerts",
+    detail:
+      "Review reorder alerts here. Before this, you should have stock movements recorded. This is the last inventory step.",
+  },
+] as const;
+
 type ActiveModal =
   | "unit"
   | "supplier"
@@ -526,18 +577,12 @@ export function InventoryPage() {
     user?.role.code === "admin" || user?.role.code === "superuser";
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
-  const [activeTab, setActiveTab] = useState("alerts");
+  const [activeTab, setActiveTab] = useState("units");
 
-  const tabs = [
-    { id: "alerts", label: "Reorder Alerts" },
-    { id: "stock", label: "Stock Items" },
-    { id: "raw", label: "Raw Materials" },
-    { id: "finished", label: "Finished Products" },
-    { id: "units", label: "Units" },
-    { id: "locations", label: "Storage Locations" },
-    { id: "suppliers", label: "Suppliers" },
-    { id: "movements", label: "Stock Movements" },
-  ];
+  const tabs = inventoryMilestoneFlow.map(({ id, label }) => ({ id, label }));
+  const activeFlowItem =
+    inventoryMilestoneFlow.find((item) => item.id === activeTab) ??
+    inventoryMilestoneFlow[0];
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState("");
 
@@ -1438,7 +1483,8 @@ export function InventoryPage() {
       </section>
       <ModuleTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="module-page-stage">
+      <div className="module-page-stage !justify-start overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-6">
         <div className="space-y-6">
           {activeTab === "alerts" ? (
             <section className="panel p-6">
@@ -2042,6 +2088,17 @@ export function InventoryPage() {
             </section>
           ) : null}
         </div>
+
+        </div>
+
+        <footer className="panel mt-auto px-4 py-3">
+          <p className="text-sm leading-6 text-slate-600">
+            <span className="font-semibold text-sky-700">
+              {activeFlowItem.label}
+            </span>{" "}
+            {activeFlowItem.detail}
+          </p>
+        </footer>
       </div>
 
       {activeModal === "unit" ? (

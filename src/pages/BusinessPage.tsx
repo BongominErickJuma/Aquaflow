@@ -65,6 +65,50 @@ type CompanyFormState = {
   vision: string;
 };
 
+const businessMilestoneFlow = [
+  {
+    id: "business",
+    label: "Business",
+    footerLabel: "Business",
+    detail: "Create or review the company profile here before moving into the supporting records.",
+  },
+  {
+    id: "registration",
+    label: "Registration",
+    footerLabel: "Registration",
+    detail:
+      "Add or update the legal registration here. Before this, make sure the base business profile exists. Next, move into licenses.",
+  },
+  {
+    id: "licenses",
+    label: "Licenses",
+    footerLabel: "Licenses",
+    detail:
+      "Add and edit licenses here. Before this, complete registration. Next, capture business locations.",
+  },
+  {
+    id: "locations",
+    label: "Locations",
+    footerLabel: "Locations",
+    detail:
+      "Add and update locations here. Before this, make sure licenses are in place. Next, record KPIs.",
+  },
+  {
+    id: "kpis",
+    label: "KPIs",
+    footerLabel: "KPIs",
+    detail:
+      "Store and adjust KPI records here. Before this, confirm the locations are set. Next, add strategic plans.",
+  },
+  {
+    id: "plans",
+    label: "Strategic Plans",
+    footerLabel: "Plans",
+    detail:
+      "Capture strategic plans here. Before this, you should have KPI records ready. This is the last business step.",
+  },
+] as const;
+
 const fieldClassName =
   "w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300";
 const textAreaClassName = `${fieldClassName} min-h-[108px] resize-y`;
@@ -478,14 +522,10 @@ export function BusinessPage() {
   >(null);
   const [activeTab, setActiveTab] = useState("business");
 
-  const tabs = [
-    { id: "business", label: "Business" },
-    { id: "registration", label: "Registration" },
-    { id: "licenses", label: "Licenses" },
-    { id: "locations", label: "Locations" },
-    { id: "kpis", label: "KPIs" },
-    { id: "plans", label: "Strategic Plans" },
-  ];
+  const tabs = businessMilestoneFlow.map(({ id, label }) => ({ id, label }));
+  const activeBusinessStep =
+    businessMilestoneFlow.find((item) => item.id === activeTab) ??
+    businessMilestoneFlow[0];
 
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1808,6 +1848,16 @@ export function BusinessPage() {
               </section>
             ) : null}
           </div>
+          {activeTab !== "business" ? (
+            <footer className="panel px-4 py-3">
+              <p className="text-sm leading-6 text-slate-600">
+                <span className="font-semibold text-sky-700">
+                  {activeBusinessStep.footerLabel}
+                </span>{" "}
+                {activeBusinessStep.detail}
+              </p>
+            </footer>
+          ) : null}
         </>
       )}
 

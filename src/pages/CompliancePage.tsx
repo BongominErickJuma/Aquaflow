@@ -4,6 +4,7 @@ import {
   LoaderCircle,
   Pencil,
   Plus,
+  ShieldAlert,
   Trash2,
 } from "lucide-react";
 import {
@@ -76,6 +77,39 @@ const iconButtonClassName =
 const recordCardClassName =
   "group relative flex h-[266px] min-w-[280px] max-w-[280px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4";
 const recordEditButtonClassName = `${iconButtonClassName} absolute right-4 top-4 opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100`;
+
+const complianceMilestoneFlow = [
+  {
+    id: "hygiene",
+    label: "Hygiene Checks",
+    detail:
+      "Capture hygiene checks here. Before this, there is nothing to prepare. Next, add water tests.",
+  },
+  {
+    id: "water",
+    label: "Water Tests",
+    detail:
+      "Record water quality tests here. Before this, hygiene checks should already be in place. Next, add safety records.",
+  },
+  {
+    id: "safety",
+    label: "Safety Records",
+    detail:
+      "Store safety records here. Before this, water tests should be ready. Next, capture training records.",
+  },
+  {
+    id: "training",
+    label: "Training Records",
+    detail:
+      "Add training records here. Before this, safety records should already exist. Next, upload compliance documents.",
+  },
+  {
+    id: "documents",
+    label: "Documents",
+    detail:
+      "Upload and manage compliance documents here. Before this, training records should be in place. This is the last compliance step.",
+  },
+] as const;
 
 type ActiveModal =
   | "hygiene"
@@ -386,8 +420,10 @@ function buildDocumentPayload(
 
 export function CompliancePage() {
   const { user } = useAuth();
-  const isAdmin =
-    user?.role.code === "admin" || user?.role.code === "superuser";
+  const canManageCompliance =
+    user?.role.code === "admin" ||
+    user?.role.code === "superuser" ||
+    user?.role.code === "hr";
 
   const [hygieneChecks, setHygieneChecks] = useState<HygieneCheckRecord[]>([]);
   const [waterTests, setWaterTests] = useState<WaterQualityTestRecord[]>([]);
@@ -438,13 +474,10 @@ export function CompliancePage() {
   const [documentPending, setDocumentPending] = useState(false);
   const [activeTab, setActiveTab] = useState("hygiene");
 
-  const tabs = [
-    { id: "hygiene", label: "Hygiene Checks" },
-    { id: "water", label: "Water Tests" },
-    { id: "safety", label: "Safety Records" },
-    { id: "training", label: "Training Records" },
-    { id: "documents", label: "Documents" },
-  ];
+  const tabs = complianceMilestoneFlow.map(({ id, label }) => ({ id, label }));
+  const activeFlowItem =
+    complianceMilestoneFlow.find((item) => item.id === activeTab) ??
+    complianceMilestoneFlow[0];
 
   async function reloadComplianceData() {
     const [hygiene, water, safety, training, docs, staff] = await Promise.all([
@@ -465,6 +498,12 @@ export function CompliancePage() {
   }
 
   useEffect(() => {
+    if (!canManageCompliance) {
+      setLoading(false);
+      setPageError(null);
+      return;
+    }
+
     let isMounted = true;
 
     async function loadPage() {
@@ -494,7 +533,7 @@ export function CompliancePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [canManageCompliance]);
 
   useEffect(() => {
     if (!selectedHygieneId) {
@@ -833,6 +872,28 @@ export function CompliancePage() {
     }
   }
 
+  if (!canManageCompliance) {
+    return (
+      <section className="panel max-w-3xl p-8">
+        <p className="section-label">Compliance</p>
+        <div className="mt-4 flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Compliance access is restricted
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
+              Viewing and managing compliance records is limited to HR and
+              admin accounts.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -891,13 +952,15 @@ export function CompliancePage() {
         </div>
       </section>
       <ModuleTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-      <div className="module-page-stage">
+      <div className="module-page-stage !justify-start overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-6">
+        <div className="min-h-0 flex-1">
         {activeTab === "hygiene" ? (
           <SectionCard
             title="Hygiene checks"
             description="Cleaning and sanitation checks for plant and storage areas."
             action={
-              isAdmin ? (
+              canManageCompliance ? (
                 <button
                   type="button"
                   className={iconButtonClassName}
@@ -915,7 +978,7 @@ export function CompliancePage() {
             {hygieneChecks.length ? (
               hygieneChecks.map((record) => (
                 <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+                  {canManageCompliance ? (
                     <button
                       type="button"
                       className={recordEditButtonClassName}
@@ -968,7 +1031,7 @@ export function CompliancePage() {
             title="Water quality tests"
             description="Lab results, sample points, and accepted limits."
             action={
-              isAdmin ? (
+              canManageCompliance ? (
                 <button
                   type="button"
                   className={iconButtonClassName}
@@ -986,7 +1049,7 @@ export function CompliancePage() {
             {waterTests.length ? (
               waterTests.map((record) => (
                 <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+                  {canManageCompliance ? (
                     <button
                       type="button"
                       className={recordEditButtonClassName}
@@ -1036,7 +1099,7 @@ export function CompliancePage() {
             title="Safety records"
             description="Incident tracking, severity, and corrective actions."
             action={
-              isAdmin ? (
+              canManageCompliance ? (
                 <button
                   type="button"
                   className={iconButtonClassName}
@@ -1054,7 +1117,7 @@ export function CompliancePage() {
             {safetyRecords.length ? (
               safetyRecords.map((record) => (
                 <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+                  {canManageCompliance ? (
                     <button
                       type="button"
                       className={recordEditButtonClassName}
@@ -1101,7 +1164,7 @@ export function CompliancePage() {
             title="Training records"
             description="Employee-linked compliance training and certificate details."
             action={
-              isAdmin ? (
+              canManageCompliance ? (
                 <button
                   type="button"
                   className={iconButtonClassName}
@@ -1119,7 +1182,7 @@ export function CompliancePage() {
             {trainingRecords.length ? (
               trainingRecords.map((record) => (
                 <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+                  {canManageCompliance ? (
                     <button
                       type="button"
                       className={recordEditButtonClassName}
@@ -1166,7 +1229,7 @@ export function CompliancePage() {
             title="Compliance documents"
             description="Official files with issue dates, expiry dates, and attachments."
             action={
-              isAdmin ? (
+              canManageCompliance ? (
                 <button
                   type="button"
                   className={iconButtonClassName}
@@ -1184,7 +1247,7 @@ export function CompliancePage() {
             {documents.length ? (
               documents.map((record) => (
                 <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+                  {canManageCompliance ? (
                     <button
                       type="button"
                       className={recordEditButtonClassName}
@@ -1238,6 +1301,17 @@ export function CompliancePage() {
             )}
           </SectionCard>
         ) : null}
+        </div>
+
+        <footer className="panel mt-auto px-4 py-3">
+          <p className="text-sm leading-6 text-slate-600">
+            <span className="font-semibold text-sky-700">
+              {activeFlowItem.label}
+            </span>{" "}
+            {activeFlowItem.detail}
+          </p>
+        </footer>
+        </div>
       </div>
       {activeModal === "hygiene" ? (
         <ModalShell

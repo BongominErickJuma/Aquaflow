@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   Pencil,
   Plus,
+  ShieldAlert,
   Trash2,
 } from "lucide-react";
 import {
@@ -16,6 +17,7 @@ import {
   type ReactNode,
 } from "react";
 import { ModuleTabs } from "../components/layout/ModuleTabs";
+import { useAuth } from "../features/auth/AuthProvider";
 import { ApiError, fetchAllUsers } from "../lib/api/auth";
 import {
   createAttendanceRecord,
@@ -60,6 +62,7 @@ import type {
   EmployeePayload,
   EmployeeRecord,
   EmployeeStatus,
+  EmployeeWorkRole,
   PayrollPayload,
   PayrollRecord,
   PayrollStatus,
@@ -98,9 +101,15 @@ type ActiveModal =
 
 type PageSizeOption = 5 | 6 | 10;
 
-const pageSizeOptions: PageSizeOption[] = [5, 6, 10];
+const pageSizeOptions: PageSizeOption[] = [10, 6, 5];
 
 const employeeStatuses: EmployeeStatus[] = ["active", "inactive", "terminated"];
+const employeeWorkRoles: Exclude<EmployeeWorkRole, "">[] = [
+  "operator",
+  "logistics",
+  "sales",
+  "maintenance",
+];
 const attendanceStatuses: AttendanceStatus[] = [
   "present",
   "absent",
@@ -226,8 +235,10 @@ function createEmptyEmployeeForm(): EmployeePayload {
     phone_number: "",
     job_title: "",
     department: "",
+    work_role: "",
     hire_date: "",
     status: "active",
+    termination_date: null,
     notes: "",
   };
 }
@@ -242,8 +253,10 @@ function buildEmployeeForm(record: EmployeeRecord | null): EmployeePayload {
     phone_number: record.phone_number,
     job_title: record.job_title,
     department: record.department,
+    work_role: record.work_role,
     hire_date: record.hire_date,
     status: record.status,
+    termination_date: record.termination_date,
     notes: record.notes,
   };
 }
@@ -521,6 +534,11 @@ function formatDate(value: string | null | undefined) {
 }
 
 export function WorkforcePage() {
+  const { user } = useAuth();
+  const canManageWorkforce =
+    user?.role.code === "admin" ||
+    user?.role.code === "superuser" ||
+    user?.role.code === "hr";
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [activeTab, setActiveTab] = useState("employees");
 
@@ -553,7 +571,7 @@ export function WorkforcePage() {
   >([]);
   const [totalPerformanceRecords, setTotalPerformanceRecords] = useState(0);
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [pageSize, setPageSize] = useState<PageSizeOption>(5);
+  const [pageSize, setPageSize] = useState<PageSizeOption>(10);
   const [employeePage, setEmployeePage] = useState(1);
   const [shiftPage, setShiftPage] = useState(1);
   const [attendancePage, setAttendancePage] = useState(1);
@@ -607,6 +625,16 @@ export function WorkforcePage() {
   const [isPayrollPending, setIsPayrollPending] = useState(false);
   const [isTaskPending, setIsTaskPending] = useState(false);
   const [isPerformancePending, setIsPerformancePending] = useState(false);
+
+  const buildAssignableEmployeeOptions = (selectedEmployeeId?: number | null) =>
+    employeeOptions.filter(
+      (item) => item.status === "active" || item.id === selectedEmployeeId,
+    );
+
+  const buildAssignableShiftOptions = (selectedShiftId?: number | null) =>
+    shiftOptions.filter(
+      (item) => item.is_active || item.id === selectedShiftId,
+    );
   const userEmailById = new Map(
     users.map((record) => [record.id, record.email]),
   );
@@ -676,6 +704,12 @@ export function WorkforcePage() {
   }
 
   useEffect(() => {
+    if (!canManageWorkforce) {
+      setIsLoading(false);
+      setPageError("");
+      return;
+    }
+
     let isMounted = true;
     const load = async () => {
       setIsLoading(true);
@@ -707,6 +741,7 @@ export function WorkforcePage() {
     reloadKey,
     shiftPage,
     taskPage,
+    canManageWorkforce,
   ]);
 
   useEffect(() => {
@@ -967,6 +1002,17 @@ export function WorkforcePage() {
   const handleEmployeeSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setEmployeeError("");
+    if (!employeeForm.work_role) {
+      setEmployeeError("Choose a work role before saving the employee.");
+      return;
+    }
+    if (
+      employeeForm.status === "terminated" &&
+      !employeeForm.termination_date
+    ) {
+      setEmployeeError("Add a termination date for terminated employees.");
+      return;
+    }
     setIsEmployeePending(true);
     try {
       const payload = {
@@ -978,6 +1024,10 @@ export function WorkforcePage() {
         phone_number: employeeForm.phone_number.trim(),
         job_title: employeeForm.job_title.trim(),
         department: employeeForm.department.trim(),
+        termination_date:
+          employeeForm.status === "terminated"
+            ? employeeForm.termination_date
+            : null,
         notes: employeeForm.notes.trim(),
       };
       if (selectedEmployeeId) await updateEmployee(selectedEmployeeId, payload);
@@ -1143,6 +1193,28 @@ export function WorkforcePage() {
     }
   };
 
+  if (!canManageWorkforce) {
+    return (
+      <section className="panel max-w-3xl p-8">
+        <p className="section-label">Workforce</p>
+        <div className="mt-4 flex items-start gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Workforce access is restricted
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
+              Managing employees, shifts, attendance, payroll, tasks, and
+              performance is limited to HR and admin accounts.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (isLoading) {
     return (
       <section className="panel flex min-h-[320px] items-center justify-center p-8">
@@ -1281,7 +1353,7 @@ export function WorkforcePage() {
                             Job title
                           </th>
                           <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                            Department
+                            Work role
                           </th>
                           <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                             Status
@@ -1333,7 +1405,9 @@ export function WorkforcePage() {
                               <td
                                 className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
                               >
-                                {record.department || "Not set"}
+                                {record.work_role
+                                  ? titleCase(record.work_role)
+                                  : "Not set"}
                               </td>
                               <td
                                 className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
@@ -1348,6 +1422,12 @@ export function WorkforcePage() {
                                         : "danger"
                                   }
                                 />
+                                {record.status === "terminated" &&
+                                record.termination_date ? (
+                                  <p className="mt-2 text-xs text-slate-500">
+                                    Terminated {formatDate(record.termination_date)}
+                                  </p>
+                                ) : null}
                               </td>
                               <td
                                 className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
@@ -2371,7 +2451,7 @@ export function WorkforcePage() {
           title={selectedEmployeeId ? "Edit employee" : "Add employee"}
           onClose={closeModal}
         >
-          <FormPanel label="Employees" title="Employee form">
+          <FormPanel label="Employees" title="Employee profile">
             <form className="space-y-4" onSubmit={handleEmployeeSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
@@ -2491,6 +2571,27 @@ export function WorkforcePage() {
                 </label>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
+                    Work role
+                  </span>
+                  <PickerField
+                    value={employeeForm.work_role}
+                    options={[
+                      { label: "Select work role", value: "" },
+                      ...employeeWorkRoles.map((value) => ({
+                        label: titleCase(value),
+                        value,
+                      })),
+                    ]}
+                    onChange={(value) =>
+                      setEmployeeForm((current) => ({
+                        ...current,
+                        work_role: value as EmployeeWorkRole,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
                     Department
                   </span>
                   <input
@@ -2535,8 +2636,29 @@ export function WorkforcePage() {
                       setEmployeeForm((current) => ({
                         ...current,
                         status: value as EmployeeStatus,
+                        termination_date:
+                          value === "terminated"
+                            ? current.termination_date
+                            : null,
                       }))
                     }
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Termination date
+                  </span>
+                  <input
+                    type="date"
+                    className={fieldClassName}
+                    value={employeeForm.termination_date ?? ""}
+                    onChange={(event) =>
+                      setEmployeeForm((current) => ({
+                        ...current,
+                        termination_date: event.target.value || null,
+                      }))
+                    }
+                    disabled={employeeForm.status !== "terminated"}
                   />
                 </label>
               </div>
@@ -2606,7 +2728,7 @@ export function WorkforcePage() {
           title={selectedShiftId ? "Edit shift" : "Add shift"}
           onClose={closeModal}
         >
-          <FormPanel label="Shifts" title="Shift form">
+          <FormPanel label="Shifts" title="Shift details">
             <form className="space-y-4" onSubmit={handleShiftSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
@@ -2752,7 +2874,7 @@ export function WorkforcePage() {
           title={selectedAttendanceId ? "Edit attendance" : "Add attendance"}
           onClose={closeModal}
         >
-          <FormPanel label="Attendance" title="Attendance form">
+          <FormPanel label="Attendance" title="Attendance record">
             <form className="space-y-4" onSubmit={handleAttendanceSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
@@ -2767,8 +2889,13 @@ export function WorkforcePage() {
                     }
                     options={[
                       { label: "Select employee", value: "" },
-                      ...employeeOptions.map((record) => ({
-                        label: record.full_name,
+                      ...buildAssignableEmployeeOptions(
+                        attendanceForm.employee,
+                      ).map((record) => ({
+                        label:
+                          record.status === "active"
+                            ? record.full_name
+                            : `${record.full_name} (${titleCase(record.status)})`,
                         value: String(record.id),
                       })),
                     ]}
@@ -2790,10 +2917,14 @@ export function WorkforcePage() {
                     }
                     options={[
                       { label: "No shift", value: "" },
-                      ...shiftOptions.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildAssignableShiftOptions(attendanceForm.shift).map(
+                        (record) => ({
+                          label: record.is_active
+                            ? record.name
+                            : `${record.name} (Inactive)`,
+                          value: String(record.id),
+                        }),
+                      ),
                     ]}
                     onChange={(value) =>
                       setAttendanceForm((current) => ({
@@ -2937,7 +3068,7 @@ export function WorkforcePage() {
           title={selectedPayrollId ? "Edit payroll" : "Add payroll"}
           onClose={closeModal}
         >
-          <FormPanel label="Payroll" title="Payroll form">
+          <FormPanel label="Payroll" title="Payroll record">
             <form className="space-y-4" onSubmit={handlePayrollSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
@@ -2950,10 +3081,15 @@ export function WorkforcePage() {
                     }
                     options={[
                       { label: "Select employee", value: "" },
-                      ...employeeOptions.map((record) => ({
-                        label: record.full_name,
-                        value: String(record.id),
-                      })),
+                      ...buildAssignableEmployeeOptions(payrollForm.employee).map(
+                        (record) => ({
+                          label:
+                            record.status === "active"
+                              ? record.full_name
+                              : `${record.full_name} (${titleCase(record.status)})`,
+                          value: String(record.id),
+                        }),
+                      ),
                     ]}
                     onChange={(value) =>
                       setPayrollForm((current) => ({
@@ -3155,7 +3291,7 @@ export function WorkforcePage() {
           title={selectedTaskId ? "Edit task" : "Add task"}
           onClose={closeModal}
         >
-          <FormPanel label="Tasks" title="Task form">
+          <FormPanel label="Tasks" title="Task assignment">
             <form className="space-y-4" onSubmit={handleTaskSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
@@ -3166,10 +3302,15 @@ export function WorkforcePage() {
                     value={taskForm.employee ? String(taskForm.employee) : ""}
                     options={[
                       { label: "Select employee", value: "" },
-                      ...employeeOptions.map((record) => ({
-                        label: record.full_name,
-                        value: String(record.id),
-                      })),
+                      ...buildAssignableEmployeeOptions(taskForm.employee).map(
+                        (record) => ({
+                          label:
+                            record.status === "active"
+                              ? record.full_name
+                              : `${record.full_name} (${titleCase(record.status)})`,
+                          value: String(record.id),
+                        }),
+                      ),
                     ]}
                     onChange={(value) =>
                       setTaskForm((current) => ({
@@ -3350,7 +3491,7 @@ export function WorkforcePage() {
           }
           onClose={closeModal}
         >
-          <FormPanel label="Performance" title="Performance form">
+          <FormPanel label="Performance" title="Performance review">
             <form className="space-y-4" onSubmit={handlePerformanceSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
@@ -3365,8 +3506,13 @@ export function WorkforcePage() {
                     }
                     options={[
                       { label: "Select employee", value: "" },
-                      ...employeeOptions.map((record) => ({
-                        label: record.full_name,
+                      ...buildAssignableEmployeeOptions(
+                        performanceForm.employee,
+                      ).map((record) => ({
+                        label:
+                          record.status === "active"
+                            ? record.full_name
+                            : `${record.full_name} (${titleCase(record.status)})`,
                         value: String(record.id),
                       })),
                     ]}

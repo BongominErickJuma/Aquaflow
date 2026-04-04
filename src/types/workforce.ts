@@ -12,6 +12,12 @@ export type WorkforcePaginatedResponse<T> = {
 };
 
 export type EmployeeStatus = "active" | "inactive" | "terminated";
+export type EmployeeWorkRole =
+  | "operator"
+  | "logistics"
+  | "sales"
+  | "maintenance"
+  | "";
 
 export type EmployeeRecord = WorkforceTimestampFields & {
   user: number | null;
@@ -23,8 +29,10 @@ export type EmployeeRecord = WorkforceTimestampFields & {
   phone_number: string;
   job_title: string;
   department: string;
+  work_role: EmployeeWorkRole;
   hire_date: string;
   status: EmployeeStatus;
+  termination_date: string | null;
   notes: string;
 };
 

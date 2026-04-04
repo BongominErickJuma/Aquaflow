@@ -91,6 +91,51 @@ const recordCardClassName =
   "group relative flex h-[242px] min-w-[280px] max-w-[280px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4";
 const recordEditButtonClassName = `${iconButtonClassName} absolute right-4 top-4 opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100`;
 
+const salesMilestoneFlow = [
+  {
+    id: "categories",
+    label: "Customer Categories",
+    detail:
+      "Set up customer categories here. Before this, there is nothing to prepare. Next, add clients.",
+  },
+  {
+    id: "clients",
+    label: "Clients",
+    detail:
+      "Create and update clients here. Before this, customer categories should already exist. Next, define branding records.",
+  },
+  {
+    id: "branding",
+    label: "Branding",
+    detail:
+      "Add branding entries here. Before this, make sure clients are in place. Next, create orders.",
+  },
+  {
+    id: "orders",
+    label: "Orders",
+    detail:
+      "Create and manage sales orders here. Before this, branding should already be ready. Next, add order items.",
+  },
+  {
+    id: "items",
+    label: "Order Items",
+    detail:
+      "Capture order items here. Before this, the parent orders should already exist. Next, schedule deliveries.",
+  },
+  {
+    id: "schedules",
+    label: "Delivery Schedules",
+    detail:
+      "Plan delivery schedules here. Before this, order items should already be set. Next, record delivery results.",
+  },
+  {
+    id: "deliveries",
+    label: "Delivery Records",
+    detail:
+      "Record delivery outcomes here. Before this, delivery schedules should be in place. This is the last sales step.",
+  },
+] as const;
+
 type ActiveModal =
   | "category"
   | "client"
@@ -457,15 +502,29 @@ export function SalesPage() {
   const [deliveryPending, setDeliveryPending] = useState(false);
   const [activeTab, setActiveTab] = useState("categories");
 
-  const tabs = [
-    { id: "categories", label: "Customer Categories" },
-    { id: "clients", label: "Clients" },
-    { id: "branding", label: "Branding" },
-    { id: "orders", label: "Orders" },
-    { id: "items", label: "Order Items" },
-    { id: "schedules", label: "Delivery Schedules" },
-    { id: "deliveries", label: "Delivery Records" },
-  ];
+  const tabs = salesMilestoneFlow.map(({ id, label }) => ({ id, label }));
+  const activeFlowItem =
+    salesMilestoneFlow.find((item) => item.id === activeTab) ??
+    salesMilestoneFlow[0];
+
+  const buildAssignableOrderOptions = (selectedOrderId?: number | null) =>
+    orders.filter(
+      (order) => order.status !== "cancelled" || order.id === selectedOrderId,
+    );
+
+  const buildAssignableScheduleOptions = ({
+    orderId,
+    selectedScheduleId,
+  }: {
+    orderId?: number | null;
+    selectedScheduleId?: number | null;
+  }) =>
+    schedules.filter(
+      (schedule) =>
+        (!orderId || schedule.order === orderId) &&
+        (schedule.status !== "cancelled" ||
+          schedule.id === selectedScheduleId),
+    );
 
   async function reloadSalesData() {
     const [
@@ -1011,7 +1070,9 @@ export function SalesPage() {
         </div>
       </section>
       <ModuleTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-      <div className="module-page-stage">
+      <div className="module-page-stage !justify-start overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-6">
+        <div className="min-h-0 flex-1">
         {activeTab === "categories" ? (
           <SectionCard
             title="Customer categories"
@@ -1463,6 +1524,17 @@ export function SalesPage() {
             )}
           </SectionCard>
         ) : null}
+        </div>
+
+        <footer className="panel mt-auto px-4 py-3">
+          <p className="text-sm leading-6 text-slate-600">
+            <span className="font-semibold text-sky-700">
+              {activeFlowItem.label}
+            </span>{" "}
+            {activeFlowItem.detail}
+          </p>
+        </footer>
+        </div>
       </div>
       {activeModal === "category" ? (
         <ModalShell
@@ -2061,10 +2133,15 @@ export function SalesPage() {
                     value={itemForm.order ? String(itemForm.order) : ""}
                     options={[
                       { label: "Select order", value: "" },
-                      ...orders.map((order) => ({
-                        label: order.order_number,
-                        value: String(order.id),
-                      })),
+                      ...buildAssignableOrderOptions(itemForm.order).map(
+                        (order) => ({
+                          label:
+                            order.status === "cancelled"
+                              ? `${order.order_number} (Cancelled)`
+                              : order.order_number,
+                          value: String(order.id),
+                        }),
+                      ),
                     ]}
                     onChange={(value) =>
                       setItemForm((current) => ({
@@ -2224,10 +2301,15 @@ export function SalesPage() {
                     value={scheduleForm.order ? String(scheduleForm.order) : ""}
                     options={[
                       { label: "Select order", value: "" },
-                      ...orders.map((order) => ({
-                        label: order.order_number,
-                        value: String(order.id),
-                      })),
+                      ...buildAssignableOrderOptions(scheduleForm.order).map(
+                        (order) => ({
+                          label:
+                            order.status === "cancelled"
+                              ? `${order.order_number} (Cancelled)`
+                              : order.order_number,
+                          value: String(order.id),
+                        }),
+                      ),
                     ]}
                     onChange={(value) =>
                       setScheduleForm((current) => ({
@@ -2377,10 +2459,15 @@ export function SalesPage() {
                     value={deliveryForm.order ? String(deliveryForm.order) : ""}
                     options={[
                       { label: "Select order", value: "" },
-                      ...orders.map((order) => ({
-                        label: order.order_number,
-                        value: String(order.id),
-                      })),
+                      ...buildAssignableOrderOptions(deliveryForm.order).map(
+                        (order) => ({
+                          label:
+                            order.status === "cancelled"
+                              ? `${order.order_number} (Cancelled)`
+                              : order.order_number,
+                          value: String(order.id),
+                        }),
+                      ),
                     ]}
                     onChange={(value) =>
                       setDeliveryForm((current) => ({
@@ -2399,14 +2486,15 @@ export function SalesPage() {
                     }
                     options={[
                       { label: "No linked schedule", value: "" },
-                      ...schedules
-                        .filter(
-                          (schedule) =>
-                            !deliveryForm.order ||
-                            schedule.order === Number(deliveryForm.order),
-                        )
+                      ...buildAssignableScheduleOptions({
+                        orderId: deliveryForm.order || null,
+                        selectedScheduleId: deliveryForm.schedule,
+                      })
                         .map((schedule) => ({
-                          label: `${schedule.order_number} - ${formatDate(schedule.scheduled_date)}`,
+                          label:
+                            schedule.status === "cancelled"
+                              ? `${schedule.order_number} - ${formatDate(schedule.scheduled_date)} (Cancelled)`
+                              : `${schedule.order_number} - ${formatDate(schedule.scheduled_date)}`,
                           value: String(schedule.id),
                         })),
                     ]}

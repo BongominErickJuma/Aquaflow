@@ -107,6 +107,57 @@ const invoiceStatuses: InvoiceStatus[] = [
   "cancelled",
 ];
 const insuranceStatuses: InsuranceStatus[] = ["active", "expired", "cancelled"];
+const financeMilestoneFlow = [
+  {
+    id: "capital",
+    label: "Capital Records",
+    footerLabel: "Capital",
+    detail:
+      "Create and review capital records here. Before this, there is nothing to prepare. Next, add operating costs.",
+  },
+  {
+    id: "operating",
+    label: "Operating Costs",
+    footerLabel: "Operating",
+    detail:
+      "Capture operating costs here. Before this, capital records should already be in place. Next, add expenses.",
+  },
+  {
+    id: "expenses",
+    label: "Expenses",
+    footerLabel: "Expenses",
+    detail:
+      "Record one-off expenses here. Before this, operating costs should already be ready. Next, create invoices.",
+  },
+  {
+    id: "invoices",
+    label: "Invoices",
+    footerLabel: "Invoices",
+    detail:
+      "Create sales-linked invoices here. Before this, expenses should already be captured. Next, record receipts.",
+  },
+  {
+    id: "receipts",
+    label: "Receipts",
+    footerLabel: "Receipts",
+    detail:
+      "Record receipts against invoices here. Before this, invoices should already exist. Next, add insurance records.",
+  },
+  {
+    id: "insurance",
+    label: "Insurance Records",
+    footerLabel: "Insurance",
+    detail:
+      "Track insurance coverage here. Before this, receipts should already be in place. Next, create profitability snapshots.",
+  },
+  {
+    id: "snapshots",
+    label: "Profitability Snapshots",
+    footerLabel: "Snapshots",
+    detail:
+      "Capture profitability snapshots here. Before this, insurance records should be ready. This is the last finance step.",
+  },
+] as const;
 
 function createEmptyCapitalForm(): CapitalPayload {
   return {
@@ -363,6 +414,100 @@ function formatDate(value: string | null) {
   );
 }
 
+function parseAmount(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseIsoDate(value: string) {
+  return new Date(`${value}T00:00:00Z`);
+}
+
+function getInclusiveDayCount(startDate: string, endDate: string) {
+  const start = parseIsoDate(startDate);
+  const end = parseIsoDate(endDate);
+  const difference = Math.round(
+    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  return Math.max(1, difference + 1);
+}
+
+function getEarnedInsuranceCost(
+  records: InsuranceRecord[],
+  asOfDate: string,
+) {
+  const asOf = parseIsoDate(asOfDate);
+
+  return records.reduce((sum, record) => {
+    if (record.status === "cancelled") {
+      return sum;
+    }
+
+    const start = parseIsoDate(record.start_date);
+    const end = parseIsoDate(record.end_date);
+    if (asOf < start) {
+      return sum;
+    }
+
+    const recognizedEnd = asOf < end ? asOf : end;
+    const coverageDays = getInclusiveDayCount(record.start_date, record.end_date);
+    const earnedDays = Math.max(
+      1,
+      Math.round((recognizedEnd.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
+        1,
+    );
+
+    return (
+      sum +
+      (parseAmount(record.premium_amount) * earnedDays) / coverageDays
+    );
+  }, 0);
+}
+
+function formatAmount(value: string | number | null | undefined) {
+  const numericValue =
+    typeof value === "number" ? value : Number.parseFloat(value ?? "0");
+  if (!Number.isFinite(numericValue)) {
+    return "0";
+  }
+
+  const absoluteValue = Math.abs(numericValue);
+  const formatScaled = (scaledValue: number, suffix: string) => {
+    const decimals = Math.abs(scaledValue) >= 10 ? 0 : 1;
+    return `${scaledValue.toFixed(decimals).replace(/\.0$/, "")}${suffix}`;
+  };
+
+  if (absoluteValue >= 1_000_000_000) {
+    return formatScaled(numericValue / 1_000_000_000, "b");
+  }
+  if (absoluteValue >= 1_000_000) {
+    return formatScaled(numericValue / 1_000_000, "m");
+  }
+  if (absoluteValue >= 1_000) {
+    return formatScaled(numericValue / 1_000, "k");
+  }
+
+  return new Intl.NumberFormat("en-UG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(numericValue);
+}
+
+function formatPercent(value: number) {
+  return `${new Intl.NumberFormat("en-UG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(value)}%`;
+}
+
+function getTodayIsoDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function FinancePage() {
   const { user } = useAuth();
   const isAdmin =
@@ -445,15 +590,50 @@ export function FinancePage() {
   const [snapshotPending, setSnapshotPending] = useState(false);
   const [activeTab, setActiveTab] = useState("capital");
 
-  const tabs = [
-    { id: "capital", label: "Capital Records" },
-    { id: "operating", label: "Operating Costs" },
-    { id: "expenses", label: "Expenses" },
-    { id: "invoices", label: "Invoices" },
-    { id: "receipts", label: "Receipts" },
-    { id: "insurance", label: "Insurance Records" },
-    { id: "snapshots", label: "Profitability Snapshots" },
-  ];
+  const tabs = financeMilestoneFlow.map(({ id, label }) => ({ id, label }));
+  const activeFinanceStep =
+    financeMilestoneFlow.find((item) => item.id === activeTab) ??
+    financeMilestoneFlow[0];
+  const todayIsoDate = getTodayIsoDate();
+  const receivableInvoices = invoices.filter(
+    (invoice) =>
+      invoice.status === "sent" && invoice.due_date >= todayIsoDate,
+  );
+  const buildAssignableInvoiceOptions = (selectedInvoiceId?: number | null) =>
+    invoices.filter(
+      (invoice) =>
+        (invoice.status === "sent" && invoice.due_date >= todayIsoDate) ||
+        invoice.id === selectedInvoiceId,
+    );
+  const buildAssignableOrderOptions = (selectedOrderId?: number | null) =>
+    orders.filter(
+      (order) => order.status !== "cancelled" || order.id === selectedOrderId,
+    );
+  const liveCollectedRevenue = receipts.reduce(
+    (sum, record) => sum + parseAmount(record.amount_received),
+    0,
+  );
+  const liveRecognizedRevenue = invoices
+    .filter(
+      (invoice) => invoice.status !== "draft" && invoice.status !== "cancelled",
+    )
+    .reduce((sum, record) => sum + parseAmount(record.amount), 0);
+  const liveInsuranceCost = getEarnedInsuranceCost(insuranceRecords, todayIsoDate);
+  const liveTotalCosts =
+    operatingCosts.reduce((sum, record) => sum + parseAmount(record.amount), 0) +
+    expenses.reduce((sum, record) => sum + parseAmount(record.amount), 0) +
+    liveInsuranceCost;
+  const liveProfitEstimate = liveRecognizedRevenue - liveTotalCosts;
+  const liveCollectionRate =
+    liveRecognizedRevenue > 0
+      ? (liveCollectedRevenue / liveRecognizedRevenue) * 100
+      : 0;
+  const createLiveSnapshotForm = (): ProfitabilitySnapshotPayload => ({
+    snapshot_date: "",
+    revenue: liveRecognizedRevenue.toFixed(2),
+    total_costs: liveTotalCosts.toFixed(2),
+    notes: "",
+  });
 
   async function reloadFinanceData() {
     const [
@@ -658,7 +838,7 @@ export function FinancePage() {
 
   useEffect(() => {
     if (!selectedSnapshotId) {
-      setSnapshotForm(createEmptySnapshotForm());
+      setSnapshotForm(createLiveSnapshotForm());
       return;
     }
     void fetchProfitabilitySnapshot(selectedSnapshotId)
@@ -722,7 +902,7 @@ export function FinancePage() {
   }
   function resetSnapshotForm() {
     setSelectedSnapshotId(null);
-    setSnapshotForm(createEmptySnapshotForm());
+    setSnapshotForm(createLiveSnapshotForm());
     setSnapshotError(null);
   }
 
@@ -824,24 +1004,28 @@ export function FinancePage() {
               <p className="hero-metric-value">{invoices.length}</p>
             </div>
             <div className="hero-metric-card">
-              <p className="hero-metric-label">Receipts</p>
-              <p className="hero-metric-value">{receipts.length}</p>
+              <p className="hero-metric-label">Collectible</p>
+              <p className="hero-metric-value">{receivableInvoices.length}</p>
             </div>
             <div className="hero-metric-card">
-              <p className="hero-metric-label">Costs</p>
+              <p className="hero-metric-label">Recognized Sales</p>
               <p className="hero-metric-value">
-                {operatingCosts.length + expenses.length}
+                {formatAmount(liveRecognizedRevenue)}
               </p>
             </div>
             <div className="hero-metric-card">
-              <p className="hero-metric-label">Snapshots</p>
-              <p className="hero-metric-value">{snapshots.length}</p>
+              <p className="hero-metric-label">Profit Estimate</p>
+              <p className="hero-metric-value">
+                {formatAmount(liveProfitEstimate)}
+              </p>
             </div>
           </div>
         </div>
       </section>
       <ModuleTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-      <div className="module-page-stage">
+      <div className="module-page-stage !justify-start overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-6">
+          <div className="min-h-0 flex-1">
         {activeTab === "capital" ? (
           <SectionCard
             title="Capital records"
@@ -884,7 +1068,7 @@ export function FinancePage() {
                         {record.source_name}
                       </h3>
                       <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.amount}
+                        {formatAmount(record.amount)}
                       </p>
                     </div>
                     <div className="flex-1 space-y-3">
@@ -948,7 +1132,7 @@ export function FinancePage() {
                         {record.category}
                       </h3>
                       <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.amount}
+                        {formatAmount(record.amount)}
                       </p>
                     </div>
                     <div className="flex-1 space-y-3">
@@ -1012,7 +1196,7 @@ export function FinancePage() {
                         {record.expense_type}
                       </h3>
                       <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.amount}
+                        {formatAmount(record.amount)}
                       </p>
                     </div>
                     <div className="flex-1 space-y-3">
@@ -1081,7 +1265,10 @@ export function FinancePage() {
                     </div>
                     <div className="flex-1 space-y-3">
                       <DetailItem label="Order" value={record.order_number} />
-                      <DetailItem label="Amount" value={record.amount} />
+                      <DetailItem
+                        label="Amount"
+                        value={formatAmount(record.amount)}
+                      />
                       <DetailItem
                         label="Due"
                         value={formatDate(record.due_date)}
@@ -1138,7 +1325,7 @@ export function FinancePage() {
                         {record.receipt_number}
                       </h3>
                       <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.amount_received}
+                        {formatAmount(record.amount_received)}
                       </p>
                     </div>
                     <div className="flex-1 space-y-3">
@@ -1212,7 +1399,7 @@ export function FinancePage() {
                       />
                       <DetailItem
                         label="Premium"
-                        value={record.premium_amount}
+                        value={formatAmount(record.premium_amount)}
                       />
                       <DetailItem
                         label="Ends"
@@ -1231,7 +1418,7 @@ export function FinancePage() {
         {activeTab === "snapshots" ? (
           <SectionCard
             title="Profitability snapshots"
-            description="Revenue, total costs, and automatically calculated profit."
+            description="Live profit estimate plus saved snapshots for reference."
             action={
               isAdmin ? (
                 <button
@@ -1248,6 +1435,37 @@ export function FinancePage() {
               ) : null
             }
           >
+            <article className={recordCardClassName}>
+              <div className="flex flex-1 flex-col gap-4">
+                <div className="space-y-1 pr-10">
+                  <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                    Current finance position
+                  </h3>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    {liveProfitEstimate >= 0 ? "Profit" : "Loss"}{" "}
+                    {formatAmount(Math.abs(liveProfitEstimate))}
+                  </p>
+                </div>
+                <div className="flex-1 space-y-3">
+                  <DetailItem
+                    label="Recognized sales"
+                    value={formatAmount(liveRecognizedRevenue)}
+                  />
+                  <DetailItem
+                    label="Collected cash"
+                    value={formatAmount(liveCollectedRevenue)}
+                  />
+                  <DetailItem
+                    label="Total costs"
+                    value={formatAmount(liveTotalCosts)}
+                  />
+                  <DetailItem
+                    label="Collection rate"
+                    value={formatPercent(liveCollectionRate)}
+                  />
+                </div>
+              </div>
+            </article>
             {snapshots.length ? (
               snapshots.map((record) => (
                 <article key={record.id} className={recordCardClassName}>
@@ -1270,14 +1488,17 @@ export function FinancePage() {
                         {formatDate(record.snapshot_date)}
                       </h3>
                       <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        Profit {record.profit}
+                        Profit {formatAmount(record.profit)}
                       </p>
                     </div>
                     <div className="flex-1 space-y-3">
-                      <DetailItem label="Revenue" value={record.revenue} />
+                      <DetailItem
+                        label="Revenue"
+                        value={formatAmount(record.revenue)}
+                      />
                       <DetailItem
                         label="Total costs"
-                        value={record.total_costs}
+                        value={formatAmount(record.total_costs)}
                       />
                     </div>
                   </div>
@@ -1288,6 +1509,16 @@ export function FinancePage() {
             )}
           </SectionCard>
         ) : null}
+          </div>
+          <footer className="panel mt-auto px-4 py-3">
+            <p className="text-sm leading-6 text-slate-600">
+              <span className="font-semibold text-sky-700">
+                {activeFinanceStep.footerLabel}
+              </span>{" "}
+              {activeFinanceStep.detail}
+            </p>
+          </footer>
+        </div>
       </div>
       {activeModal === "capital" ? (
         <ModalShell
@@ -1780,10 +2011,15 @@ export function FinancePage() {
                     value={invoiceForm.order ? String(invoiceForm.order) : ""}
                     options={[
                       { label: "Select order", value: "" },
-                      ...orders.map((order) => ({
-                        label: order.order_number,
-                        value: String(order.id),
-                      })),
+                      ...buildAssignableOrderOptions(invoiceForm.order).map(
+                        (order) => ({
+                          label:
+                            order.status === "cancelled"
+                              ? `${order.order_number} (Cancelled)`
+                              : order.order_number,
+                          value: String(order.id),
+                        }),
+                      ),
                     ]}
                     onChange={(value) =>
                       setInvoiceForm((current) => ({
@@ -1957,10 +2193,16 @@ export function FinancePage() {
                     }
                     options={[
                       { label: "Select invoice", value: "" },
-                      ...invoices.map((invoice) => ({
-                        label: invoice.invoice_number,
-                        value: String(invoice.id),
-                      })),
+                      ...buildAssignableInvoiceOptions(receiptForm.invoice).map(
+                        (invoice) => ({
+                          label:
+                            invoice.status === "sent" &&
+                            invoice.due_date >= todayIsoDate
+                              ? invoice.invoice_number
+                              : `${invoice.invoice_number} (${invoice.status})`,
+                          value: String(invoice.id),
+                        }),
+                      ),
                     ]}
                     onChange={(value) =>
                       setReceiptForm((current) => ({
@@ -2320,7 +2562,7 @@ export function FinancePage() {
               ? "Edit profitability snapshot"
               : "Add profitability snapshot"
           }
-          description="Capture revenue and total costs; profit is calculated by the backend."
+          description="Snapshot the current live revenue and costs for later reference."
           onClose={closeModal}
         >
           <form
@@ -2340,7 +2582,7 @@ export function FinancePage() {
           >
             <FormPanel
               title="Snapshot details"
-              description="Use the profitability snapshots endpoint fields here."
+              description="Revenue and costs are pulled from the current finance records."
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2 text-sm font-medium text-slate-700">
@@ -2363,12 +2605,7 @@ export function FinancePage() {
                   <input
                     className={fieldClassName}
                     value={snapshotForm.revenue}
-                    onChange={(event) =>
-                      setSnapshotForm((current) => ({
-                        ...current,
-                        revenue: event.target.value,
-                      }))
-                    }
+                    readOnly
                     required
                   />
                 </label>
@@ -2377,12 +2614,7 @@ export function FinancePage() {
                   <input
                     className={fieldClassName}
                     value={snapshotForm.total_costs}
-                    onChange={(event) =>
-                      setSnapshotForm((current) => ({
-                        ...current,
-                        total_costs: event.target.value,
-                      }))
-                    }
+                    readOnly
                     required
                   />
                 </label>

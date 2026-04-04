@@ -254,7 +254,7 @@ export function MembersPage() {
     admins: 0,
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSizeOption>(5);
+  const [pageSize, setPageSize] = useState<PageSizeOption>(10);
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [searchValue, setSearchValue] = useState("");
@@ -535,7 +535,7 @@ export function MembersPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-6 overflow-hidden">
+    <div className="module-page">
       <section className="rounded-[32px] border border-white/70 bg-[radial-gradient(circle_at_top_left,#ffffff,rgba(224,242,254,0.92)_52%,rgba(240,249,255,0.95))] py-6 pl-6 pr-0 shadow-[0_25px_80px_rgba(148,163,184,0.14)]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-3">
@@ -569,7 +569,8 @@ export function MembersPage() {
         </div>
       </section>
 
-      <section className="panel flex min-h-0 flex-1 flex-col p-6">
+      <div className="module-page-stage justify-start">
+        <section className="panel p-6">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div
@@ -713,7 +714,7 @@ export function MembersPage() {
               </div>
 
               <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-1">
-                {([5, 6, 10] as const).map((option) => (
+                {([10, 6, 5] as const).map((option) => (
                   <button
                     key={option}
                     type="button"
@@ -786,14 +787,14 @@ export function MembersPage() {
           ) : null}
         </div>
 
-        <div className="mt-5 min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
+        <div className="mt-5 min-h-0 overflow-x-auto overflow-y-hidden">
           {isLoading ? (
-            <div className="flex h-full min-h-[420px] items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-4 text-sm text-slate-600">
+            <div className="flex min-h-[420px] items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-4 text-sm text-slate-600">
               <LoaderCircle className="h-4 w-4 animate-spin text-sky-700" />
               Loading members and roles...
             </div>
           ) : members.length === 0 ? (
-            <div className="flex h-full min-h-[420px] items-start rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-6 text-sm text-slate-600">
+            <div className="flex min-h-[420px] items-start rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-6 text-sm text-slate-600">
               No members match the current filters.
             </div>
           ) : (
@@ -958,7 +959,8 @@ export function MembersPage() {
             </table>
           )}
         </div>
-      </section>
+        </section>
+      </div>
 
       {activeModal === "create" ? (
         <ModalShell title="Create member" onClose={closeModal}>

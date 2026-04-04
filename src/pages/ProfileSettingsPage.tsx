@@ -8,7 +8,6 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react";
-import { useNavigate } from "react-router-dom";
 import { ModuleTabs } from "../components/layout/ModuleTabs";
 import { useAuth } from "../features/auth/AuthProvider";
 import {
@@ -46,9 +45,8 @@ const fieldClassName =
   "w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300";
 
 export function ProfileSettingsPage() {
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const { user, setAuthUser, expireSession } = useAuth();
+  const { user, setAuthUser } = useAuth();
   const [activeTab, setActiveTab] = useState("details");
   const [profileForm, setProfileForm] = useState<ProfileFormState>({
     email: "",
@@ -69,7 +67,7 @@ export function ProfileSettingsPage() {
   const [profileError, setProfileError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [isProfilePending, startProfileTransition] = useTransition();
-  const [isPasswordPending, startPasswordTransition] = useTransition();
+  const [isPasswordPending, setIsPasswordPending] = useState(false);
 
   const tabs = [
     { id: "details", label: "Profile Details" },
@@ -165,30 +163,31 @@ export function ProfileSettingsPage() {
     event.preventDefault();
     setPasswordMessage("");
     setPasswordError("");
+    setIsPasswordPending(true);
 
-    startPasswordTransition(() => {
-      void (async () => {
-        try {
-          const response = await changePassword(passwordForm);
-          expireSession();
-          navigate("/login", {
-            replace: true,
-            state: {
-              message:
-                response.detail ||
-                "Password changed successfully. Please sign in again.",
-            },
-          });
-        } catch (error) {
-          if (error instanceof ApiError) {
-            setPasswordError(error.message);
-            return;
-          }
-
-          setPasswordError("Unable to update your password right now.");
+    void (async () => {
+      try {
+        const response = await changePassword(passwordForm);
+        setPasswordForm({
+          current_password: "",
+          new_password: "",
+          confirm_password: "",
+        });
+        setPasswordMessage(
+          response.detail ||
+            "Password updated successfully. You can keep working with your new password.",
+        );
+      } catch (error) {
+        if (error instanceof ApiError) {
+          setPasswordError(error.message);
+          return;
         }
-      })();
-    });
+
+        setPasswordError("Unable to update your password right now.");
+      } finally {
+        setIsPasswordPending(false);
+      }
+    })();
   };
 
   return (
@@ -431,17 +430,25 @@ export function ProfileSettingsPage() {
 
         {activeTab === "security" ? (
           <form
-            className="panel module-tab-panel p-6"
+            className="panel module-tab-panel relative p-6"
             onSubmit={handlePasswordSubmit}
           >
+            {isPasswordPending ? (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/78 backdrop-blur-[2px]">
+                <div className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-700 shadow-[0_18px_40px_rgba(14,116,144,0.12)]">
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  Updating your password and keeping your session active...
+                </div>
+              </div>
+            ) : null}
             <div>
               <p className="section-label">Security</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-900">
                 Change password
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Changing your password signs you out for security. After saving,
-                you will be redirected to log in again with the new password.
+                Update your password here. Once it saves, your session stays
+                active and future sign-ins will use the new password.
               </p>
             </div>
 
@@ -454,6 +461,7 @@ export function ProfileSettingsPage() {
                   type="password"
                   autoComplete="current-password"
                   className={fieldClassName}
+                  disabled={isPasswordPending}
                   value={passwordForm.current_password}
                   onChange={(event) =>
                     setPasswordForm((current) => ({
@@ -473,6 +481,7 @@ export function ProfileSettingsPage() {
                   type="password"
                   autoComplete="new-password"
                   className={fieldClassName}
+                  disabled={isPasswordPending}
                   value={passwordForm.new_password}
                   onChange={(event) =>
                     setPasswordForm((current) => ({
@@ -492,6 +501,7 @@ export function ProfileSettingsPage() {
                   type="password"
                   autoComplete="new-password"
                   className={fieldClassName}
+                  disabled={isPasswordPending}
                   value={passwordForm.confirm_password}
                   onChange={(event) =>
                     setPasswordForm((current) => ({
@@ -525,7 +535,7 @@ export function ProfileSettingsPage() {
                 {isPasswordPending ? (
                   <>
                     <LoaderCircle className="h-4 w-4 animate-spin" />
-                    Updating password
+                    Saving new password
                   </>
                 ) : (
                   "Update password"

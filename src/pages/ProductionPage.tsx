@@ -15,7 +15,8 @@ import {
 } from "react";
 import { ModuleTabs } from "../components/layout/ModuleTabs";
 import { useAuth } from "../features/auth/AuthProvider";
-import { ApiError } from "../lib/api/auth";
+import { ApiError, fetchAllUsers } from "../lib/api/auth";
+import { fetchEmployees } from "../lib/api/workforce";
 import {
   createDowntimeAlert,
   createMachine,
@@ -68,6 +69,8 @@ import type {
   UtilityConsumptionLogRecord,
   UtilityType,
 } from "../types/production";
+import type { AdminUser } from "../types/auth";
+import type { EmployeeRecord } from "../types/workforce";
 
 const fieldClassName =
   "w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300";
@@ -83,6 +86,51 @@ const iconButtonClassName =
 const recordCardClassName =
   "group relative flex h-[220px] min-w-[280px] max-w-[280px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4";
 const recordEditButtonClassName = `${iconButtonClassName} absolute right-4 top-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto`;
+
+const productionMilestoneFlow = [
+  {
+    id: "machines",
+    label: "Machines",
+    detail:
+      "Add and update machines here. Before this, there is nothing to prepare. Next, capture usage logs.",
+  },
+  {
+    id: "usage",
+    label: "Usage Logs",
+    detail:
+      "Record machine usage here. Before this, the machines should already exist. Next, create maintenance schedules.",
+  },
+  {
+    id: "schedules",
+    label: "Schedules",
+    detail:
+      "Create maintenance schedules here. Before this, make sure usage logs can point to active machines. Next, add maintenance logs.",
+  },
+  {
+    id: "maintenance",
+    label: "Maintenance Logs",
+    detail:
+      "Capture completed maintenance work here. Before this, schedules should be ready. Next, track downtime alerts.",
+  },
+  {
+    id: "downtime",
+    label: "Downtime Alerts",
+    detail:
+      "Open and manage downtime alerts here. Before this, maintenance logging should already be in motion. Next, review resolved history.",
+  },
+  {
+    id: "resolvedDowntime",
+    label: "Resolved History",
+    detail:
+      "Review resolved downtime here. Before this, downtime alerts should have been opened and closed. Next, log utilities.",
+  },
+  {
+    id: "utility",
+    label: "Utility Logs",
+    detail:
+      "Record utility consumption here. Before this, you should have worked through the machine and downtime flow. This is the last production step.",
+  },
+] as const;
 
 type ActiveModal =
   | "machine"
@@ -517,6 +565,18 @@ function formatDateTimeInput(value: string | null | undefined) {
   return localDate.toISOString().slice(0, 16);
 }
 
+function getCurrentDateString() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  return new Date(now.getTime() - offset * 60_000).toISOString().slice(0, 10);
+}
+
+function getCurrentDateTimeInputValue() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  return new Date(now.getTime() - offset * 60_000).toISOString().slice(0, 16);
+}
+
 function titleCase(value: string) {
   return value
     .replace(/_/g, " ")
@@ -529,20 +589,20 @@ export function ProductionPage() {
     user?.role.code === "admin" || user?.role.code === "superuser";
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
-  const [activeTab, setActiveTab] = useState("downtime");
+  const [activeTab, setActiveTab] = useState("machines");
 
-  const tabs = [
-    { id: "downtime", label: "Downtime Alerts" },
-    { id: "machines", label: "Machines" },
-    { id: "schedules", label: "Schedules" },
-    { id: "usage", label: "Usage Logs" },
-    { id: "maintenance", label: "Maintenance Logs" },
-    { id: "utility", label: "Utility Logs" },
-  ];
+  const tabs = productionMilestoneFlow.map(({ id, label }) => ({ id, label }));
+  const activeFlowItem =
+    productionMilestoneFlow.find((item) => item.id === activeTab) ??
+    productionMilestoneFlow[0];
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState("");
 
   const [machines, setMachines] = useState<MachineRecord[]>([]);
+  const [internalMembers, setInternalMembers] = useState<AdminUser[]>([]);
+  const [operatorEmployees, setOperatorEmployees] = useState<EmployeeRecord[]>(
+    [],
+  );
   const [usageLogs, setUsageLogs] = useState<MachineUsageLogRecord[]>([]);
   const [maintenanceSchedules, setMaintenanceSchedules] = useState<
     MaintenanceScheduleRecord[]
@@ -606,6 +666,75 @@ export function ProductionPage() {
   const [isDowntimePending, setIsDowntimePending] = useState(false);
   const [isUtilityPending, setIsUtilityPending] = useState(false);
 
+  const todayDateString = getCurrentDateString();
+  const activeScheduleIds = new Set(
+    maintenanceSchedules
+      .filter((item) => item.is_active)
+      .map((item) => item.id),
+  );
+  const visibleMaintenanceLogs = maintenanceLogs.filter(
+    (item) => !item.schedule || activeScheduleIds.has(item.schedule),
+  );
+  const hiddenMaintenanceLogCount =
+    maintenanceLogs.length - visibleMaintenanceLogs.length;
+  const dueMaintenanceSchedules = maintenanceSchedules.filter(
+    (item) => item.is_active && item.next_due_date <= todayDateString,
+  );
+  const openDowntimeAlerts = downtimeAlerts.filter(
+    (item) => item.status === "open",
+  );
+  const resolvedDowntimeAlerts = downtimeAlerts.filter(
+    (item) => item.status === "resolved",
+  );
+  const buildOperatorOptions = (selectedOperatorName?: string) => {
+    const options = operatorEmployees
+      .filter(
+        (employee) =>
+          employee.status === "active" && employee.work_role === "operator",
+      )
+      .map((employee) => ({
+        label: employee.full_name,
+        value: employee.full_name,
+      }));
+
+    if (
+      selectedOperatorName &&
+      !options.some((option) => option.value === selectedOperatorName)
+    ) {
+      options.push({
+        label: `${selectedOperatorName} (Unavailable)`,
+        value: selectedOperatorName,
+      });
+    }
+
+    return options;
+  };
+
+  const buildInternalMemberOptions = (selectedMemberName?: string) => {
+    const options = internalMembers
+      .filter((member) => member.is_active)
+      .map((member) => {
+        const label =
+          `${member.first_name} ${member.last_name}`.trim() || member.email;
+        return {
+          label,
+          value: label,
+        };
+      });
+
+    if (
+      selectedMemberName &&
+      !options.some((option) => option.value === selectedMemberName)
+    ) {
+      options.push({
+        label: `${selectedMemberName} (Unavailable)`,
+        value: selectedMemberName,
+      });
+    }
+
+    return options;
+  };
+
   async function reloadProductionData() {
     const [
       nextMachines,
@@ -614,6 +743,8 @@ export function ProductionPage() {
       nextLogs,
       nextDowntime,
       nextUtilities,
+      nextMembers,
+      nextOperators,
     ] = await Promise.all([
       fetchMachines(),
       fetchMachineUsageLogs(),
@@ -621,6 +752,8 @@ export function ProductionPage() {
       fetchMaintenanceLogs(),
       fetchDowntimeAlerts(),
       fetchUtilityConsumptionLogs(),
+      isAdmin ? fetchAllUsers().catch(() => []) : Promise.resolve([]),
+      isAdmin ? fetchEmployees().catch(() => []) : Promise.resolve([]),
     ]);
 
     setMachines(nextMachines);
@@ -629,6 +762,8 @@ export function ProductionPage() {
     setMaintenanceLogs(nextLogs);
     setDowntimeAlerts(nextDowntime);
     setUtilityLogs(nextUtilities);
+    setInternalMembers(nextMembers);
+    setOperatorEmployees(nextOperators);
   }
 
   useEffect(() => {
@@ -1053,12 +1188,22 @@ export function ProductionPage() {
   const handleDowntimeSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setDowntimeError("");
+    if (
+      downtimeForm.status === "resolved" &&
+      !downtimeForm.resolution_notes.trim()
+    ) {
+      setDowntimeError("Add resolution notes before resolving the downtime alert.");
+      return;
+    }
     setIsDowntimePending(true);
     try {
       const payload = {
         ...downtimeForm,
         title: downtimeForm.title.trim(),
-        end_time: downtimeForm.end_time || null,
+        end_time:
+          downtimeForm.status === "resolved"
+            ? downtimeForm.end_time || getCurrentDateTimeInputValue()
+            : null,
         cause: downtimeForm.cause.trim(),
         resolution_notes: downtimeForm.resolution_notes.trim(),
       };
@@ -1218,8 +1363,9 @@ export function ProductionPage() {
       </section>
       <ModuleTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="module-page-stage">
-        <div className="space-y-6">
+      <div className="module-page-stage !justify-start overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-6">
+        <div className="min-h-0 flex-1 space-y-6">
           {activeTab === "downtime" ? (
             <section className="panel p-6">
               <div className="flex items-start justify-between gap-4">
@@ -1245,15 +1391,129 @@ export function ProductionPage() {
                 ) : null}
               </div>
 
+              <div className="mt-5 space-y-3">
+                <div className="scrollbar-hidden flex gap-3 overflow-x-auto pb-2">
+                  {dueMaintenanceSchedules.length === 0 &&
+                  openDowntimeAlerts.length === 0 ? (
+                    <EmptyState
+                      title="No live downtime or due maintenance"
+                      description="Resolved incidents stay in the history tab, and new downtime alerts can be added here."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    <>
+                      {dueMaintenanceSchedules.map((record) => (
+                        <div
+                          key={`maintenance-${record.id}`}
+                          className={`${recordCardClassName} bg-sky-50/55`}
+                        >
+                          <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                            <p className="font-semibold text-slate-900">
+                              {record.title}
+                              <span className="ml-1 inline-block h-2.5 w-2.5 rounded-full bg-sky-500 align-middle" />
+                            </p>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {record.machine_name}
+                            </p>
+                            <p className="mt-3 text-sm text-slate-600">
+                              {record.maintenance_type}
+                            </p>
+                            <p className="mt-2 text-sm text-slate-600">
+                              {record.next_due_date < todayDateString
+                                ? "Overdue maintenance"
+                                : "Due today"}
+                            </p>
+                            <p className="mt-2 text-sm text-slate-600">
+                              Scheduled for {formatDate(record.next_due_date)}
+                            </p>
+                          </div>
+                          {isAdmin ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedScheduleId(record.id);
+                                setScheduleForm(buildScheduleForm(record));
+                                setActiveModal("schedule");
+                              }}
+                              className={recordEditButtonClassName}
+                              aria-label={`Edit ${record.title}`}
+                              title={`Edit ${record.title}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                          ) : null}
+                        </div>
+                      ))}
+
+                      {openDowntimeAlerts.map((record) => (
+                        <div
+                          key={`downtime-${record.id}`}
+                          className={recordCardClassName}
+                        >
+                          <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                            <p className="font-semibold text-slate-900">
+                              {record.title}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {record.machine_name}
+                            </p>
+                            <p className="mt-3 text-sm text-slate-600">
+                              {titleCase(record.severity)} / Open
+                            </p>
+                            <p className="mt-2 text-sm text-slate-600">
+                              Started {formatDateTime(record.start_time)}
+                            </p>
+                            <p className="mt-2 text-sm text-slate-600">
+                              Downtime: Open
+                            </p>
+                          </div>
+                          {isAdmin ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedDowntimeId(record.id);
+                                setDowntimeForm(buildDowntimeForm(record));
+                                setActiveModal("downtime");
+                              }}
+                              className={recordEditButtonClassName}
+                              aria-label={`Edit ${record.title}`}
+                              title={`Edit ${record.title}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                          ) : null}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "resolvedDowntime" ? (
+            <section className="panel p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="section-label">Resolved History</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                    Closed downtime records
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Completed downtime records stay here as reference without competing with the live operations lane.
+                  </p>
+                </div>
+              </div>
+
               <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {downtimeAlerts.length === 0 ? (
+                {resolvedDowntimeAlerts.length === 0 ? (
                   <EmptyState
-                    title="No downtime alerts yet"
-                    description="Log interruptions and outages here."
+                    title="No resolved downtime history yet"
+                    description="Once downtime alerts are resolved, they will move into this tab."
                     className={`${recordCardClassName} justify-center`}
                   />
                 ) : (
-                  downtimeAlerts.map((record) => (
+                  resolvedDowntimeAlerts.map((record) => (
                     <div key={record.id} className={recordCardClassName}>
                       <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
                         <p className="font-semibold text-slate-900">
@@ -1263,16 +1523,15 @@ export function ProductionPage() {
                           {record.machine_name}
                         </p>
                         <p className="mt-2 text-sm text-slate-600">
-                          {titleCase(record.severity)} /{" "}
-                          {titleCase(record.status)}
+                          {titleCase(record.severity)} / Resolved
                         </p>
                         <p className="mt-2 text-sm text-slate-600">
-                          Started {formatDateTime(record.start_time)}
+                          Ended {formatDateTime(record.end_time)}
                         </p>
                         <p className="mt-2 text-sm text-slate-600">
                           Downtime:{" "}
                           {record.downtime_hours == null
-                            ? "Open"
+                            ? "Not calculated"
                             : `${record.downtime_hours} hrs`}
                         </p>
                       </div>
@@ -1535,6 +1794,9 @@ export function ProductionPage() {
                   <h2 className="mt-1 text-2xl font-semibold text-slate-900">
                     Completed maintenance work
                   </h2>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Logs tied to inactive schedules are kept in history and hidden from this working lane.
+                  </p>
                 </div>
                 {isAdmin ? (
                   <button
@@ -1553,14 +1815,22 @@ export function ProductionPage() {
               </div>
 
               <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {maintenanceLogs.length === 0 ? (
+                {visibleMaintenanceLogs.length === 0 ? (
                   <EmptyState
-                    title="No maintenance logs yet"
-                    description="Capture completed service work, costs, and downtime here."
+                    title={
+                      hiddenMaintenanceLogCount > 0
+                        ? "No active maintenance logs"
+                        : "No maintenance logs yet"
+                    }
+                    description={
+                      hiddenMaintenanceLogCount > 0
+                        ? `${hiddenMaintenanceLogCount} log${hiddenMaintenanceLogCount === 1 ? "" : "s"} remain in hidden history because their schedules are inactive.`
+                        : "Capture completed service work, costs, and downtime here."
+                    }
                     className={`${recordCardClassName} justify-center`}
                   />
                 ) : (
-                  maintenanceLogs.map((record) => (
+                  visibleMaintenanceLogs.map((record) => (
                     <div key={record.id} className={recordCardClassName}>
                       <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
                         <p className="font-semibold text-slate-900">
@@ -1679,6 +1949,16 @@ export function ProductionPage() {
               </div>
             </section>
           ) : null}
+        </div>
+
+        <footer className="panel mt-auto px-4 py-3">
+          <p className="text-sm leading-6 text-slate-600">
+            <span className="font-semibold text-sky-700">
+              {activeFlowItem.label}
+            </span>{" "}
+            {activeFlowItem.detail}
+          </p>
+        </footer>
         </div>
       </div>
 
@@ -1971,13 +2251,16 @@ export function ProductionPage() {
                   <span className="text-sm font-medium text-slate-700">
                     Operator name
                   </span>
-                  <input
-                    className={fieldClassName}
+                  <PickerField
                     value={usageForm.operator_name}
-                    onChange={(event) =>
+                    options={[
+                      { label: "Select operator", value: "" },
+                      ...buildOperatorOptions(usageForm.operator_name),
+                    ]}
+                    onChange={(value) =>
                       setUsageForm((current) => ({
                         ...current,
-                        operator_name: event.target.value,
+                        operator_name: value,
                       }))
                     }
                   />
@@ -2330,7 +2613,9 @@ export function ProductionPage() {
                       { label: "No linked schedule", value: "" },
                       ...maintenanceSchedules
                         .filter(
-                          (item) => item.machine === maintenanceLogForm.machine,
+                          (item) =>
+                            item.machine === maintenanceLogForm.machine &&
+                            item.is_active,
                         )
                         .map((record) => ({
                           label: record.title,
@@ -2404,13 +2689,18 @@ export function ProductionPage() {
                   <span className="text-sm font-medium text-slate-700">
                     Performed by
                   </span>
-                  <input
-                    className={fieldClassName}
+                  <PickerField
                     value={maintenanceLogForm.performed_by_name}
-                    onChange={(event) =>
+                    options={[
+                      { label: "Select member", value: "" },
+                      ...buildInternalMemberOptions(
+                        maintenanceLogForm.performed_by_name,
+                      ),
+                    ]}
+                    onChange={(value) =>
                       setMaintenanceLogForm((current) => ({
                         ...current,
-                        performed_by_name: event.target.value,
+                        performed_by_name: value,
                       }))
                     }
                   />
@@ -2598,6 +2888,10 @@ export function ProductionPage() {
                       setDowntimeForm((current) => ({
                         ...current,
                         status: value as DowntimeStatus,
+                        end_time:
+                          value === "resolved"
+                            ? current.end_time || getCurrentDateTimeInputValue()
+                            : null,
                       }))
                     }
                   />

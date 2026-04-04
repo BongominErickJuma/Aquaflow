@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -36,7 +37,7 @@ body {
     ),
     linear-gradient(180deg, #f7fbfe 0%, #eef5fa 56%, #e8f0f6 100%);
   color: var(--text);
-  font-family: Inter, "Segoe UI", sans-serif;
+  font-family: "Manrope", "Segoe UI", sans-serif;
 }
 
 body::before {
