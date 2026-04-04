@@ -432,10 +432,7 @@ function getInclusiveDayCount(startDate: string, endDate: string) {
   return Math.max(1, difference + 1);
 }
 
-function getEarnedInsuranceCost(
-  records: InsuranceRecord[],
-  asOfDate: string,
-) {
+function getEarnedInsuranceCost(records: InsuranceRecord[], asOfDate: string) {
   const asOf = parseIsoDate(asOfDate);
 
   return records.reduce((sum, record) => {
@@ -450,16 +447,19 @@ function getEarnedInsuranceCost(
     }
 
     const recognizedEnd = asOf < end ? asOf : end;
-    const coverageDays = getInclusiveDayCount(record.start_date, record.end_date);
+    const coverageDays = getInclusiveDayCount(
+      record.start_date,
+      record.end_date,
+    );
     const earnedDays = Math.max(
       1,
-      Math.round((recognizedEnd.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
-        1,
+      Math.round(
+        (recognizedEnd.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+      ) + 1,
     );
 
     return (
-      sum +
-      (parseAmount(record.premium_amount) * earnedDays) / coverageDays
+      sum + (parseAmount(record.premium_amount) * earnedDays) / coverageDays
     );
   }, 0);
 }
@@ -596,8 +596,7 @@ export function FinancePage() {
     financeMilestoneFlow[0];
   const todayIsoDate = getTodayIsoDate();
   const receivableInvoices = invoices.filter(
-    (invoice) =>
-      invoice.status === "sent" && invoice.due_date >= todayIsoDate,
+    (invoice) => invoice.status === "sent" && invoice.due_date >= todayIsoDate,
   );
   const buildAssignableInvoiceOptions = (selectedInvoiceId?: number | null) =>
     invoices.filter(
@@ -618,9 +617,15 @@ export function FinancePage() {
       (invoice) => invoice.status !== "draft" && invoice.status !== "cancelled",
     )
     .reduce((sum, record) => sum + parseAmount(record.amount), 0);
-  const liveInsuranceCost = getEarnedInsuranceCost(insuranceRecords, todayIsoDate);
+  const liveInsuranceCost = getEarnedInsuranceCost(
+    insuranceRecords,
+    todayIsoDate,
+  );
   const liveTotalCosts =
-    operatingCosts.reduce((sum, record) => sum + parseAmount(record.amount), 0) +
+    operatingCosts.reduce(
+      (sum, record) => sum + parseAmount(record.amount),
+      0,
+    ) +
     expenses.reduce((sum, record) => sum + parseAmount(record.amount), 0) +
     liveInsuranceCost;
   const liveProfitEstimate = liveRecognizedRevenue - liveTotalCosts;
@@ -1026,489 +1031,492 @@ export function FinancePage() {
       <div className="module-page-stage !justify-start overflow-hidden">
         <div className="flex min-h-0 flex-1 flex-col gap-6">
           <div className="min-h-0 flex-1">
-        {activeTab === "capital" ? (
-          <SectionCard
-            title="Capital records"
-            description="Owner injections, funding, and expansion capital."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetCapitalForm();
-                    setActiveModal("capital");
-                  }}
-                  aria-label="Add capital record"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {capitalRecords.length ? (
-              capitalRecords.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "capital" ? (
+              <SectionCard
+                title="Capital records"
+                description="Owner injections, funding, and expansion capital."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedCapitalId(record.id);
+                        resetCapitalForm();
                         setActiveModal("capital");
                       }}
-                      aria-label={`Edit capital ${record.source_name}`}
+                      aria-label="Add capital record"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.source_name}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {formatAmount(record.amount)}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Date"
-                        value={formatDate(record.record_date)}
-                      />
-                      <DetailItem
-                        label="Description"
-                        value={record.description || "No description"}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No capital records created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {capitalRecords.length ? (
+                  capitalRecords.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedCapitalId(record.id);
+                            setActiveModal("capital");
+                          }}
+                          aria-label={`Edit capital ${record.source_name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.source_name}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {formatAmount(record.amount)}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Date"
+                            value={formatDate(record.record_date)}
+                          />
+                          <DetailItem
+                            label="Description"
+                            value={record.description || "No description"}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No capital records created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "operating" ? (
-          <SectionCard
-            title="Operating costs"
-            description="Recurring operating cost entries like electricity and utilities."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetOperatingForm();
-                    setActiveModal("operating");
-                  }}
-                  aria-label="Add operating cost"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {operatingCosts.length ? (
-              operatingCosts.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "operating" ? (
+              <SectionCard
+                title="Operating costs"
+                description="Recurring operating cost entries like electricity and utilities."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedOperatingId(record.id);
+                        resetOperatingForm();
                         setActiveModal("operating");
                       }}
-                      aria-label={`Edit operating cost ${record.category}`}
+                      aria-label="Add operating cost"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.category}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {formatAmount(record.amount)}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Date"
-                        value={formatDate(record.cost_date)}
-                      />
-                      <DetailItem
-                        label="Description"
-                        value={record.description || "No description"}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No operating costs created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {operatingCosts.length ? (
+                  operatingCosts.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedOperatingId(record.id);
+                            setActiveModal("operating");
+                          }}
+                          aria-label={`Edit operating cost ${record.category}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.category}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {formatAmount(record.amount)}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Date"
+                            value={formatDate(record.cost_date)}
+                          />
+                          <DetailItem
+                            label="Description"
+                            value={record.description || "No description"}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No operating costs created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "expenses" ? (
-          <SectionCard
-            title="Expenses"
-            description="One-off spending like fuel, repairs, and external purchases."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetExpenseForm();
-                    setActiveModal("expense");
-                  }}
-                  aria-label="Add expense"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {expenses.length ? (
-              expenses.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "expenses" ? (
+              <SectionCard
+                title="Expenses"
+                description="One-off spending like fuel, repairs, and external purchases."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedExpenseId(record.id);
+                        resetExpenseForm();
                         setActiveModal("expense");
                       }}
-                      aria-label={`Edit expense ${record.expense_type}`}
+                      aria-label="Add expense"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.expense_type}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {formatAmount(record.amount)}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Vendor"
-                        value={record.vendor_name || "No vendor"}
-                      />
-                      <DetailItem
-                        label="Reference"
-                        value={record.reference_number || "No reference"}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No expense records created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {expenses.length ? (
+                  expenses.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedExpenseId(record.id);
+                            setActiveModal("expense");
+                          }}
+                          aria-label={`Edit expense ${record.expense_type}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.expense_type}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {formatAmount(record.amount)}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Vendor"
+                            value={record.vendor_name || "No vendor"}
+                          />
+                          <DetailItem
+                            label="Reference"
+                            value={record.reference_number || "No reference"}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No expense records created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "invoices" ? (
-          <SectionCard
-            title="Invoices"
-            description="Order-linked invoices with amount derived from the sales order total."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetInvoiceForm();
-                    setActiveModal("invoice");
-                  }}
-                  aria-label="Add invoice"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {invoices.length ? (
-              invoices.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "invoices" ? (
+              <SectionCard
+                title="Invoices"
+                description="Order-linked invoices with amount derived from the sales order total."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedInvoiceId(record.id);
+                        resetInvoiceForm();
                         setActiveModal("invoice");
                       }}
-                      aria-label={`Edit invoice ${record.invoice_number}`}
+                      aria-label="Add invoice"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.invoice_number}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem label="Order" value={record.order_number} />
-                      <DetailItem
-                        label="Amount"
-                        value={formatAmount(record.amount)}
-                      />
-                      <DetailItem
-                        label="Due"
-                        value={formatDate(record.due_date)}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No invoices created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {invoices.length ? (
+                  invoices.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedInvoiceId(record.id);
+                            setActiveModal("invoice");
+                          }}
+                          aria-label={`Edit invoice ${record.invoice_number}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.invoice_number}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Order"
+                            value={record.order_number}
+                          />
+                          <DetailItem
+                            label="Amount"
+                            value={formatAmount(record.amount)}
+                          />
+                          <DetailItem
+                            label="Due"
+                            value={formatDate(record.due_date)}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No invoices created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "receipts" ? (
-          <SectionCard
-            title="Receipts"
-            description="Payments received against invoices."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetReceiptForm();
-                    setActiveModal("receipt");
-                  }}
-                  aria-label="Add receipt"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {receipts.length ? (
-              receipts.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "receipts" ? (
+              <SectionCard
+                title="Receipts"
+                description="Payments received against invoices."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedReceiptId(record.id);
+                        resetReceiptForm();
                         setActiveModal("receipt");
                       }}
-                      aria-label={`Edit receipt ${record.receipt_number}`}
+                      aria-label="Add receipt"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.receipt_number}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {formatAmount(record.amount_received)}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Invoice"
-                        value={record.invoice_number}
-                      />
-                      <DetailItem
-                        label="Method"
-                        value={record.payment_method || "No payment method"}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No receipts created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {receipts.length ? (
+                  receipts.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedReceiptId(record.id);
+                            setActiveModal("receipt");
+                          }}
+                          aria-label={`Edit receipt ${record.receipt_number}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.receipt_number}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {formatAmount(record.amount_received)}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Invoice"
+                            value={record.invoice_number}
+                          />
+                          <DetailItem
+                            label="Method"
+                            value={record.payment_method || "No payment method"}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No receipts created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "insurance" ? (
-          <SectionCard
-            title="Insurance records"
-            description="Policies, providers, dates, and coverage status."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetInsuranceForm();
-                    setActiveModal("insurance");
-                  }}
-                  aria-label="Add insurance record"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {insuranceRecords.length ? (
-              insuranceRecords.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "insurance" ? (
+              <SectionCard
+                title="Insurance records"
+                description="Policies, providers, dates, and coverage status."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedInsuranceId(record.id);
+                        resetInsuranceForm();
                         setActiveModal("insurance");
                       }}
-                      aria-label={`Edit insurance ${record.policy_name}`}
+                      aria-label="Add insurance record"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.policy_name}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Provider"
-                        value={record.provider_name}
-                      />
-                      <DetailItem
-                        label="Premium"
-                        value={formatAmount(record.premium_amount)}
-                      />
-                      <DetailItem
-                        label="Ends"
-                        value={formatDate(record.end_date)}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No insurance records created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {insuranceRecords.length ? (
+                  insuranceRecords.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedInsuranceId(record.id);
+                            setActiveModal("insurance");
+                          }}
+                          aria-label={`Edit insurance ${record.policy_name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.policy_name}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Provider"
+                            value={record.provider_name}
+                          />
+                          <DetailItem
+                            label="Premium"
+                            value={formatAmount(record.premium_amount)}
+                          />
+                          <DetailItem
+                            label="Ends"
+                            value={formatDate(record.end_date)}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No insurance records created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "snapshots" ? (
-          <SectionCard
-            title="Profitability snapshots"
-            description="Live profit estimate plus saved snapshots for reference."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetSnapshotForm();
-                    setActiveModal("snapshot");
-                  }}
-                  aria-label="Add profitability snapshot"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            <article className={recordCardClassName}>
-              <div className="flex flex-1 flex-col gap-4">
-                <div className="space-y-1 pr-10">
-                  <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                    Current finance position
-                  </h3>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                    {liveProfitEstimate >= 0 ? "Profit" : "Loss"}{" "}
-                    {formatAmount(Math.abs(liveProfitEstimate))}
-                  </p>
-                </div>
-                <div className="flex-1 space-y-3">
-                  <DetailItem
-                    label="Recognized sales"
-                    value={formatAmount(liveRecognizedRevenue)}
-                  />
-                  <DetailItem
-                    label="Collected cash"
-                    value={formatAmount(liveCollectedRevenue)}
-                  />
-                  <DetailItem
-                    label="Total costs"
-                    value={formatAmount(liveTotalCosts)}
-                  />
-                  <DetailItem
-                    label="Collection rate"
-                    value={formatPercent(liveCollectionRate)}
-                  />
-                </div>
-              </div>
-            </article>
-            {snapshots.length ? (
-              snapshots.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "snapshots" ? (
+              <SectionCard
+                title="Profitability snapshots"
+                description="Live profit estimate plus saved snapshots for reference."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedSnapshotId(record.id);
+                        resetSnapshotForm();
                         setActiveModal("snapshot");
                       }}
-                      aria-label={`Edit snapshot ${record.snapshot_date}`}
+                      aria-label="Add profitability snapshot"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
+                  ) : null
+                }
+              >
+                <article className={recordCardClassName}>
                   <div className="flex flex-1 flex-col gap-4">
                     <div className="space-y-1 pr-10">
                       <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {formatDate(record.snapshot_date)}
+                        Current finance position
                       </h3>
                       <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        Profit {formatAmount(record.profit)}
+                        {liveProfitEstimate >= 0 ? "Profit" : "Loss"}{" "}
+                        {formatAmount(Math.abs(liveProfitEstimate))}
                       </p>
                     </div>
                     <div className="flex-1 space-y-3">
                       <DetailItem
-                        label="Revenue"
-                        value={formatAmount(record.revenue)}
+                        label="Recognized sales"
+                        value={formatAmount(liveRecognizedRevenue)}
+                      />
+                      <DetailItem
+                        label="Collected cash"
+                        value={formatAmount(liveCollectedRevenue)}
                       />
                       <DetailItem
                         label="Total costs"
-                        value={formatAmount(record.total_costs)}
+                        value={formatAmount(liveTotalCosts)}
+                      />
+                      <DetailItem
+                        label="Collection rate"
+                        value={formatPercent(liveCollectionRate)}
                       />
                     </div>
                   </div>
                 </article>
-              ))
-            ) : (
-              <EmptyState message="No profitability snapshots created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                {snapshots.length ? (
+                  snapshots.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedSnapshotId(record.id);
+                            setActiveModal("snapshot");
+                          }}
+                          aria-label={`Edit snapshot ${record.snapshot_date}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {formatDate(record.snapshot_date)}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Profit {formatAmount(record.profit)}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Revenue"
+                            value={formatAmount(record.revenue)}
+                          />
+                          <DetailItem
+                            label="Total costs"
+                            value={formatAmount(record.total_costs)}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No profitability snapshots created yet." />
+                )}
+              </SectionCard>
+            ) : null}
           </div>
           <footer className="panel mt-auto px-4 py-3">
             <p className="text-sm leading-6 text-slate-600">

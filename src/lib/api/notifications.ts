@@ -59,10 +59,7 @@ export async function deleteNotification(
   );
 }
 
-export async function bulkDeleteNotifications(
-  ids: number[],
-  force = false,
-) {
+export async function bulkDeleteNotifications(ids: number[], force = false) {
   return apiRequest<NotificationBulkDeleteResponse | NotificationDeleteWarning>(
     `${NOTIFICATIONS_BASE_PATH}bulk-delete/`,
     {

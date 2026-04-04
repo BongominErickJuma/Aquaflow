@@ -70,7 +70,8 @@ const businessMilestoneFlow = [
     id: "business",
     label: "Business",
     footerLabel: "Business",
-    detail: "Create or review the company profile here before moving into the supporting records.",
+    detail:
+      "Create or review the company profile here before moving into the supporting records.",
   },
   {
     id: "registration",

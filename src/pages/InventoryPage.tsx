@@ -1485,610 +1485,609 @@ export function InventoryPage() {
 
       <div className="module-page-stage !justify-start overflow-hidden">
         <div className="flex min-h-0 flex-1 flex-col gap-6">
-        <div className="space-y-6">
-          {activeTab === "alerts" ? (
-            <section className="panel p-6">
-              <div>
-                <p className="section-label">Reorder Alerts</p>
-                <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                  Attention needed
-                </h2>
-              </div>
-
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {reorderAlerts.length === 0 ? (
-                  <EmptyState
-                    title="No reorder alerts"
-                    description="All tracked items are above their reorder levels right now."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  reorderAlerts.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-2">
-                        <p className="font-semibold text-slate-900">
-                          {record.item_name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.item_type === "raw_material"
-                            ? "Raw material"
-                            : "Finished product"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Location:{" "}
-                          {locationNameById.get(record.location) ??
-                            `#${record.location}`}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          In stock:{" "}
-                          {formatQuantity(record.quantity, record.unit_name)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Reorder level:{" "}
-                          {formatQuantity(
-                            record.reorder_level,
-                            record.unit_name,
-                          )}
-                        </p>
-                        <p className="mt-2 text-sm font-medium text-amber-700">
-                          Shortage:{" "}
-                          {formatQuantity(record.shortage, record.unit_name)}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-
-          {activeTab === "stock" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
+          <div className="space-y-6">
+            {activeTab === "alerts" ? (
+              <section className="panel p-6">
                 <div>
-                  <p className="section-label">Stock Items</p>
+                  <p className="section-label">Reorder Alerts</p>
                   <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Current balances
+                    Attention needed
                   </h2>
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetStockItemState();
-                      setActiveModal("stockItem");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add stock item"
-                    title="Add stock item"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {stockItems.length === 0 ? (
-                  <EmptyState
-                    title="No stock items yet"
-                    description="Create stock items to start tracking balances by location."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  stockItems.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.item_name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.item_type === "raw_material"
-                            ? "Raw material"
-                            : "Finished product"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Location:{" "}
-                          {locationNameById.get(record.location) ??
-                            `#${record.location}`}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Quantity:{" "}
-                          {formatQuantity(record.quantity, record.unit_name)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Reorder:{" "}
-                          {formatQuantity(
-                            record.reorder_level,
-                            record.unit_name,
-                          )}
-                        </p>
-                        <p
-                          className={[
-                            "mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
-                            record.is_below_reorder
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-emerald-100 text-emerald-700",
-                          ].join(" ")}
-                        >
-                          {record.is_below_reorder
-                            ? "Below reorder"
-                            : "Healthy"}
-                        </p>
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {reorderAlerts.length === 0 ? (
+                    <EmptyState
+                      title="No reorder alerts"
+                      description="All tracked items are above their reorder levels right now."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    reorderAlerts.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-2">
+                          <p className="font-semibold text-slate-900">
+                            {record.item_name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.item_type === "raw_material"
+                              ? "Raw material"
+                              : "Finished product"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Location:{" "}
+                            {locationNameById.get(record.location) ??
+                              `#${record.location}`}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            In stock:{" "}
+                            {formatQuantity(record.quantity, record.unit_name)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Reorder level:{" "}
+                            {formatQuantity(
+                              record.reorder_level,
+                              record.unit_name,
+                            )}
+                          </p>
+                          <p className="mt-2 text-sm font-medium text-amber-700">
+                            Shortage:{" "}
+                            {formatQuantity(record.shortage, record.unit_name)}
+                          </p>
+                        </div>
                       </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedStockItemId(record.id);
-                            setStockItemForm(buildStockItemForm(record));
-                            setActiveModal("stockItem");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.item_name}`}
-                          title={`Edit ${record.item_name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        <div className="space-y-6">
-          {activeTab === "raw" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Raw Materials</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Input materials
-                  </h2>
+                    ))
+                  )}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetRawMaterialState();
-                      setActiveModal("rawMaterial");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add raw material"
-                    title="Add raw material"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
+              </section>
+            ) : null}
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {rawMaterials.length === 0 ? (
-                  <EmptyState
-                    title="No raw materials yet"
-                    description="Track water, packaging, and other supply inputs here."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  rawMaterials.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.sku}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Unit: {record.unit_name}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Supplier: {record.supplier_name || "Not linked"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Reorder:{" "}
-                          {formatQuantity(
-                            record.reorder_level,
-                            record.unit_name,
-                          )}
-                        </p>
-                      </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedRawMaterialId(record.id);
-                            setRawMaterialForm(buildRawMaterialForm(record));
-                            setActiveModal("rawMaterial");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.name}`}
-                          title={`Edit ${record.name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-
-          {activeTab === "finished" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Finished Products</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Sellable outputs
-                  </h2>
+            {activeTab === "stock" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Stock Items</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Current balances
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetStockItemState();
+                        setActiveModal("stockItem");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add stock item"
+                      title="Add stock item"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetFinishedProductState();
-                      setActiveModal("finishedProduct");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add finished product"
-                    title="Add finished product"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {finishedProducts.length === 0 ? (
-                  <EmptyState
-                    title="No finished products yet"
-                    description="Add the packaged products the business keeps in stock."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  finishedProducts.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.sku}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Unit: {record.unit_name}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Reorder:{" "}
-                          {formatQuantity(
-                            record.reorder_level,
-                            record.unit_name,
-                          )}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.is_active ? "Active" : "Inactive"}
-                        </p>
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {stockItems.length === 0 ? (
+                    <EmptyState
+                      title="No stock items yet"
+                      description="Create stock items to start tracking balances by location."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    stockItems.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.item_name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.item_type === "raw_material"
+                              ? "Raw material"
+                              : "Finished product"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Location:{" "}
+                            {locationNameById.get(record.location) ??
+                              `#${record.location}`}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Quantity:{" "}
+                            {formatQuantity(record.quantity, record.unit_name)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Reorder:{" "}
+                            {formatQuantity(
+                              record.reorder_level,
+                              record.unit_name,
+                            )}
+                          </p>
+                          <p
+                            className={[
+                              "mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
+                              record.is_below_reorder
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-emerald-100 text-emerald-700",
+                            ].join(" ")}
+                          >
+                            {record.is_below_reorder
+                              ? "Below reorder"
+                              : "Healthy"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedStockItemId(record.id);
+                              setStockItemForm(buildStockItemForm(record));
+                              setActiveModal("stockItem");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.item_name}`}
+                            title={`Edit ${record.item_name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
                       </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedFinishedProductId(record.id);
-                            setFinishedProductForm(
-                              buildFinishedProductForm(record),
-                            );
-                            setActiveModal("finishedProduct");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.name}`}
-                          title={`Edit ${record.name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        <div className="space-y-6">
-          {activeTab === "units" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Units</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Measurement setup
-                  </h2>
+                    ))
+                  )}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetUnitState();
-                      setActiveModal("unit");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add unit"
-                    title="Add unit"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
+              </section>
+            ) : null}
+          </div>
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {units.length === 0 ? (
-                  <EmptyState
-                    title="No units yet"
-                    description="Create the measurement units inventory records will rely on."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  units.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.symbol}
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                          {record.description || "No description recorded"}
-                        </p>
-                      </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedUnitId(record.id);
-                            setUnitForm(buildUnitForm(record));
-                            setActiveModal("unit");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.name}`}
-                          title={`Edit ${record.name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-
-          {activeTab === "locations" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Storage Locations</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Where stock lives
-                  </h2>
+          <div className="space-y-6">
+            {activeTab === "raw" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Raw Materials</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Input materials
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetRawMaterialState();
+                        setActiveModal("rawMaterial");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add raw material"
+                      title="Add raw material"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetLocationState();
-                      setActiveModal("location");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add storage location"
-                    title="Add storage location"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {locations.length === 0 ? (
-                  <EmptyState
-                    title="No storage locations yet"
-                    description="Add warehouses, cold rooms, or stores before assigning stock."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  locations.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.code}
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                          {record.description || "No description recorded"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.is_active ? "Active" : "Inactive"}
-                        </p>
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {rawMaterials.length === 0 ? (
+                    <EmptyState
+                      title="No raw materials yet"
+                      description="Track water, packaging, and other supply inputs here."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    rawMaterials.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.sku}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Unit: {record.unit_name}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Supplier: {record.supplier_name || "Not linked"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Reorder:{" "}
+                            {formatQuantity(
+                              record.reorder_level,
+                              record.unit_name,
+                            )}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedRawMaterialId(record.id);
+                              setRawMaterialForm(buildRawMaterialForm(record));
+                              setActiveModal("rawMaterial");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.name}`}
+                            title={`Edit ${record.name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
                       </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedLocationId(record.id);
-                            setLocationForm(buildLocationForm(record));
-                            setActiveModal("location");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.name}`}
-                          title={`Edit ${record.name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        <div className="space-y-6">
-          {activeTab === "suppliers" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Suppliers</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    External sources
-                  </h2>
+                    ))
+                  )}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetSupplierState();
-                      setActiveModal("supplier");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add supplier"
-                    title="Add supplier"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
+              </section>
+            ) : null}
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {suppliers.length === 0 ? (
-                  <EmptyState
-                    title="No suppliers yet"
-                    description="Add the businesses or contacts that supply inventory inputs."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  suppliers.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.contact_person || "No contact person"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.phone_number || "No phone number"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.email || "No email address"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.is_active ? "Active" : "Inactive"}
-                        </p>
-                      </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedSupplierId(record.id);
-                            setSupplierForm(buildSupplierForm(record));
-                            setActiveModal("supplier");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.name}`}
-                          title={`Edit ${record.name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-
-          {activeTab === "movements" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Stock Movements</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Quantity changes
-                  </h2>
+            {activeTab === "finished" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Finished Products</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Sellable outputs
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetFinishedProductState();
+                        setActiveModal("finishedProduct");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add finished product"
+                      title="Add finished product"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetMovementState();
-                      setActiveModal("movement");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add stock movement"
-                    title="Add stock movement"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {stockMovements.length === 0 ? (
-                  <EmptyState
-                    title="No stock movements yet"
-                    description="Record stock in, stock out, and adjustments here."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  stockMovements.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.stock_item_name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {humanizeMovementType(record.movement_type)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Quantity: {record.quantity}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {formatDateTime(record.movement_date)}
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                          {record.reference_note || "No reference note"}
-                        </p>
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {finishedProducts.length === 0 ? (
+                    <EmptyState
+                      title="No finished products yet"
+                      description="Add the packaged products the business keeps in stock."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    finishedProducts.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.sku}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Unit: {record.unit_name}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Reorder:{" "}
+                            {formatQuantity(
+                              record.reorder_level,
+                              record.unit_name,
+                            )}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.is_active ? "Active" : "Inactive"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedFinishedProductId(record.id);
+                              setFinishedProductForm(
+                                buildFinishedProductForm(record),
+                              );
+                              setActiveModal("finishedProduct");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.name}`}
+                            title={`Edit ${record.name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
                       </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedMovementId(record.id);
-                            setMovementForm(buildMovementForm(record));
-                            setActiveModal("movement");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit movement for ${record.stock_item_name}`}
-                          title={`Edit movement for ${record.stock_item_name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-        </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
+          </div>
 
+          <div className="space-y-6">
+            {activeTab === "units" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Units</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Measurement setup
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetUnitState();
+                        setActiveModal("unit");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add unit"
+                      title="Add unit"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {units.length === 0 ? (
+                    <EmptyState
+                      title="No units yet"
+                      description="Create the measurement units inventory records will rely on."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    units.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.symbol}
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">
+                            {record.description || "No description recorded"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedUnitId(record.id);
+                              setUnitForm(buildUnitForm(record));
+                              setActiveModal("unit");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.name}`}
+                            title={`Edit ${record.name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === "locations" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Storage Locations</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Where stock lives
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetLocationState();
+                        setActiveModal("location");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add storage location"
+                      title="Add storage location"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {locations.length === 0 ? (
+                    <EmptyState
+                      title="No storage locations yet"
+                      description="Add warehouses, cold rooms, or stores before assigning stock."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    locations.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.code}
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">
+                            {record.description || "No description recorded"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.is_active ? "Active" : "Inactive"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedLocationId(record.id);
+                              setLocationForm(buildLocationForm(record));
+                              setActiveModal("location");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.name}`}
+                            title={`Edit ${record.name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
+          </div>
+
+          <div className="space-y-6">
+            {activeTab === "suppliers" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Suppliers</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      External sources
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetSupplierState();
+                        setActiveModal("supplier");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add supplier"
+                      title="Add supplier"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {suppliers.length === 0 ? (
+                    <EmptyState
+                      title="No suppliers yet"
+                      description="Add the businesses or contacts that supply inventory inputs."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    suppliers.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.contact_person || "No contact person"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.phone_number || "No phone number"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.email || "No email address"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.is_active ? "Active" : "Inactive"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSupplierId(record.id);
+                              setSupplierForm(buildSupplierForm(record));
+                              setActiveModal("supplier");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.name}`}
+                            title={`Edit ${record.name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === "movements" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Stock Movements</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Quantity changes
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetMovementState();
+                        setActiveModal("movement");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add stock movement"
+                      title="Add stock movement"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {stockMovements.length === 0 ? (
+                    <EmptyState
+                      title="No stock movements yet"
+                      description="Record stock in, stock out, and adjustments here."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    stockMovements.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.stock_item_name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {humanizeMovementType(record.movement_type)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Quantity: {record.quantity}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {formatDateTime(record.movement_date)}
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">
+                            {record.reference_note || "No reference note"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMovementId(record.id);
+                              setMovementForm(buildMovementForm(record));
+                              setActiveModal("movement");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit movement for ${record.stock_item_name}`}
+                            title={`Edit movement for ${record.stock_item_name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
+          </div>
         </div>
 
         <footer className="panel mt-auto px-4 py-3">

@@ -15,9 +15,9 @@ const ANALYTICS_BASE_PATH = "/api/analytics";
 function isPopulatedRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(
     value &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      Object.keys(value).length > 0,
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value).length > 0,
   );
 }
 
@@ -27,33 +27,27 @@ async function fetchLatestListItem<T>(path: string) {
 }
 
 export async function fetchDashboardOverview(): Promise<DashboardOverviewResponse> {
-  const [
-    combinedResponse,
-    production,
-    sales,
-    finance,
-    inventory,
-    business,
-  ] = await Promise.all([
-    apiRequest<DailyAnalyticsDashboard | Record<string, never>>(
-      `${ANALYTICS_BASE_PATH}/combined-dashboard/latest/`,
-    ),
-    fetchLatestListItem<DailyProductionAnalytics>(
-      `${ANALYTICS_BASE_PATH}/production-efficiency-reports/`,
-    ),
-    fetchLatestListItem<DailySalesAnalytics>(
-      `${ANALYTICS_BASE_PATH}/sales-performance-dashboards/`,
-    ),
-    fetchLatestListItem<DailyFinanceAnalytics>(
-      `${ANALYTICS_BASE_PATH}/financial-metrics-reports/`,
-    ),
-    fetchLatestListItem<DailyInventoryAnalytics>(
-      `${ANALYTICS_BASE_PATH}/inventory-stock-reports/`,
-    ),
-    fetchLatestListItem<DailyBusinessKPIAnalytics>(
-      `${ANALYTICS_BASE_PATH}/business-kpi-analytics/`,
-    ),
-  ]);
+  const [combinedResponse, production, sales, finance, inventory, business] =
+    await Promise.all([
+      apiRequest<DailyAnalyticsDashboard | Record<string, never>>(
+        `${ANALYTICS_BASE_PATH}/combined-dashboard/latest/`,
+      ),
+      fetchLatestListItem<DailyProductionAnalytics>(
+        `${ANALYTICS_BASE_PATH}/production-efficiency-reports/`,
+      ),
+      fetchLatestListItem<DailySalesAnalytics>(
+        `${ANALYTICS_BASE_PATH}/sales-performance-dashboards/`,
+      ),
+      fetchLatestListItem<DailyFinanceAnalytics>(
+        `${ANALYTICS_BASE_PATH}/financial-metrics-reports/`,
+      ),
+      fetchLatestListItem<DailyInventoryAnalytics>(
+        `${ANALYTICS_BASE_PATH}/inventory-stock-reports/`,
+      ),
+      fetchLatestListItem<DailyBusinessKPIAnalytics>(
+        `${ANALYTICS_BASE_PATH}/business-kpi-analytics/`,
+      ),
+    ]);
 
   return {
     combined: isPopulatedRecord(combinedResponse)

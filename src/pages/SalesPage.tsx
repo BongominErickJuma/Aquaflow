@@ -522,8 +522,7 @@ export function SalesPage() {
     schedules.filter(
       (schedule) =>
         (!orderId || schedule.order === orderId) &&
-        (schedule.status !== "cancelled" ||
-          schedule.id === selectedScheduleId),
+        (schedule.status !== "cancelled" || schedule.id === selectedScheduleId),
     );
 
   async function reloadSalesData() {
@@ -1072,468 +1071,483 @@ export function SalesPage() {
       <ModuleTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
       <div className="module-page-stage !justify-start overflow-hidden">
         <div className="flex min-h-0 flex-1 flex-col gap-6">
-        <div className="min-h-0 flex-1">
-        {activeTab === "categories" ? (
-          <SectionCard
-            title="Customer categories"
-            description="Group clients by hospitality, retail, wholesale, or direct channels."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetCategoryForm();
-                    setActiveModal("category");
-                  }}
-                  aria-label="Add customer category"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {categories.length ? (
-              categories.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+          <div className="min-h-0 flex-1">
+            {activeTab === "categories" ? (
+              <SectionCard
+                title="Customer categories"
+                description="Group clients by hospitality, retail, wholesale, or direct channels."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedCategoryId(record.id);
+                        resetCategoryForm();
                         setActiveModal("category");
                       }}
-                      aria-label={`Edit category ${record.name}`}
+                      aria-label="Add customer category"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.name}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.is_active ? "Active" : "Inactive"}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Description"
-                        value={record.description || "No description"}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No customer categories created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {categories.length ? (
+                  categories.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedCategoryId(record.id);
+                            setActiveModal("category");
+                          }}
+                          aria-label={`Edit category ${record.name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.name}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.is_active ? "Active" : "Inactive"}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Description"
+                            value={record.description || "No description"}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No customer categories created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "clients" ? (
-          <SectionCard
-            title="Clients"
-            description="Company buyers, delivery contacts, and their relationship notes."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetClientForm();
-                    setActiveModal("client");
-                  }}
-                  aria-label="Add client"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {clients.length ? (
-              clients.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "clients" ? (
+              <SectionCard
+                title="Clients"
+                description="Company buyers, delivery contacts, and their relationship notes."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedClientId(record.id);
+                        resetClientForm();
                         setActiveModal("client");
                       }}
-                      aria-label={`Edit client ${record.name}`}
+                      aria-label="Add client"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.name}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.category_name || "Uncategorized"}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Contact"
-                        value={record.contact_person || "No contact person"}
-                      />
-                      <DetailItem
-                        label="Phone"
-                        value={record.phone_number || "No phone"}
-                      />
-                      <DetailItem
-                        label="Status"
-                        value={record.is_active ? "Active" : "Inactive"}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No clients added yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {clients.length ? (
+                  clients.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedClientId(record.id);
+                            setActiveModal("client");
+                          }}
+                          aria-label={`Edit client ${record.name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.name}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.category_name || "Uncategorized"}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Contact"
+                            value={record.contact_person || "No contact person"}
+                          />
+                          <DetailItem
+                            label="Phone"
+                            value={record.phone_number || "No phone"}
+                          />
+                          <DetailItem
+                            label="Status"
+                            value={record.is_active ? "Active" : "Inactive"}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No clients added yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "branding" ? (
-          <SectionCard
-            title="Branding records"
-            description="Track customer-specific packaging, label, and brand requests."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetBrandingForm();
-                    setActiveModal("branding");
-                  }}
-                  aria-label="Add branding record"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {brandingRecords.length ? (
-              brandingRecords.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "branding" ? (
+              <SectionCard
+                title="Branding records"
+                description="Track customer-specific packaging, label, and brand requests."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedBrandingId(record.id);
+                        resetBrandingForm();
                         setActiveModal("branding");
                       }}
-                      aria-label={`Edit branding ${record.title}`}
+                      aria-label="Add branding record"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.title}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Client"
-                        value={record.client_name || "No linked client"}
-                      />
-                      <DetailItem label="Type" value={record.branding_type} />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No branding records created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {brandingRecords.length ? (
+                  brandingRecords.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedBrandingId(record.id);
+                            setActiveModal("branding");
+                          }}
+                          aria-label={`Edit branding ${record.title}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.title}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Client"
+                            value={record.client_name || "No linked client"}
+                          />
+                          <DetailItem
+                            label="Type"
+                            value={record.branding_type}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No branding records created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "orders" ? (
-          <SectionCard
-            title="Sales orders"
-            description="Customer orders with totals calculated from order items."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetOrderForm();
-                    setActiveModal("order");
-                  }}
-                  aria-label="Add sales order"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {orders.length ? (
-              orders.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "orders" ? (
+              <SectionCard
+                title="Sales orders"
+                description="Customer orders with totals calculated from order items."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedOrderId(record.id);
+                        resetOrderForm();
                         setActiveModal("order");
                       }}
-                      aria-label={`Edit order ${record.order_number}`}
+                      aria-label="Add sales order"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.order_number}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem label="Client" value={record.client_name} />
-                      <DetailItem
-                        label="Order date"
-                        value={formatDate(record.order_date)}
-                      />
-                      <DetailItem label="Total" value={record.total_amount} />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No sales orders created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {orders.length ? (
+                  orders.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedOrderId(record.id);
+                            setActiveModal("order");
+                          }}
+                          aria-label={`Edit order ${record.order_number}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.order_number}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Client"
+                            value={record.client_name}
+                          />
+                          <DetailItem
+                            label="Order date"
+                            value={formatDate(record.order_date)}
+                          />
+                          <DetailItem
+                            label="Total"
+                            value={record.total_amount}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No sales orders created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "items" ? (
-          <SectionCard
-            title="Order items"
-            description="Line items that feed order totals and can point to finished products."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetItemForm();
-                    setActiveModal("item");
-                  }}
-                  aria-label="Add order item"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {orderItems.length ? (
-              orderItems.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "items" ? (
+              <SectionCard
+                title="Order items"
+                description="Line items that feed order totals and can point to finished products."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedItemId(record.id);
+                        resetItemForm();
                         setActiveModal("item");
                       }}
-                      aria-label={`Edit order item ${record.product_name}`}
+                      aria-label="Add order item"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.product_name || record.finished_product_name}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.order_number}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem label="Quantity" value={record.quantity} />
-                      <DetailItem
-                        label="Unit price"
-                        value={record.unit_price}
-                      />
-                      <DetailItem
-                        label="Line total"
-                        value={record.line_total}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No order items created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {orderItems.length ? (
+                  orderItems.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedItemId(record.id);
+                            setActiveModal("item");
+                          }}
+                          aria-label={`Edit order item ${record.product_name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.product_name ||
+                              record.finished_product_name}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.order_number}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Quantity"
+                            value={record.quantity}
+                          />
+                          <DetailItem
+                            label="Unit price"
+                            value={record.unit_price}
+                          />
+                          <DetailItem
+                            label="Line total"
+                            value={record.line_total}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No order items created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "schedules" ? (
-          <SectionCard
-            title="Delivery schedules"
-            description="Plan transport windows, assigned vehicles, and driver details."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetScheduleForm();
-                    setActiveModal("schedule");
-                  }}
-                  aria-label="Add delivery schedule"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {schedules.length ? (
-              schedules.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "schedules" ? (
+              <SectionCard
+                title="Delivery schedules"
+                description="Plan transport windows, assigned vehicles, and driver details."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedScheduleId(record.id);
+                        resetScheduleForm();
                         setActiveModal("schedule");
                       }}
-                      aria-label={`Edit schedule for ${record.order_number}`}
+                      aria-label="Add delivery schedule"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.order_number}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Scheduled"
-                        value={formatDate(record.scheduled_date)}
-                      />
-                      <DetailItem
-                        label="Vehicle"
-                        value={record.assigned_vehicle || "Not assigned"}
-                      />
-                      <DetailItem
-                        label="Driver"
-                        value={record.assigned_driver || "Not assigned"}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No delivery schedules created yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {schedules.length ? (
+                  schedules.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedScheduleId(record.id);
+                            setActiveModal("schedule");
+                          }}
+                          aria-label={`Edit schedule for ${record.order_number}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.order_number}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Scheduled"
+                            value={formatDate(record.scheduled_date)}
+                          />
+                          <DetailItem
+                            label="Vehicle"
+                            value={record.assigned_vehicle || "Not assigned"}
+                          />
+                          <DetailItem
+                            label="Driver"
+                            value={record.assigned_driver || "Not assigned"}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No delivery schedules created yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "deliveries" ? (
-          <SectionCard
-            title="Delivery records"
-            description="Capture proof of delivery, recipient name, and final delivery status."
-            action={
-              isAdmin ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetDeliveryForm();
-                    setActiveModal("delivery");
-                  }}
-                  aria-label="Add delivery record"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {deliveries.length ? (
-              deliveries.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {isAdmin ? (
+            {activeTab === "deliveries" ? (
+              <SectionCard
+                title="Delivery records"
+                description="Capture proof of delivery, recipient name, and final delivery status."
+                action={
+                  isAdmin ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedDeliveryId(record.id);
+                        resetDeliveryForm();
                         setActiveModal("delivery");
                       }}
-                      aria-label={`Edit delivery for ${record.order_number}`}
+                      aria-label="Add delivery record"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.order_number}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.delivery_status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Delivery date"
-                        value={formatDate(record.delivery_date)}
-                      />
-                      <DetailItem
-                        label="Recipient"
-                        value={record.recipient_name || "Not recorded"}
-                      />
-                      <DetailItem
-                        label="Proof"
-                        value={record.proof_reference || "No proof reference"}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No delivery records created yet." />
-            )}
-          </SectionCard>
-        ) : null}
-        </div>
+                  ) : null
+                }
+              >
+                {deliveries.length ? (
+                  deliveries.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedDeliveryId(record.id);
+                            setActiveModal("delivery");
+                          }}
+                          aria-label={`Edit delivery for ${record.order_number}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.order_number}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.delivery_status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Delivery date"
+                            value={formatDate(record.delivery_date)}
+                          />
+                          <DetailItem
+                            label="Recipient"
+                            value={record.recipient_name || "Not recorded"}
+                          />
+                          <DetailItem
+                            label="Proof"
+                            value={
+                              record.proof_reference || "No proof reference"
+                            }
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No delivery records created yet." />
+                )}
+              </SectionCard>
+            ) : null}
+          </div>
 
-        <footer className="panel mt-auto px-4 py-3">
-          <p className="text-sm leading-6 text-slate-600">
-            <span className="font-semibold text-sky-700">
-              {activeFlowItem.label}
-            </span>{" "}
-            {activeFlowItem.detail}
-          </p>
-        </footer>
+          <footer className="panel mt-auto px-4 py-3">
+            <p className="text-sm leading-6 text-slate-600">
+              <span className="font-semibold text-sky-700">
+                {activeFlowItem.label}
+              </span>{" "}
+              {activeFlowItem.detail}
+            </p>
+          </footer>
         </div>
       </div>
       {activeModal === "category" ? (
@@ -2489,14 +2503,13 @@ export function SalesPage() {
                       ...buildAssignableScheduleOptions({
                         orderId: deliveryForm.order || null,
                         selectedScheduleId: deliveryForm.schedule,
-                      })
-                        .map((schedule) => ({
-                          label:
-                            schedule.status === "cancelled"
-                              ? `${schedule.order_number} - ${formatDate(schedule.scheduled_date)} (Cancelled)`
-                              : `${schedule.order_number} - ${formatDate(schedule.scheduled_date)}`,
-                          value: String(schedule.id),
-                        })),
+                      }).map((schedule) => ({
+                        label:
+                          schedule.status === "cancelled"
+                            ? `${schedule.order_number} - ${formatDate(schedule.scheduled_date)} (Cancelled)`
+                            : `${schedule.order_number} - ${formatDate(schedule.scheduled_date)}`,
+                        value: String(schedule.id),
+                      })),
                     ]}
                     onChange={(value) =>
                       setDeliveryForm((current) => ({

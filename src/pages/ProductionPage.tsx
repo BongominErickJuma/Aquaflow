@@ -1192,7 +1192,9 @@ export function ProductionPage() {
       downtimeForm.status === "resolved" &&
       !downtimeForm.resolution_notes.trim()
     ) {
-      setDowntimeError("Add resolution notes before resolving the downtime alert.");
+      setDowntimeError(
+        "Add resolution notes before resolving the downtime alert.",
+      );
       return;
     }
     setIsDowntimePending(true);
@@ -1365,600 +1367,602 @@ export function ProductionPage() {
 
       <div className="module-page-stage !justify-start overflow-hidden">
         <div className="flex min-h-0 flex-1 flex-col gap-6">
-        <div className="min-h-0 flex-1 space-y-6">
-          {activeTab === "downtime" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Downtime Alerts</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Live equipment interruptions
-                  </h2>
+          <div className="min-h-0 flex-1 space-y-6">
+            {activeTab === "downtime" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Downtime Alerts</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Live equipment interruptions
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetDowntimeState();
+                        setActiveModal("downtime");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add downtime alert"
+                      title="Add downtime alert"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetDowntimeState();
-                      setActiveModal("downtime");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add downtime alert"
-                    title="Add downtime alert"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
 
-              <div className="mt-5 space-y-3">
-                <div className="scrollbar-hidden flex gap-3 overflow-x-auto pb-2">
-                  {dueMaintenanceSchedules.length === 0 &&
-                  openDowntimeAlerts.length === 0 ? (
+                <div className="mt-5 space-y-3">
+                  <div className="scrollbar-hidden flex gap-3 overflow-x-auto pb-2">
+                    {dueMaintenanceSchedules.length === 0 &&
+                    openDowntimeAlerts.length === 0 ? (
+                      <EmptyState
+                        title="No live downtime or due maintenance"
+                        description="Resolved incidents stay in the history tab, and new downtime alerts can be added here."
+                        className={`${recordCardClassName} justify-center`}
+                      />
+                    ) : (
+                      <>
+                        {dueMaintenanceSchedules.map((record) => (
+                          <div
+                            key={`maintenance-${record.id}`}
+                            className={`${recordCardClassName} bg-sky-50/55`}
+                          >
+                            <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                              <p className="font-semibold text-slate-900">
+                                {record.title}
+                                <span className="ml-1 inline-block h-2.5 w-2.5 rounded-full bg-sky-500 align-middle" />
+                              </p>
+                              <p className="mt-1 text-sm text-slate-500">
+                                {record.machine_name}
+                              </p>
+                              <p className="mt-3 text-sm text-slate-600">
+                                {record.maintenance_type}
+                              </p>
+                              <p className="mt-2 text-sm text-slate-600">
+                                {record.next_due_date < todayDateString
+                                  ? "Overdue maintenance"
+                                  : "Due today"}
+                              </p>
+                              <p className="mt-2 text-sm text-slate-600">
+                                Scheduled for {formatDate(record.next_due_date)}
+                              </p>
+                            </div>
+                            {isAdmin ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedScheduleId(record.id);
+                                  setScheduleForm(buildScheduleForm(record));
+                                  setActiveModal("schedule");
+                                }}
+                                className={recordEditButtonClassName}
+                                aria-label={`Edit ${record.title}`}
+                                title={`Edit ${record.title}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                            ) : null}
+                          </div>
+                        ))}
+
+                        {openDowntimeAlerts.map((record) => (
+                          <div
+                            key={`downtime-${record.id}`}
+                            className={recordCardClassName}
+                          >
+                            <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                              <p className="font-semibold text-slate-900">
+                                {record.title}
+                              </p>
+                              <p className="mt-1 text-sm text-slate-500">
+                                {record.machine_name}
+                              </p>
+                              <p className="mt-3 text-sm text-slate-600">
+                                {titleCase(record.severity)} / Open
+                              </p>
+                              <p className="mt-2 text-sm text-slate-600">
+                                Started {formatDateTime(record.start_time)}
+                              </p>
+                              <p className="mt-2 text-sm text-slate-600">
+                                Downtime: Open
+                              </p>
+                            </div>
+                            {isAdmin ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDowntimeId(record.id);
+                                  setDowntimeForm(buildDowntimeForm(record));
+                                  setActiveModal("downtime");
+                                }}
+                                className={recordEditButtonClassName}
+                                aria-label={`Edit ${record.title}`}
+                                title={`Edit ${record.title}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                            ) : null}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === "resolvedDowntime" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Resolved History</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Closed downtime records
+                    </h2>
+                    <p className="mt-2 text-sm text-slate-500">
+                      Completed downtime records stay here as reference without
+                      competing with the live operations lane.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {resolvedDowntimeAlerts.length === 0 ? (
                     <EmptyState
-                      title="No live downtime or due maintenance"
-                      description="Resolved incidents stay in the history tab, and new downtime alerts can be added here."
+                      title="No resolved downtime history yet"
+                      description="Once downtime alerts are resolved, they will move into this tab."
                       className={`${recordCardClassName} justify-center`}
                     />
                   ) : (
-                    <>
-                      {dueMaintenanceSchedules.map((record) => (
-                        <div
-                          key={`maintenance-${record.id}`}
-                          className={`${recordCardClassName} bg-sky-50/55`}
-                        >
-                          <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                            <p className="font-semibold text-slate-900">
-                              {record.title}
-                              <span className="ml-1 inline-block h-2.5 w-2.5 rounded-full bg-sky-500 align-middle" />
-                            </p>
-                            <p className="mt-1 text-sm text-slate-500">
-                              {record.machine_name}
-                            </p>
-                            <p className="mt-3 text-sm text-slate-600">
-                              {record.maintenance_type}
-                            </p>
-                            <p className="mt-2 text-sm text-slate-600">
-                              {record.next_due_date < todayDateString
-                                ? "Overdue maintenance"
-                                : "Due today"}
-                            </p>
-                            <p className="mt-2 text-sm text-slate-600">
-                              Scheduled for {formatDate(record.next_due_date)}
-                            </p>
-                          </div>
-                          {isAdmin ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedScheduleId(record.id);
-                                setScheduleForm(buildScheduleForm(record));
-                                setActiveModal("schedule");
-                              }}
-                              className={recordEditButtonClassName}
-                              aria-label={`Edit ${record.title}`}
-                              title={`Edit ${record.title}`}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                          ) : null}
+                    resolvedDowntimeAlerts.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.title}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.machine_name}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {titleCase(record.severity)} / Resolved
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Ended {formatDateTime(record.end_time)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Downtime:{" "}
+                            {record.downtime_hours == null
+                              ? "Not calculated"
+                              : `${record.downtime_hours} hrs`}
+                          </p>
                         </div>
-                      ))}
-
-                      {openDowntimeAlerts.map((record) => (
-                        <div
-                          key={`downtime-${record.id}`}
-                          className={recordCardClassName}
-                        >
-                          <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                            <p className="font-semibold text-slate-900">
-                              {record.title}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-500">
-                              {record.machine_name}
-                            </p>
-                            <p className="mt-3 text-sm text-slate-600">
-                              {titleCase(record.severity)} / Open
-                            </p>
-                            <p className="mt-2 text-sm text-slate-600">
-                              Started {formatDateTime(record.start_time)}
-                            </p>
-                            <p className="mt-2 text-sm text-slate-600">
-                              Downtime: Open
-                            </p>
-                          </div>
-                          {isAdmin ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedDowntimeId(record.id);
-                                setDowntimeForm(buildDowntimeForm(record));
-                                setActiveModal("downtime");
-                              }}
-                              className={recordEditButtonClassName}
-                              aria-label={`Edit ${record.title}`}
-                              title={`Edit ${record.title}`}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                          ) : null}
-                        </div>
-                      ))}
-                    </>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedDowntimeId(record.id);
+                              setDowntimeForm(buildDowntimeForm(record));
+                              setActiveModal("downtime");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.title}`}
+                            title={`Edit ${record.title}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
+                    ))
                   )}
                 </div>
-              </div>
-            </section>
-          ) : null}
+              </section>
+            ) : null}
 
-          {activeTab === "resolvedDowntime" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Resolved History</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Closed downtime records
-                  </h2>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Completed downtime records stay here as reference without competing with the live operations lane.
-                  </p>
+            {activeTab === "machines" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Machines</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Equipment registry
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetMachineState();
+                        setActiveModal("machine");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add machine"
+                      title="Add machine"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
-              </div>
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {resolvedDowntimeAlerts.length === 0 ? (
-                  <EmptyState
-                    title="No resolved downtime history yet"
-                    description="Once downtime alerts are resolved, they will move into this tab."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  resolvedDowntimeAlerts.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.title}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.machine_name}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {titleCase(record.severity)} / Resolved
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Ended {formatDateTime(record.end_time)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Downtime:{" "}
-                          {record.downtime_hours == null
-                            ? "Not calculated"
-                            : `${record.downtime_hours} hrs`}
-                        </p>
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {machines.length === 0 ? (
+                    <EmptyState
+                      title="No machines yet"
+                      description="Register equipment before logging usage or maintenance."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    machines.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.code} / {record.machine_type}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.location_name || "No location recorded"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {titleCase(record.status)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.manufacturer || "No manufacturer"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMachineId(record.id);
+                              setMachineForm(buildMachineForm(record));
+                              setActiveModal("machine");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.name}`}
+                            title={`Edit ${record.name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
                       </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedDowntimeId(record.id);
-                            setDowntimeForm(buildDowntimeForm(record));
-                            setActiveModal("downtime");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.title}`}
-                          title={`Edit ${record.title}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-
-          {activeTab === "machines" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Machines</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Equipment registry
-                  </h2>
+                    ))
+                  )}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetMachineState();
-                      setActiveModal("machine");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add machine"
-                    title="Add machine"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
+              </section>
+            ) : null}
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {machines.length === 0 ? (
-                  <EmptyState
-                    title="No machines yet"
-                    description="Register equipment before logging usage or maintenance."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  machines.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.code} / {record.machine_type}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.location_name || "No location recorded"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {titleCase(record.status)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.manufacturer || "No manufacturer"}
-                        </p>
-                      </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedMachineId(record.id);
-                            setMachineForm(buildMachineForm(record));
-                            setActiveModal("machine");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.name}`}
-                          title={`Edit ${record.name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-
-          {activeTab === "schedules" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Schedules</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Maintenance schedules
-                  </h2>
+            {activeTab === "schedules" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Schedules</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Maintenance schedules
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetScheduleState();
+                        setActiveModal("schedule");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add maintenance schedule"
+                      title="Add maintenance schedule"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetScheduleState();
-                      setActiveModal("schedule");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add maintenance schedule"
-                    title="Add maintenance schedule"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {maintenanceSchedules.length === 0 ? (
-                  <EmptyState
-                    title="No maintenance schedules yet"
-                    description="Set up recurring maintenance plans for each machine here."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  maintenanceSchedules.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.title}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.machine_name}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.maintenance_type}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {titleCase(record.frequency)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Next due {formatDate(record.next_due_date)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.is_active
-                            ? "Active schedule"
-                            : "Inactive schedule"}
-                        </p>
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {maintenanceSchedules.length === 0 ? (
+                    <EmptyState
+                      title="No maintenance schedules yet"
+                      description="Set up recurring maintenance plans for each machine here."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    maintenanceSchedules.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.title}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.machine_name}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.maintenance_type}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {titleCase(record.frequency)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Next due {formatDate(record.next_due_date)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.is_active
+                              ? "Active schedule"
+                              : "Inactive schedule"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedScheduleId(record.id);
+                              setScheduleForm(buildScheduleForm(record));
+                              setActiveModal("schedule");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.title}`}
+                            title={`Edit ${record.title}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
                       </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedScheduleId(record.id);
-                            setScheduleForm(buildScheduleForm(record));
-                            setActiveModal("schedule");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.title}`}
-                          title={`Edit ${record.title}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        <div className="space-y-6">
-          {activeTab === "usage" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Usage Logs</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Machine usage
-                  </h2>
+                    ))
+                  )}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetUsageState();
-                      setActiveModal("usage");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add usage log"
-                    title="Add usage log"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
+              </section>
+            ) : null}
+          </div>
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {usageLogs.length === 0 ? (
-                  <EmptyState
-                    title="No usage logs yet"
-                    description="Capture daily or shift usage for each machine here."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  usageLogs.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.machine_name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {formatDate(record.usage_date)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.hours_used} hrs used
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.operator_name || "No operator name"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.purpose || "No purpose recorded"}
-                        </p>
-                      </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedUsageId(record.id);
-                            setUsageForm(buildUsageForm(record));
-                            setActiveModal("usage");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit usage for ${record.machine_name}`}
-                          title={`Edit usage for ${record.machine_name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-
-          {activeTab === "maintenance" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Maintenance Logs</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Completed maintenance work
-                  </h2>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Logs tied to inactive schedules are kept in history and hidden from this working lane.
-                  </p>
+          <div className="space-y-6">
+            {activeTab === "usage" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Usage Logs</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Machine usage
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetUsageState();
+                        setActiveModal("usage");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add usage log"
+                      title="Add usage log"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetMaintenanceLogState();
-                      setActiveModal("maintenanceLog");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add maintenance log"
-                    title="Add maintenance log"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {visibleMaintenanceLogs.length === 0 ? (
-                  <EmptyState
-                    title={
-                      hiddenMaintenanceLogCount > 0
-                        ? "No active maintenance logs"
-                        : "No maintenance logs yet"
-                    }
-                    description={
-                      hiddenMaintenanceLogCount > 0
-                        ? `${hiddenMaintenanceLogCount} log${hiddenMaintenanceLogCount === 1 ? "" : "s"} remain in hidden history because their schedules are inactive.`
-                        : "Capture completed service work, costs, and downtime here."
-                    }
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  visibleMaintenanceLogs.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {record.machine_name}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.schedule_title || "No linked schedule"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.maintenance_type}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {formatDate(record.maintenance_date)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {titleCase(record.status)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Cost {record.cost}
-                        </p>
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {usageLogs.length === 0 ? (
+                    <EmptyState
+                      title="No usage logs yet"
+                      description="Capture daily or shift usage for each machine here."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    usageLogs.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.machine_name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {formatDate(record.usage_date)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.hours_used} hrs used
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.operator_name || "No operator name"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.purpose || "No purpose recorded"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedUsageId(record.id);
+                              setUsageForm(buildUsageForm(record));
+                              setActiveModal("usage");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit usage for ${record.machine_name}`}
+                            title={`Edit usage for ${record.machine_name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
                       </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedMaintenanceLogId(record.id);
-                            setMaintenanceLogForm(
-                              buildMaintenanceLogForm(record),
-                            );
-                            setActiveModal("maintenanceLog");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit maintenance log for ${record.machine_name}`}
-                          title={`Edit maintenance log for ${record.machine_name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-
-          {activeTab === "utility" ? (
-            <section className="panel p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Utility Logs</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Consumption tracking
-                  </h2>
+                    ))
+                  )}
                 </div>
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetUtilityState();
-                      setActiveModal("utility");
-                    }}
-                    className={iconButtonClassName}
-                    aria-label="Add utility log"
-                    title="Add utility log"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </div>
+              </section>
+            ) : null}
 
-              <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                {utilityLogs.length === 0 ? (
-                  <EmptyState
-                    title="No utility logs yet"
-                    description="Track machine or facility utility consumption here."
-                    className={`${recordCardClassName} justify-center`}
-                  />
-                ) : (
-                  utilityLogs.map((record) => (
-                    <div key={record.id} className={recordCardClassName}>
-                      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                        <p className="font-semibold text-slate-900">
-                          {titleCase(record.utility_type)}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {record.machine_name || "Facility level"}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {formatDate(record.log_date)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {record.quantity} {record.unit_name}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Cost {record.cost}
-                        </p>
+            {activeTab === "maintenance" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Maintenance Logs</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Completed maintenance work
+                    </h2>
+                    <p className="mt-2 text-sm text-slate-500">
+                      Logs tied to inactive schedules are kept in history and
+                      hidden from this working lane.
+                    </p>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetMaintenanceLogState();
+                        setActiveModal("maintenanceLog");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add maintenance log"
+                      title="Add maintenance log"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {visibleMaintenanceLogs.length === 0 ? (
+                    <EmptyState
+                      title={
+                        hiddenMaintenanceLogCount > 0
+                          ? "No active maintenance logs"
+                          : "No maintenance logs yet"
+                      }
+                      description={
+                        hiddenMaintenanceLogCount > 0
+                          ? `${hiddenMaintenanceLogCount} log${hiddenMaintenanceLogCount === 1 ? "" : "s"} remain in hidden history because their schedules are inactive.`
+                          : "Capture completed service work, costs, and downtime here."
+                      }
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    visibleMaintenanceLogs.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.machine_name}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.schedule_title || "No linked schedule"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.maintenance_type}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {formatDate(record.maintenance_date)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {titleCase(record.status)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Cost {record.cost}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMaintenanceLogId(record.id);
+                              setMaintenanceLogForm(
+                                buildMaintenanceLogForm(record),
+                              );
+                              setActiveModal("maintenanceLog");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit maintenance log for ${record.machine_name}`}
+                            title={`Edit maintenance log for ${record.machine_name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
                       </div>
-                      {isAdmin ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedUtilityId(record.id);
-                            setUtilityForm(buildUtilityForm(record));
-                            setActiveModal("utility");
-                          }}
-                          className={recordEditButtonClassName}
-                          aria-label={`Edit ${record.utility_type} log`}
-                          title={`Edit ${record.utility_type} log`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-        </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
 
-        <footer className="panel mt-auto px-4 py-3">
-          <p className="text-sm leading-6 text-slate-600">
-            <span className="font-semibold text-sky-700">
-              {activeFlowItem.label}
-            </span>{" "}
-            {activeFlowItem.detail}
-          </p>
-        </footer>
+            {activeTab === "utility" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Utility Logs</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Consumption tracking
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetUtilityState();
+                        setActiveModal("utility");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add utility log"
+                      title="Add utility log"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {utilityLogs.length === 0 ? (
+                    <EmptyState
+                      title="No utility logs yet"
+                      description="Track machine or facility utility consumption here."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    utilityLogs.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {titleCase(record.utility_type)}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {record.machine_name || "Facility level"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {formatDate(record.log_date)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.quantity} {record.unit_name}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Cost {record.cost}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedUtilityId(record.id);
+                              setUtilityForm(buildUtilityForm(record));
+                              setActiveModal("utility");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.utility_type} log`}
+                            title={`Edit ${record.utility_type} log`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
+          </div>
+
+          <footer className="panel mt-auto px-4 py-3">
+            <p className="text-sm leading-6 text-slate-600">
+              <span className="font-semibold text-sky-700">
+                {activeFlowItem.label}
+              </span>{" "}
+              {activeFlowItem.detail}
+            </p>
+          </footer>
         </div>
       </div>
 

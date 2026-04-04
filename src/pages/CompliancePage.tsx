@@ -885,8 +885,8 @@ export function CompliancePage() {
               Compliance access is restricted
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-              Viewing and managing compliance records is limited to HR and
-              admin accounts.
+              Viewing and managing compliance records is limited to HR and admin
+              accounts.
             </p>
           </div>
         </div>
@@ -954,363 +954,372 @@ export function CompliancePage() {
       <ModuleTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
       <div className="module-page-stage !justify-start overflow-hidden">
         <div className="flex min-h-0 flex-1 flex-col gap-6">
-        <div className="min-h-0 flex-1">
-        {activeTab === "hygiene" ? (
-          <SectionCard
-            title="Hygiene checks"
-            description="Cleaning and sanitation checks for plant and storage areas."
-            action={
-              canManageCompliance ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetHygieneForm();
-                    setActiveModal("hygiene");
-                  }}
-                  aria-label="Add hygiene check"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {hygieneChecks.length ? (
-              hygieneChecks.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {canManageCompliance ? (
+          <div className="min-h-0 flex-1">
+            {activeTab === "hygiene" ? (
+              <SectionCard
+                title="Hygiene checks"
+                description="Cleaning and sanitation checks for plant and storage areas."
+                action={
+                  canManageCompliance ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedHygieneId(record.id);
+                        resetHygieneForm();
                         setActiveModal("hygiene");
                       }}
-                      aria-label={`Edit hygiene check for ${record.area}`}
+                      aria-label="Add hygiene check"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.area}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Date"
-                        value={formatDate(record.check_date)}
-                      />
-                      <DetailItem
-                        label="Inspector"
-                        value={record.inspector_name}
-                      />
-                      <DetailItem
-                        label="Action"
-                        value={
-                          record.corrective_action ||
-                          "No corrective action logged"
-                        }
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No hygiene checks logged yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {hygieneChecks.length ? (
+                  hygieneChecks.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {canManageCompliance ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedHygieneId(record.id);
+                            setActiveModal("hygiene");
+                          }}
+                          aria-label={`Edit hygiene check for ${record.area}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.area}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Date"
+                            value={formatDate(record.check_date)}
+                          />
+                          <DetailItem
+                            label="Inspector"
+                            value={record.inspector_name}
+                          />
+                          <DetailItem
+                            label="Action"
+                            value={
+                              record.corrective_action ||
+                              "No corrective action logged"
+                            }
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No hygiene checks logged yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "water" ? (
-          <SectionCard
-            title="Water quality tests"
-            description="Lab results, sample points, and accepted limits."
-            action={
-              canManageCompliance ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetWaterForm();
-                    setActiveModal("water");
-                  }}
-                  aria-label="Add water quality test"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {waterTests.length ? (
-              waterTests.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {canManageCompliance ? (
+            {activeTab === "water" ? (
+              <SectionCard
+                title="Water quality tests"
+                description="Lab results, sample points, and accepted limits."
+                action={
+                  canManageCompliance ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedWaterId(record.id);
+                        resetWaterForm();
                         setActiveModal("water");
                       }}
-                      aria-label={`Edit water test ${record.parameter_name}`}
+                      aria-label="Add water quality test"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.parameter_name}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem
-                        label="Location"
-                        value={record.sample_location}
-                      />
-                      <DetailItem
-                        label="Result"
-                        value={`${record.result_value} ${record.unit_name}`.trim()}
-                      />
-                      <DetailItem
-                        label="Standard"
-                        value={record.standard_limit}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No water quality tests recorded yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {waterTests.length ? (
+                  waterTests.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {canManageCompliance ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedWaterId(record.id);
+                            setActiveModal("water");
+                          }}
+                          aria-label={`Edit water test ${record.parameter_name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.parameter_name}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Location"
+                            value={record.sample_location}
+                          />
+                          <DetailItem
+                            label="Result"
+                            value={`${record.result_value} ${record.unit_name}`.trim()}
+                          />
+                          <DetailItem
+                            label="Standard"
+                            value={record.standard_limit}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No water quality tests recorded yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "safety" ? (
-          <SectionCard
-            title="Safety records"
-            description="Incident tracking, severity, and corrective actions."
-            action={
-              canManageCompliance ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetSafetyForm();
-                    setActiveModal("safety");
-                  }}
-                  aria-label="Add safety record"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {safetyRecords.length ? (
-              safetyRecords.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {canManageCompliance ? (
+            {activeTab === "safety" ? (
+              <SectionCard
+                title="Safety records"
+                description="Incident tracking, severity, and corrective actions."
+                action={
+                  canManageCompliance ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedSafetyId(record.id);
+                        resetSafetyForm();
                         setActiveModal("safety");
                       }}
-                      aria-label={`Edit safety record ${record.incident_type}`}
+                      aria-label="Add safety record"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.incident_type}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem label="Severity" value={record.severity} />
-                      <DetailItem
-                        label="Reported by"
-                        value={record.reported_by}
-                      />
-                      <DetailItem
-                        label="Action"
-                        value={record.action_taken || "No action logged"}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No safety records available yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {safetyRecords.length ? (
+                  safetyRecords.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {canManageCompliance ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedSafetyId(record.id);
+                            setActiveModal("safety");
+                          }}
+                          aria-label={`Edit safety record ${record.incident_type}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.incident_type}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Severity"
+                            value={record.severity}
+                          />
+                          <DetailItem
+                            label="Reported by"
+                            value={record.reported_by}
+                          />
+                          <DetailItem
+                            label="Action"
+                            value={record.action_taken || "No action logged"}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No safety records available yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "training" ? (
-          <SectionCard
-            title="Training records"
-            description="Employee-linked compliance training and certificate details."
-            action={
-              canManageCompliance ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetTrainingForm();
-                    setActiveModal("training");
-                  }}
-                  aria-label="Add training record"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {trainingRecords.length ? (
-              trainingRecords.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {canManageCompliance ? (
+            {activeTab === "training" ? (
+              <SectionCard
+                title="Training records"
+                description="Employee-linked compliance training and certificate details."
+                action={
+                  canManageCompliance ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedTrainingId(record.id);
+                        resetTrainingForm();
                         setActiveModal("training");
                       }}
-                      aria-label={`Edit training record for ${record.employee_name}`}
+                      aria-label="Add training record"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.training_title}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.employee_name}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem label="Trainer" value={record.trainer_name} />
-                      <DetailItem
-                        label="Date"
-                        value={formatDate(record.training_date)}
-                      />
-                      <DetailItem
-                        label="Expiry"
-                        value={formatDate(record.expiry_date)}
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No training records available yet." />
-            )}
-          </SectionCard>
-        ) : null}
+                  ) : null
+                }
+              >
+                {trainingRecords.length ? (
+                  trainingRecords.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {canManageCompliance ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedTrainingId(record.id);
+                            setActiveModal("training");
+                          }}
+                          aria-label={`Edit training record for ${record.employee_name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.training_title}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.employee_name}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Trainer"
+                            value={record.trainer_name}
+                          />
+                          <DetailItem
+                            label="Date"
+                            value={formatDate(record.training_date)}
+                          />
+                          <DetailItem
+                            label="Expiry"
+                            value={formatDate(record.expiry_date)}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No training records available yet." />
+                )}
+              </SectionCard>
+            ) : null}
 
-        {activeTab === "documents" ? (
-          <SectionCard
-            title="Compliance documents"
-            description="Official files with issue dates, expiry dates, and attachments."
-            action={
-              canManageCompliance ? (
-                <button
-                  type="button"
-                  className={iconButtonClassName}
-                  onClick={() => {
-                    resetDocumentForm();
-                    setActiveModal("document");
-                  }}
-                  aria-label="Add compliance document"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : null
-            }
-          >
-            {documents.length ? (
-              documents.map((record) => (
-                <article key={record.id} className={recordCardClassName}>
-                  {canManageCompliance ? (
+            {activeTab === "documents" ? (
+              <SectionCard
+                title="Compliance documents"
+                description="Official files with issue dates, expiry dates, and attachments."
+                action={
+                  canManageCompliance ? (
                     <button
                       type="button"
-                      className={recordEditButtonClassName}
+                      className={iconButtonClassName}
                       onClick={() => {
-                        setSelectedDocumentId(record.id);
+                        resetDocumentForm();
                         setActiveModal("document");
                       }}
-                      aria-label={`Edit document ${record.title}`}
+                      aria-label="Add compliance document"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
-                  ) : null}
-                  <div className="flex flex-1 flex-col gap-4">
-                    <div className="space-y-1 pr-10">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                        {record.title}
-                      </h3>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                        {record.status}
-                      </p>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <DetailItem label="Type" value={record.document_type} />
-                      <DetailItem
-                        label="Issued"
-                        value={formatDate(record.issue_date)}
-                      />
-                      <DetailItem
-                        label="File"
-                        value={
-                          record.file ? (
-                            <a
-                              href={resolveApiAssetUrl(record.file) ?? "#"}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sky-700 underline underline-offset-4"
-                            >
-                              View file
-                            </a>
-                          ) : (
-                            "No file attached"
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <EmptyState message="No compliance documents uploaded yet." />
-            )}
-          </SectionCard>
-        ) : null}
-        </div>
+                  ) : null
+                }
+              >
+                {documents.length ? (
+                  documents.map((record) => (
+                    <article key={record.id} className={recordCardClassName}>
+                      {canManageCompliance ? (
+                        <button
+                          type="button"
+                          className={recordEditButtonClassName}
+                          onClick={() => {
+                            setSelectedDocumentId(record.id);
+                            setActiveModal("document");
+                          }}
+                          aria-label={`Edit document ${record.title}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <div className="flex flex-1 flex-col gap-4">
+                        <div className="space-y-1 pr-10">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {record.title}
+                          </h3>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {record.status}
+                          </p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <DetailItem
+                            label="Type"
+                            value={record.document_type}
+                          />
+                          <DetailItem
+                            label="Issued"
+                            value={formatDate(record.issue_date)}
+                          />
+                          <DetailItem
+                            label="File"
+                            value={
+                              record.file ? (
+                                <a
+                                  href={resolveApiAssetUrl(record.file) ?? "#"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-sky-700 underline underline-offset-4"
+                                >
+                                  View file
+                                </a>
+                              ) : (
+                                "No file attached"
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <EmptyState message="No compliance documents uploaded yet." />
+                )}
+              </SectionCard>
+            ) : null}
+          </div>
 
-        <footer className="panel mt-auto px-4 py-3">
-          <p className="text-sm leading-6 text-slate-600">
-            <span className="font-semibold text-sky-700">
-              {activeFlowItem.label}
-            </span>{" "}
-            {activeFlowItem.detail}
-          </p>
-        </footer>
+          <footer className="panel mt-auto px-4 py-3">
+            <p className="text-sm leading-6 text-slate-600">
+              <span className="font-semibold text-sky-700">
+                {activeFlowItem.label}
+              </span>{" "}
+              {activeFlowItem.detail}
+            </p>
+          </footer>
         </div>
       </div>
       {activeModal === "hygiene" ? (

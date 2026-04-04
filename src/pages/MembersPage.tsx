@@ -571,394 +571,394 @@ export function MembersPage() {
 
       <div className="module-page-stage justify-start">
         <section className="panel p-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div
-              ref={pickerContainerRef}
-              className="flex flex-col gap-3 lg:flex-row lg:items-center"
-            >
-              <label className="flex min-w-[260px] items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5 text-sm text-slate-600">
-                <Search className="h-4 w-4 text-slate-400" />
-                <input
-                  className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  placeholder="Search members"
-                  value={searchValue}
-                  onChange={(event) => handleSearchChange(event.target.value)}
-                />
-              </label>
-
-              <div className="relative min-w-[200px]">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActivePicker((current) =>
-                      current === "role" ? null : "role",
-                    )
-                  }
-                  className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-                  aria-haspopup="listbox"
-                  aria-expanded={activePicker === "role"}
-                >
-                  <span>{selectedRoleLabel}</span>
-                  <ChevronDown
-                    className={[
-                      "h-4 w-4 text-slate-400 transition",
-                      activePicker === "role" ? "rotate-180" : "",
-                    ].join(" ")}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div
+                ref={pickerContainerRef}
+                className="flex flex-col gap-3 lg:flex-row lg:items-center"
+              >
+                <label className="flex min-w-[260px] items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5 text-sm text-slate-600">
+                  <Search className="h-4 w-4 text-slate-400" />
+                  <input
+                    className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                    placeholder="Search members"
+                    value={searchValue}
+                    onChange={(event) => handleSearchChange(event.target.value)}
                   />
-                </button>
+                </label>
 
-                {activePicker === "role" ? (
-                  <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-                    <div className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                      Filter by role
-                    </div>
-                    <div className="space-y-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleRoleFilterChange("all");
-                          setActivePicker(null);
-                        }}
-                        className={[
-                          "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                          roleFilter === "all"
-                            ? "bg-sky-50 text-sky-700"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                        ].join(" ")}
-                      >
-                        <span>All roles</span>
-                        {roleFilter === "all" ? (
-                          <Check className="h-4 w-4" />
-                        ) : null}
-                      </button>
-                      {roles.map((role) => (
+                <div className="relative min-w-[200px]">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActivePicker((current) =>
+                        current === "role" ? null : "role",
+                      )
+                    }
+                    className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                    aria-haspopup="listbox"
+                    aria-expanded={activePicker === "role"}
+                  >
+                    <span>{selectedRoleLabel}</span>
+                    <ChevronDown
+                      className={[
+                        "h-4 w-4 text-slate-400 transition",
+                        activePicker === "role" ? "rotate-180" : "",
+                      ].join(" ")}
+                    />
+                  </button>
+
+                  {activePicker === "role" ? (
+                    <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
+                      <div className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                        Filter by role
+                      </div>
+                      <div className="space-y-1">
                         <button
-                          key={role.id}
                           type="button"
                           onClick={() => {
-                            handleRoleFilterChange(role.code);
+                            handleRoleFilterChange("all");
                             setActivePicker(null);
                           }}
                           className={[
                             "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                            roleFilter === role.code
+                            roleFilter === "all"
                               ? "bg-sky-50 text-sky-700"
                               : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
                           ].join(" ")}
                         >
-                          <span>{role.name}</span>
-                          {roleFilter === role.code ? (
+                          <span>All roles</span>
+                          {roleFilter === "all" ? (
+                            <Check className="h-4 w-4" />
+                          ) : null}
+                        </button>
+                        {roles.map((role) => (
+                          <button
+                            key={role.id}
+                            type="button"
+                            onClick={() => {
+                              handleRoleFilterChange(role.code);
+                              setActivePicker(null);
+                            }}
+                            className={[
+                              "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                              roleFilter === role.code
+                                ? "bg-sky-50 text-sky-700"
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                            ].join(" ")}
+                          >
+                            <span>{role.name}</span>
+                            {roleFilter === role.code ? (
+                              <Check className="h-4 w-4" />
+                            ) : null}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="relative min-w-[200px]">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActivePicker((current) =>
+                        current === "status" ? null : "status",
+                      )
+                    }
+                    className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                    aria-haspopup="listbox"
+                    aria-expanded={activePicker === "status"}
+                  >
+                    <span>{selectedStatusLabel}</span>
+                    <ChevronDown
+                      className={[
+                        "h-4 w-4 text-slate-400 transition",
+                        activePicker === "status" ? "rotate-180" : "",
+                      ].join(" ")}
+                    />
+                  </button>
+
+                  {activePicker === "status" ? (
+                    <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
+                      <div className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                        Filter by status
+                      </div>
+                      {[
+                        { label: "All statuses", value: "all" },
+                        { label: "Active", value: "active" },
+                        { label: "Inactive", value: "inactive" },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            handleStatusFilterChange(option.value);
+                            setActivePicker(null);
+                          }}
+                          className={[
+                            "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                            statusFilter === option.value
+                              ? "bg-sky-50 text-sky-700"
+                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                          ].join(" ")}
+                        >
+                          <span>{option.label}</span>
+                          {statusFilter === option.value ? (
                             <Check className="h-4 w-4" />
                           ) : null}
                         </button>
                       ))}
                     </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="relative min-w-[200px]">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActivePicker((current) =>
-                      current === "status" ? null : "status",
-                    )
-                  }
-                  className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-                  aria-haspopup="listbox"
-                  aria-expanded={activePicker === "status"}
-                >
-                  <span>{selectedStatusLabel}</span>
-                  <ChevronDown
-                    className={[
-                      "h-4 w-4 text-slate-400 transition",
-                      activePicker === "status" ? "rotate-180" : "",
-                    ].join(" ")}
-                  />
-                </button>
-
-                {activePicker === "status" ? (
-                  <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-                    <div className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                      Filter by status
-                    </div>
-                    {[
-                      { label: "All statuses", value: "all" },
-                      { label: "Active", value: "active" },
-                      { label: "Inactive", value: "inactive" },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => {
-                          handleStatusFilterChange(option.value);
-                          setActivePicker(null);
-                        }}
-                        className={[
-                          "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                          statusFilter === option.value
-                            ? "bg-sky-50 text-sky-700"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                        ].join(" ")}
-                      >
-                        <span>{option.label}</span>
-                        {statusFilter === option.value ? (
-                          <Check className="h-4 w-4" />
-                        ) : null}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-1">
-                {([10, 6, 5] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => handlePageSizeChange(option)}
-                    className={[
-                      "rounded-[1rem] px-3 py-1.5 text-sm font-medium transition",
-                      pageSize === option
-                        ? "bg-white text-sky-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
-                        : "text-slate-500 hover:text-slate-800",
-                    ].join(" ")}
-                    aria-pressed={pageSize === option}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 xl:justify-end">
-              <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-1">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentPage((page) => Math.max(1, page - 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-[1rem] text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:opacity-45"
-                  aria-label="Previous page"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-                <div className="min-w-[88px] px-2 text-center text-sm font-medium text-slate-600">
-                  {currentPage}/{totalPages}
+                  ) : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentPage((page) => Math.min(totalPages, page + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-[1rem] text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:opacity-45"
-                  aria-label="Next page"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+
+                <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-1">
+                  {([10, 6, 5] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => handlePageSizeChange(option)}
+                      className={[
+                        "rounded-[1rem] px-3 py-1.5 text-sm font-medium transition",
+                        pageSize === option
+                          ? "bg-white text-sky-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                          : "text-slate-500 hover:text-slate-800",
+                      ].join(" ")}
+                      aria-pressed={pageSize === option}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={openCreateModal}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-100 text-sky-700 transition hover:border-sky-300 hover:bg-sky-200/70 hover:text-sky-800"
-                aria-label="Create member"
-                title="Create member"
-              >
-                <UserPlus className="h-5 w-5" />
-              </button>
+              <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+                <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.max(1, page - 1))
+                    }
+                    disabled={currentPage === 1}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-[1rem] text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:opacity-45"
+                    aria-label="Previous page"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  <div className="min-w-[88px] px-2 text-center text-sm font-medium text-slate-600">
+                    {currentPage}/{totalPages}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(totalPages, page + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-[1rem] text-slate-600 transition hover:bg-white hover:text-slate-900 disabled:opacity-45"
+                    aria-label="Next page"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={openCreateModal}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-100 text-sky-700 transition hover:border-sky-300 hover:bg-sky-200/70 hover:text-sky-800"
+                  aria-label="Create member"
+                  title="Create member"
+                >
+                  <UserPlus className="h-5 w-5" />
+                </button>
+              </div>
             </div>
+
+            {pageError ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {pageError}
+              </div>
+            ) : null}
+
+            {pageMessage ? (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                {pageMessage}
+              </div>
+            ) : null}
           </div>
 
-          {pageError ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {pageError}
-            </div>
-          ) : null}
+          <div className="mt-5 min-h-0 overflow-x-auto overflow-y-hidden">
+            {isLoading ? (
+              <div className="flex min-h-[420px] items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-4 text-sm text-slate-600">
+                <LoaderCircle className="h-4 w-4 animate-spin text-sky-700" />
+                Loading members and roles...
+              </div>
+            ) : members.length === 0 ? (
+              <div className="flex min-h-[420px] items-start rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-6 text-sm text-slate-600">
+                No members match the current filters.
+              </div>
+            ) : (
+              <table className="min-w-full border-separate border-spacing-0">
+                <thead>
+                  <tr>
+                    <th className="rounded-tl-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      User
+                    </th>
+                    <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Role
+                    </th>
+                    <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Phone
+                    </th>
+                    <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Status
+                    </th>
+                    <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Joined
+                    </th>
+                    <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Last login
+                    </th>
+                    <th className="rounded-tr-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((member, index) => {
+                    const photoUrl = resolveApiAssetUrl(member.profile_photo);
+                    const isLast =
+                      index === members.length - 1 && fillerRowCount === 0;
+                    const rowClass = isLast
+                      ? "border-b border-slate-200/80"
+                      : "border-b border-slate-200/60";
 
-          {pageMessage ? (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              {pageMessage}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mt-5 min-h-0 overflow-x-auto overflow-y-hidden">
-          {isLoading ? (
-            <div className="flex min-h-[420px] items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-4 text-sm text-slate-600">
-              <LoaderCircle className="h-4 w-4 animate-spin text-sky-700" />
-              Loading members and roles...
-            </div>
-          ) : members.length === 0 ? (
-            <div className="flex min-h-[420px] items-start rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-6 text-sm text-slate-600">
-              No members match the current filters.
-            </div>
-          ) : (
-            <table className="min-w-full border-separate border-spacing-0">
-              <thead>
-                <tr>
-                  <th className="rounded-tl-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                    User
-                  </th>
-                  <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                    Role
-                  </th>
-                  <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                    Phone
-                  </th>
-                  <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                    Status
-                  </th>
-                  <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                    Joined
-                  </th>
-                  <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                    Last login
-                  </th>
-                  <th className="rounded-tr-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {members.map((member, index) => {
-                  const photoUrl = resolveApiAssetUrl(member.profile_photo);
-                  const isLast =
-                    index === members.length - 1 && fillerRowCount === 0;
-                  const rowClass = isLast
-                    ? "border-b border-slate-200/80"
-                    : "border-b border-slate-200/60";
-
-                  return (
-                    <tr key={member.id} className="group">
-                      <td
-                        className={`${rowClass} border-l border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <div className="flex min-w-[260px] items-center gap-3">
-                          {photoUrl ? (
-                            <img
-                              src={photoUrl}
-                              alt={getMemberLabel(member)}
-                              className="h-11 w-11 rounded-2xl object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-100 text-sm font-semibold text-sky-700">
-                              {getMemberInitials(member) || "IB"}
+                    return (
+                      <tr key={member.id} className="group">
+                        <td
+                          className={`${rowClass} border-l border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <div className="flex min-w-[260px] items-center gap-3">
+                            {photoUrl ? (
+                              <img
+                                src={photoUrl}
+                                alt={getMemberLabel(member)}
+                                className="h-11 w-11 rounded-2xl object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-100 text-sm font-semibold text-sky-700">
+                                {getMemberInitials(member) || "IB"}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-900">
+                                {getMemberLabel(member)}
+                              </p>
+                              <p className="mt-1 truncate text-sm text-slate-500">
+                                {member.email}
+                              </p>
                             </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">
-                              {getMemberLabel(member)}
-                            </p>
-                            <p className="mt-1 truncate text-sm text-slate-500">
-                              {member.email}
-                            </p>
                           </div>
-                        </div>
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
-                      >
-                        {member.role.name}
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
-                      >
-                        {member.phone_number || "No phone"}
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <span
-                          className={[
-                            "inline-flex rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.24em]",
-                            member.is_active
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : "border-slate-200 bg-slate-100 text-slate-500",
-                          ].join(" ")}
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
                         >
-                          {member.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
-                      >
-                        {formatDate(member.date_joined)}
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
-                      >
-                        {formatDate(member.last_login)}
-                      </td>
-                      <td
-                        className={`${rowClass} rounded-br-2xl border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(member)}
-                          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          {member.role.name}
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
                         >
-                          <Pencil className="h-4 w-4" />
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {Array.from({ length: fillerRowCount }).map((_, index) => {
-                  const isLastFiller = index === fillerRowCount - 1;
-                  const rowClass = isLastFiller
-                    ? "border-b border-slate-200/80"
-                    : "border-b border-slate-200/60";
+                          {member.phone_number || "No phone"}
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <span
+                            className={[
+                              "inline-flex rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.24em]",
+                              member.is_active
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 bg-slate-100 text-slate-500",
+                            ].join(" ")}
+                          >
+                            {member.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
+                        >
+                          {formatDate(member.date_joined)}
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4 text-sm text-slate-600`}
+                        >
+                          {formatDate(member.last_login)}
+                        </td>
+                        <td
+                          className={`${rowClass} rounded-br-2xl border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(member)}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {Array.from({ length: fillerRowCount }).map((_, index) => {
+                    const isLastFiller = index === fillerRowCount - 1;
+                    const rowClass = isLastFiller
+                      ? "border-b border-slate-200/80"
+                      : "border-b border-slate-200/60";
 
-                  return (
-                    <tr key={`filler-${index}`} aria-hidden="true">
-                      <td
-                        className={`${rowClass} border-l border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <div className="h-11" />
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <div className="h-6" />
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <div className="h-6" />
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <div className="h-6" />
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <div className="h-6" />
-                      </td>
-                      <td
-                        className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <div className="h-6" />
-                      </td>
-                      <td
-                        className={`${rowClass} rounded-br-2xl border-r border-slate-200/80 bg-white px-4 py-4`}
-                      >
-                        <div className="h-6" />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
+                    return (
+                      <tr key={`filler-${index}`} aria-hidden="true">
+                        <td
+                          className={`${rowClass} border-l border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <div className="h-11" />
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <div className="h-6" />
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <div className="h-6" />
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <div className="h-6" />
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <div className="h-6" />
+                        </td>
+                        <td
+                          className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <div className="h-6" />
+                        </td>
+                        <td
+                          className={`${rowClass} rounded-br-2xl border-r border-slate-200/80 bg-white px-4 py-4`}
+                        >
+                          <div className="h-6" />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </section>
       </div>
 

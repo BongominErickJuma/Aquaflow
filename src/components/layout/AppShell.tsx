@@ -21,7 +21,10 @@ import { startTransition, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { useNotifications } from "../../features/notifications/NotificationsProvider";
-import { markAllNotificationsRead, markNotificationRead } from "../../lib/api/notifications";
+import {
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "../../lib/api/notifications";
 import { resolveApiAssetUrl } from "../../lib/api/auth";
 import type { NotificationModule } from "../../types/notifications";
 
@@ -90,7 +93,9 @@ export function AppShell() {
   const location = useLocation();
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [actionId, setActionId] = useState<number | string | "all" | null>(null);
+  const [actionId, setActionId] = useState<number | string | "all" | null>(
+    null,
+  );
   const fullName =
     [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
     user?.email ||
@@ -256,7 +261,8 @@ export function AppShell() {
                             No notifications yet
                           </p>
                           <p className="mt-2 text-xs leading-6 text-slate-500">
-                            New alerts from inventory, production, sales, and finance will appear here.
+                            New alerts from inventory, production, sales, and
+                            finance will appear here.
                           </p>
                         </div>
                       ) : (
@@ -289,14 +295,19 @@ export function AppShell() {
                                       type="button"
                                       onClick={(event) => {
                                         event.stopPropagation();
-                                        void handleQuickMarkRead(notification.id);
+                                        void handleQuickMarkRead(
+                                          notification.id,
+                                        );
                                       }}
-                                      disabled={actionId === `read-${notification.id}`}
+                                      disabled={
+                                        actionId === `read-${notification.id}`
+                                      }
                                       aria-label={`Mark ${notification.title} as read`}
                                       title="Mark read"
                                       className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-sky-200 bg-sky-100 text-sky-700 transition hover:bg-sky-200/70 disabled:opacity-70"
                                     >
-                                      {actionId === `read-${notification.id}` ? (
+                                      {actionId ===
+                                      `read-${notification.id}` ? (
                                         <LoaderCircle className="h-3 w-3 animate-spin" />
                                       ) : (
                                         <Check className="h-3 w-3" />

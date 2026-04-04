@@ -140,8 +140,9 @@ export function NotificationsPage() {
   }, [filter, notifications]);
 
   const summary = useMemo(() => {
-    const unread = notifications.filter((notification) => !notification.is_read)
-      .length;
+    const unread = notifications.filter(
+      (notification) => !notification.is_read,
+    ).length;
     const resolved = notifications.filter(
       (notification) => notification.status === "resolved",
     ).length;
@@ -172,7 +173,9 @@ export function NotificationsPage() {
       setSelectedIds((current) =>
         current.filter(
           (id) =>
-            !filteredNotifications.some((notification) => notification.id === id),
+            !filteredNotifications.some(
+              (notification) => notification.id === id,
+            ),
         ),
       );
       return;
@@ -569,13 +572,18 @@ export function NotificationsPage() {
                         </div>
 
                         <div className="flex flex-wrap gap-6 text-sm text-slate-500">
-                          <span>Created {formatTimestamp(notification.created_at)}</span>
+                          <span>
+                            Created {formatTimestamp(notification.created_at)}
+                          </span>
                           <span>
                             Read by {notification.read_summary.read} of{" "}
                             {notification.read_summary.total}
                           </span>
                           {notification.read_at ? (
-                            <span>You read this on {formatTimestamp(notification.read_at)}</span>
+                            <span>
+                              You read this on{" "}
+                              {formatTimestamp(notification.read_at)}
+                            </span>
                           ) : null}
                         </div>
                       </div>
@@ -600,7 +608,9 @@ export function NotificationsPage() {
 
                         <button
                           type="button"
-                          onClick={() => navigate(getModuleRoute(notification.module))}
+                          onClick={() =>
+                            navigate(getModuleRoute(notification.module))
+                          }
                           aria-label={`Open ${formatModuleLabel(notification.module)} module`}
                           title="Open module"
                           className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
@@ -663,8 +673,8 @@ export function NotificationsPage() {
 
             <div className="mt-5 rounded-[24px] border border-amber-200 bg-amber-50/80 p-4">
               <p className="text-sm font-semibold text-amber-800">
-                {deleteWarning.warning.unread_count} member(s) have not read this
-                yet.
+                {deleteWarning.warning.unread_count} member(s) have not read
+                this yet.
               </p>
               {deleteWarning.warning.selected_count ? (
                 <p className="mt-2 text-sm leading-6 text-amber-700">

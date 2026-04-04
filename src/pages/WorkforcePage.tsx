@@ -1425,7 +1425,8 @@ export function WorkforcePage() {
                                 {record.status === "terminated" &&
                                 record.termination_date ? (
                                   <p className="mt-2 text-xs text-slate-500">
-                                    Terminated {formatDate(record.termination_date)}
+                                    Terminated{" "}
+                                    {formatDate(record.termination_date)}
                                   </p>
                                 ) : null}
                               </td>
@@ -3081,15 +3082,15 @@ export function WorkforcePage() {
                     }
                     options={[
                       { label: "Select employee", value: "" },
-                      ...buildAssignableEmployeeOptions(payrollForm.employee).map(
-                        (record) => ({
-                          label:
-                            record.status === "active"
-                              ? record.full_name
-                              : `${record.full_name} (${titleCase(record.status)})`,
-                          value: String(record.id),
-                        }),
-                      ),
+                      ...buildAssignableEmployeeOptions(
+                        payrollForm.employee,
+                      ).map((record) => ({
+                        label:
+                          record.status === "active"
+                            ? record.full_name
+                            : `${record.full_name} (${titleCase(record.status)})`,
+                        value: String(record.id),
+                      })),
                     ]}
                     onChange={(value) =>
                       setPayrollForm((current) => ({

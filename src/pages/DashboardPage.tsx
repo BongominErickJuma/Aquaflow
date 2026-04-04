@@ -17,7 +17,10 @@ import {
   fetchDashboardOverview,
   runDashboardAnalytics,
 } from "../lib/api/dashboard";
-import type { DashboardOverviewResponse, SeverityTone } from "../types/dashboard";
+import type {
+  DashboardOverviewResponse,
+  SeverityTone,
+} from "../types/dashboard";
 
 function WindowCard({
   children,
@@ -387,8 +390,7 @@ export function DashboardPage() {
   const inventory = overview?.inventory;
   const business = overview?.business;
 
-  const companyName =
-    business?.context.company_names?.[0] || "IBMS Ice Ltd";
+  const companyName = business?.context.company_names?.[0] || "IBMS Ice Ltd";
   const generatedAt =
     combined?.updated_at ||
     production?.updated_at ||
@@ -510,7 +512,9 @@ export function DashboardPage() {
     (combined.dashboard_context.compliance?.documents_expiring_soon ?? 0);
   const lowStockItems = inventory?.low_stock_items ?? [];
   const topClient =
-    combined.dashboard_context.sales?.top_clients?.[0] ?? sales?.top_clients?.[0] ?? null;
+    combined.dashboard_context.sales?.top_clients?.[0] ??
+    sales?.top_clients?.[0] ??
+    null;
 
   const efficiency = toNumber(combined.production_efficiency_pct);
   const availability = toNumber(
@@ -523,14 +527,20 @@ export function DashboardPage() {
       production?.maintenance_completion_rate_pct,
   );
   const deliveryRate =
-    (combined.dashboard_context.sales?.total_orders ?? sales?.total_orders ?? 0) > 0
-      ? (
-          ((combined.dashboard_context.sales?.delivered_orders ?? sales?.delivered_orders ?? 0) /
-            (combined.dashboard_context.sales?.total_orders ?? sales?.total_orders ?? 1)) *
-          100
-        )
+    (combined.dashboard_context.sales?.total_orders ??
+      sales?.total_orders ??
+      0) > 0
+      ? ((combined.dashboard_context.sales?.delivered_orders ??
+          sales?.delivered_orders ??
+          0) /
+          (combined.dashboard_context.sales?.total_orders ??
+            sales?.total_orders ??
+            1)) *
+        100
       : 0;
-  const stockHealth = toNumber(combined.dashboard_context.inventory?.stock_health_pct);
+  const stockHealth = toNumber(
+    combined.dashboard_context.inventory?.stock_health_pct,
+  );
   const totalSales = toNumber(combined.total_sales_amount);
   const revenue = toNumber(combined.revenue_amount);
   const profit = toNumber(combined.profit_estimate);
@@ -546,21 +556,28 @@ export function DashboardPage() {
     combined.dashboard_context.business?.expired_license_count ?? 0;
   const activeKpis = combined.active_kpi_count;
   const utilityCost = toNumber(
-    combined.dashboard_context.production?.utility_total_cost ?? production?.utility_total_cost,
+    combined.dashboard_context.production?.utility_total_cost ??
+      production?.utility_total_cost,
   );
   const finishedGoodsLines = inventory?.finished_goods_item_count ?? 0;
   const paidInvoices =
-    combined.dashboard_context.finance?.paid_invoices ?? finance?.paid_invoices ?? 0;
+    combined.dashboard_context.finance?.paid_invoices ??
+    finance?.paid_invoices ??
+    0;
   const totalInvoices = finance?.total_invoices ?? 0;
   const totalCosts = toNumber(
-    combined.dashboard_context.finance?.total_cost_amount ?? finance?.total_cost_amount,
+    combined.dashboard_context.finance?.total_cost_amount ??
+      finance?.total_cost_amount,
   );
   const activeInsurance = finance?.context.active_insurance_records ?? 0;
   const openSafetyRecords =
     combined.dashboard_context.compliance?.open_safety_records ?? 0;
-  const totalTrackedLicenses = activeLicenses + expiringLicenses + expiredLicenses;
+  const totalTrackedLicenses =
+    activeLicenses + expiringLicenses + expiredLicenses;
   const expiredLicenseRate =
-    totalTrackedLicenses > 0 ? (expiredLicenses / totalTrackedLicenses) * 100 : 0;
+    totalTrackedLicenses > 0
+      ? (expiredLicenses / totalTrackedLicenses) * 100
+      : 0;
   const openSafetyRate =
     complianceWatch > 0 ? (openSafetyRecords / complianceWatch) * 100 : 0;
 
@@ -621,7 +638,8 @@ export function DashboardPage() {
                 {companyName}
               </h3>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                Saved cross-module analytics for operations, finance, sales, and inventory decisions.
+                Saved cross-module analytics for operations, finance, sales, and
+                inventory decisions.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -696,7 +714,8 @@ export function DashboardPage() {
                     Billing detail
                   </p>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Invoice settlement and cost markers from the saved analytics snapshot.
+                    Invoice settlement and cost markers from the saved analytics
+                    snapshot.
                   </p>
                 </div>
                 <TrendingUp className="h-5 w-5 text-emerald-500" />
@@ -767,7 +786,8 @@ export function DashboardPage() {
                   6 live signals
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  A simple read of the strongest and weakest operational signals across operations.
+                  A simple read of the strongest and weakest operational signals
+                  across operations.
                 </p>
               </div>
               <div className="text-right">
@@ -776,38 +796,38 @@ export function DashboardPage() {
                 </p>
               </div>
             </div>
-              <div className="border border-slate-200/80 bg-white p-5">
-                <div className="grid gap-4 md:grid-cols-2">
-                  {chartBars.map((bar) => (
-                    <div
-                      key={bar.label}
-                      className="border border-slate-200/80 bg-slate-50/70 px-4 py-3"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {bar.label} ({bar.formula})
-                        </p>
-                        <p className="shrink-0 text-sm font-semibold text-slate-950">
-                          {Math.round(bar.value)}%
-                        </p>
-                      </div>
-                      <div className="mt-3 overflow-hidden rounded-full border border-slate-200/80 bg-slate-100/90">
-                        <div
-                          className="h-3.5 rounded-full"
-                          style={{
-                            width: `${Math.max(0, Math.min(bar.value, 100))}%`,
-                            minWidth:
-                              Math.max(0, Math.min(bar.value, 100)) > 0
-                                ? "14px"
-                                : "0px",
-                            background: `linear-gradient(90deg, ${bar.softColor}, ${bar.color})`,
-                          }}
-                        />
-                      </div>
+            <div className="border border-slate-200/80 bg-white p-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                {chartBars.map((bar) => (
+                  <div
+                    key={bar.label}
+                    className="border border-slate-200/80 bg-slate-50/70 px-4 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {bar.label} ({bar.formula})
+                      </p>
+                      <p className="shrink-0 text-sm font-semibold text-slate-950">
+                        {Math.round(bar.value)}%
+                      </p>
                     </div>
-                  ))}
-                </div>
+                    <div className="mt-3 overflow-hidden rounded-full border border-slate-200/80 bg-slate-100/90">
+                      <div
+                        className="h-3.5 rounded-full"
+                        style={{
+                          width: `${Math.max(0, Math.min(bar.value, 100))}%`,
+                          minWidth:
+                            Math.max(0, Math.min(bar.value, 100)) > 0
+                              ? "14px"
+                              : "0px",
+                          background: `linear-gradient(90deg, ${bar.softColor}, ${bar.color})`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
           </div>
         );
       case "status":
@@ -925,24 +945,24 @@ export function DashboardPage() {
                 detail="Production interruptions still unresolved."
                 tone={openDowntime > 0 ? "medium" : "low"}
               />
-                <ListMetric
-                  title="Compliance follow-up"
-                  value={`${complianceWatch}`}
-                  detail="Compliance-related items that still need attention."
-                  tone={complianceWatch > 0 ? "medium" : "low"}
-                />
-                <ListMetric
-                  title="Utility cost"
-                  value={formatAmount(utilityCost)}
-                  detail="Water and electricity cost accumulated up to this analytics date."
-                  tone={utilityCost > 0 ? "low" : "medium"}
-                />
-                <ListMetric
-                  title="Finished product lines"
-                  value={`${finishedGoodsLines}`}
-                  detail="Tracked finished-product stock lines in inventory."
-                  tone={finishedGoodsLines > 0 ? "low" : "medium"}
-                />
+              <ListMetric
+                title="Compliance follow-up"
+                value={`${complianceWatch}`}
+                detail="Compliance-related items that still need attention."
+                tone={complianceWatch > 0 ? "medium" : "low"}
+              />
+              <ListMetric
+                title="Utility cost"
+                value={formatAmount(utilityCost)}
+                detail="Water and electricity cost accumulated up to this analytics date."
+                tone={utilityCost > 0 ? "low" : "medium"}
+              />
+              <ListMetric
+                title="Finished product lines"
+                value={`${finishedGoodsLines}`}
+                detail="Tracked finished-product stock lines in inventory."
+                tone={finishedGoodsLines > 0 ? "low" : "medium"}
+              />
             </div>
           </div>
         );
@@ -976,7 +996,8 @@ export function DashboardPage() {
                   Profit estimate
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  {formatAmount(profit)} based on {formatAmount(totalSales)} sales and {formatAmount(revenue)} recognized revenue.
+                  {formatAmount(profit)} based on {formatAmount(totalSales)}{" "}
+                  sales and {formatAmount(revenue)} recognized revenue.
                 </p>
               </div>
               <div className="border border-slate-200/80 bg-slate-50/70 p-4">
@@ -1013,7 +1034,8 @@ export function DashboardPage() {
                 {companyName}
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Saved cross-module analytics for operations, finance, sales, and inventory decisions.
+                Saved cross-module analytics for operations, finance, sales, and
+                inventory decisions.
               </p>
             </div>
 
@@ -1034,7 +1056,9 @@ export function DashboardPage() {
                 <p className="mt-2 text-sm font-semibold text-slate-950">
                   {formatAmount(profit)}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">current analytics view</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  current analytics view
+                </p>
               </div>
               {adminRefreshControl ? (
                 adminRefreshControl
@@ -1044,9 +1068,13 @@ export function DashboardPage() {
                     Active Attention
                   </p>
                   <p className="mt-2 text-sm font-semibold text-slate-950">
-                    {combined.low_stock_alert_count + dueMaintenance + overdueInvoices}
+                    {combined.low_stock_alert_count +
+                      dueMaintenance +
+                      overdueInvoices}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">queue items to watch</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    queue items to watch
+                  </p>
                 </div>
               )}
             </div>
@@ -1054,378 +1082,381 @@ export function DashboardPage() {
         </WindowCard>
 
         <div className="grid min-h-0 grid-cols-[0.88fr_1.45fr_0.92fr] grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-3 overflow-hidden">
-            <WindowCard
-              delay={0.05}
-              className="p-3"
-              onExpand={() => setExpandedCard("revenue")}
-              expandLabel="Expand revenue snapshot"
-            >
-              <div className="grid h-full min-h-0 grid-rows-[auto_auto_auto] gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Revenue Snapshot
-                  </p>
-                    <p className="mt-2 text-[1.75rem] font-semibold text-slate-950">
-                     {formatAmount(revenue)}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                     Recognized revenue in the latest saved snapshot.
-                    </p>
-                  </div>
-
-                  <div className="border border-slate-200/80 bg-slate-50/70 p-2.5">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-semibold text-slate-900">
-                          Billing detail
-                        </p>
-                        <p className="mt-1 text-[11px] leading-4 text-slate-500">
-                          Invoice settlement and cost markers from the saved analytics snapshot.
-                        </p>
-                      </div>
-                      <TrendingUp className="h-4 w-4 text-emerald-500" />
-                    </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      <div className="border border-slate-200/80 bg-white px-2 py-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                          Paid
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">
-                          {paidInvoices}/{totalInvoices}
-                        </p>
-                        <p className="mt-1 text-[10px] leading-4 text-slate-500">
-                          settled
-                        </p>
-                      </div>
-                      <div className="border border-slate-200/80 bg-white px-2 py-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                          Costs
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">
-                          {formatAmount(totalCosts)}
-                        </p>
-                        <p className="mt-1 text-[10px] leading-4 text-slate-500">
-                          saved total
-                        </p>
-                      </div>
-                      <div className="border border-slate-200/80 bg-white px-2 py-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                          Cover
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">
-                          {activeInsurance}
-                        </p>
-                        <p className="mt-1 text-[10px] leading-4 text-slate-500">
-                          active policies
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                <div className="grid min-h-0 content-between border border-slate-200/80 bg-[linear-gradient(180deg,#f7fbff,#edf4fb)] p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        Efficiency pulse
-                      </p>
-                      <p className="mt-1 text-[11px] leading-4 text-slate-500">
-                        Production efficiency from the latest saved summary.
-                      </p>
-                    </div>
-                    <Gauge className="h-4 w-4 text-sky-600" />
-                  </div>
-                  <div className="mt-4 flex items-center justify-center">
-                    <div className="relative flex h-24 w-24 items-center justify-center border border-sky-100 bg-white">
-                      <div className="absolute inset-3 border border-sky-50" />
-                      <div className="text-center">
-                        <p className="text-[1.65rem] font-semibold text-slate-950">
-                          {Math.round(efficiency)}%
-                        </p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">
-                          efficiency
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between gap-3 border border-slate-200/80 bg-white px-2.5 py-2">
-                    <p className="text-[11px] font-medium text-slate-500">
-                      Operational availability
-                    </p>
-                    <p className="text-sm font-semibold text-slate-950">
-                      {Math.round(availability)}%
-                    </p>
-                  </div>
-                </div>
+          <WindowCard
+            delay={0.05}
+            className="p-3"
+            onExpand={() => setExpandedCard("revenue")}
+            expandLabel="Expand revenue snapshot"
+          >
+            <div className="grid h-full min-h-0 grid-rows-[auto_auto_auto] gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Revenue Snapshot
+                </p>
+                <p className="mt-2 text-[1.75rem] font-semibold text-slate-950">
+                  {formatAmount(revenue)}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Recognized revenue in the latest saved snapshot.
+                </p>
               </div>
-            </WindowCard>
 
-            <WindowCard
-              delay={0.1}
-              className="p-4"
-              onExpand={() => setExpandedCard("growth")}
-              expandLabel="Expand growth metrics"
-            >
-              <div className="grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-4">
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                        Performance Signals
-                      </p>
-                      <p className="mt-2 text-[1.55rem] font-semibold text-slate-950">
-                        6 live signals
-                      </p>
-                      <p className="mt-1 text-sm text-slate-500">
-                        A simple read of the strongest and weakest operational signals across operations.
-                      </p>
-                    </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      Utilized metrics
-                    </p>
-                  </div>
-                </div>
-
-                  <div className="grid min-h-0 content-start gap-3">
-                    {chartBars.map((bar) => (
-                      <SignalBar
-                        key={bar.label}
-                        label={bar.label}
-                        value={bar.value}
-                        color={bar.color}
-                        softColor={bar.softColor}
-                        compact
-                      />
-                    ))}
-                  </div>
-                </div>
-              </WindowCard>
-
-            <WindowCard
-              delay={0.15}
-              className="p-4"
-              onExpand={() => setExpandedCard("status")}
-              expandLabel="Expand quick status"
-            >
-              <div className="grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3">
-                <div className="flex items-start justify-between gap-3">
+              <div className="border border-slate-200/80 bg-slate-50/70 p-2.5">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      Quick Status
+                    <p className="text-xs font-semibold text-slate-900">
+                      Billing detail
                     </p>
-                    <p className="mt-1 text-base font-semibold text-slate-950">
-                      Internal signals
-                    </p>
-                  </div>
-                  <Waves className="h-4 w-4 text-slate-300" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <MiniRing
-                    label="Expired Licenses"
-                    value={expiredLicenseRate}
-                    displayValue={`${expiredLicenses}`}
-                    suffix=""
-                    tone={expiredLicenses > 0 ? "medium" : "low"}
-                  />
-                  <MiniRing
-                    label="Open Safety"
-                    value={openSafetyRate}
-                    displayValue={`${openSafetyRecords}`}
-                    suffix=""
-                    tone={openSafetyRecords > 0 ? "medium" : "low"}
-                  />
-                </div>
-
-                <div className="grid min-h-0 content-start gap-1">
-                  <ListMetric
-                    title="Overdue invoices"
-                    value={`${overdueInvoices}`}
-                    detail="Invoices still pending collection follow-up."
-                    tone={overdueInvoices > 0 ? "medium" : "low"}
-                  />
-                  <ListMetric
-                    title="Maintenance due"
-                    value={`${dueMaintenance}`}
-                    detail="Schedules waiting for action from production."
-                    tone={dueMaintenance > 0 ? "medium" : "low"}
-                  />
-                  <ListMetric
-                    title="Low-stock alerts"
-                    value={`${combined.low_stock_alert_count}`}
-                    detail="Inventory items under reorder level."
-                    tone={lowStockItems.length > 0 ? "high" : "low"}
-                  />
-                </div>
-              </div>
-            </WindowCard>
-
-            <WindowCard
-              delay={0.2}
-              className="p-4"
-              onExpand={() => setExpandedCard("overview")}
-              expandLabel="Expand operations overview"
-            >
-              <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      Operations Overview
-                    </p>
-                    <p className="mt-1 text-base font-semibold text-slate-950">
-                      Module pulse
+                    <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                      Invoice settlement and cost markers from the saved
+                      analytics snapshot.
                     </p>
                   </div>
-                  <Factory className="h-4 w-4 text-slate-300" />
+                  <TrendingUp className="h-4 w-4 text-emerald-500" />
                 </div>
-
-                <div className="grid min-h-0 grid-cols-2 gap-3">
-                  <TinyStat
-                    label="Business"
-                    value={`${activeKpis}`}
-                    note={`${expiringLicenses} expiring licenses`}
-                  />
-                  <TinyStat
-                    label="Production"
-                    value={`${activeMachines}`}
-                    note={`${dueMaintenance} maintenance due`}
-                  />
-                  <TinyStat
-                    label="Finance"
-                    value={`${totalInvoices}`}
-                    note={`${overdueInvoices} overdue invoices`}
-                  />
-                  <TinyStat
-                    label="Compliance"
-                    value={`${openSafetyRecords}`}
-                    note="open safety records"
-                  />
-                </div>
-              </div>
-            </WindowCard>
-
-            <WindowCard
-              delay={0.24}
-              className="p-3"
-              onExpand={() => setExpandedCard("queue")}
-              expandLabel="Expand current queue"
-            >
-              <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2.5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      Current Queue
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="border border-slate-200/80 bg-white px-2 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Paid
                     </p>
                     <p className="mt-1 text-sm font-semibold text-slate-950">
-                      Active follow-ups
+                      {paidInvoices}/{totalInvoices}
+                    </p>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                      settled
                     </p>
                   </div>
-                  <AlertTriangle className="h-4 w-4 text-slate-300" />
-                </div>
-
-                <div className="grid min-h-0 content-start gap-0.5">
-                  <ListMetric
-                    title="Open downtime"
-                    value={`${openDowntime}`}
-                    detail="Production interruptions still unresolved."
-                    tone={openDowntime > 0 ? "medium" : "low"}
-                  />
-                    <ListMetric
-                      title="Compliance follow-up"
-                      value={`${complianceWatch}`}
-                      detail="Compliance-related items that still need attention."
-                      tone={complianceWatch > 0 ? "medium" : "low"}
-                    />
-                    <ListMetric
-                      title="Utility cost"
-                      value={formatAmount(utilityCost)}
-                      detail="Water and electricity cost accumulated up to this analytics date."
-                      tone={utilityCost > 0 ? "low" : "medium"}
-                    />
-                    <ListMetric
-                      title="Finished product lines"
-                      value={`${finishedGoodsLines}`}
-                      detail="Tracked finished-product stock lines in inventory."
-                      tone={finishedGoodsLines > 0 ? "low" : "medium"}
-                    />
+                  <div className="border border-slate-200/80 bg-white px-2 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Costs
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-950">
+                      {formatAmount(totalCosts)}
+                    </p>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                      saved total
+                    </p>
+                  </div>
+                  <div className="border border-slate-200/80 bg-white px-2 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Cover
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-950">
+                      {activeInsurance}
+                    </p>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                      active policies
+                    </p>
+                  </div>
                 </div>
               </div>
-            </WindowCard>
 
-            <WindowCard
-              delay={0.28}
-              className="p-4"
-              onExpand={() => setExpandedCard("highlights")}
-              expandLabel="Expand highlights"
-            >
-              <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3">
+              <div className="grid min-h-0 content-between border border-slate-200/80 bg-[linear-gradient(180deg,#f7fbff,#edf4fb)] p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      Highlights
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Efficiency pulse
                     </p>
-                    <p className="mt-1 text-base font-semibold text-slate-950">
-                      Snapshot notes
+                    <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                      Production efficiency from the latest saved summary.
                     </p>
                   </div>
-                  <TrendingUp className="h-4 w-4 text-slate-300" />
+                  <Gauge className="h-4 w-4 text-sky-600" />
                 </div>
-
-                <div className="grid min-h-0 content-start gap-3">
-                  <div className="border border-slate-200/80 bg-slate-50/70 p-3">
-                    <p className="text-xs font-semibold text-slate-900">
-                      {topClient?.client_name || "No top client yet"}
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                      {topClient
-                        ? `${topClient.order_count} order(s) contributing ${formatAmount(topClient.total_amount)}.`
-                        : "Sales analytics has not produced a top-client signal yet."}
-                    </p>
-                  </div>
-                  <div className="border border-slate-200/80 bg-slate-50/70 p-3">
-                    <p className="text-xs font-semibold text-slate-900">
-                      Profit estimate
-                    </p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">
-                       {formatAmount(profit)} based on {formatAmount(totalSales)} sales and {formatAmount(revenue)} recognized revenue.
+                <div className="mt-4 flex items-center justify-center">
+                  <div className="relative flex h-24 w-24 items-center justify-center border border-sky-100 bg-white">
+                    <div className="absolute inset-3 border border-sky-50" />
+                    <div className="text-center">
+                      <p className="text-[1.65rem] font-semibold text-slate-950">
+                        {Math.round(efficiency)}%
+                      </p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">
+                        efficiency
                       </p>
                     </div>
-                  <div className="border border-slate-200/80 bg-slate-50/70 p-3">
-                    <p className="text-xs font-semibold text-slate-900">
-                      Inventory watch
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                      {lowStockItems.length > 0
-                        ? `${lowStockItems[0]?.item_name} is currently leading the low-stock list.`
-                        : "No low-stock item is leading the queue right now."}
-                    </p>
                   </div>
                 </div>
+                <div className="mt-4 flex items-center justify-between gap-3 border border-slate-200/80 bg-white px-2.5 py-2">
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Operational availability
+                  </p>
+                  <p className="text-sm font-semibold text-slate-950">
+                    {Math.round(availability)}%
+                  </p>
+                </div>
               </div>
-            </WindowCard>
-          </div>
-        </div>
-        {expandedCard ? (
-          <DashboardModal
-            title={
-              expandedCard === "header"
-                ? "Dashboard Summary"
-                : expandedCard === "revenue"
-                  ? "Revenue Snapshot"
-                  : expandedCard === "growth"
-                    ? "Annual/Metric Growth"
-                    : expandedCard === "status"
-                      ? "Quick Status"
-                      : expandedCard === "overview"
-                        ? "Operations Overview"
-                        : expandedCard === "queue"
-                          ? "Current Queue"
-                          : "Highlights"
-            }
-            onClose={() => setExpandedCard(null)}
+            </div>
+          </WindowCard>
+
+          <WindowCard
+            delay={0.1}
+            className="p-4"
+            onExpand={() => setExpandedCard("growth")}
+            expandLabel="Expand growth metrics"
           >
-            {renderExpandedCard()}
-          </DashboardModal>
-        ) : null}
+            <div className="grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Performance Signals
+                  </p>
+                  <p className="mt-2 text-[1.55rem] font-semibold text-slate-950">
+                    6 live signals
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    A simple read of the strongest and weakest operational
+                    signals across operations.
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Utilized metrics
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid min-h-0 content-start gap-3">
+                {chartBars.map((bar) => (
+                  <SignalBar
+                    key={bar.label}
+                    label={bar.label}
+                    value={bar.value}
+                    color={bar.color}
+                    softColor={bar.softColor}
+                    compact
+                  />
+                ))}
+              </div>
+            </div>
+          </WindowCard>
+
+          <WindowCard
+            delay={0.15}
+            className="p-4"
+            onExpand={() => setExpandedCard("status")}
+            expandLabel="Expand quick status"
+          >
+            <div className="grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Quick Status
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-slate-950">
+                    Internal signals
+                  </p>
+                </div>
+                <Waves className="h-4 w-4 text-slate-300" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <MiniRing
+                  label="Expired Licenses"
+                  value={expiredLicenseRate}
+                  displayValue={`${expiredLicenses}`}
+                  suffix=""
+                  tone={expiredLicenses > 0 ? "medium" : "low"}
+                />
+                <MiniRing
+                  label="Open Safety"
+                  value={openSafetyRate}
+                  displayValue={`${openSafetyRecords}`}
+                  suffix=""
+                  tone={openSafetyRecords > 0 ? "medium" : "low"}
+                />
+              </div>
+
+              <div className="grid min-h-0 content-start gap-1">
+                <ListMetric
+                  title="Overdue invoices"
+                  value={`${overdueInvoices}`}
+                  detail="Invoices still pending collection follow-up."
+                  tone={overdueInvoices > 0 ? "medium" : "low"}
+                />
+                <ListMetric
+                  title="Maintenance due"
+                  value={`${dueMaintenance}`}
+                  detail="Schedules waiting for action from production."
+                  tone={dueMaintenance > 0 ? "medium" : "low"}
+                />
+                <ListMetric
+                  title="Low-stock alerts"
+                  value={`${combined.low_stock_alert_count}`}
+                  detail="Inventory items under reorder level."
+                  tone={lowStockItems.length > 0 ? "high" : "low"}
+                />
+              </div>
+            </div>
+          </WindowCard>
+
+          <WindowCard
+            delay={0.2}
+            className="p-4"
+            onExpand={() => setExpandedCard("overview")}
+            expandLabel="Expand operations overview"
+          >
+            <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Operations Overview
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-slate-950">
+                    Module pulse
+                  </p>
+                </div>
+                <Factory className="h-4 w-4 text-slate-300" />
+              </div>
+
+              <div className="grid min-h-0 grid-cols-2 gap-3">
+                <TinyStat
+                  label="Business"
+                  value={`${activeKpis}`}
+                  note={`${expiringLicenses} expiring licenses`}
+                />
+                <TinyStat
+                  label="Production"
+                  value={`${activeMachines}`}
+                  note={`${dueMaintenance} maintenance due`}
+                />
+                <TinyStat
+                  label="Finance"
+                  value={`${totalInvoices}`}
+                  note={`${overdueInvoices} overdue invoices`}
+                />
+                <TinyStat
+                  label="Compliance"
+                  value={`${openSafetyRecords}`}
+                  note="open safety records"
+                />
+              </div>
+            </div>
+          </WindowCard>
+
+          <WindowCard
+            delay={0.24}
+            className="p-3"
+            onExpand={() => setExpandedCard("queue")}
+            expandLabel="Expand current queue"
+          >
+            <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Current Queue
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-950">
+                    Active follow-ups
+                  </p>
+                </div>
+                <AlertTriangle className="h-4 w-4 text-slate-300" />
+              </div>
+
+              <div className="grid min-h-0 content-start gap-0.5">
+                <ListMetric
+                  title="Open downtime"
+                  value={`${openDowntime}`}
+                  detail="Production interruptions still unresolved."
+                  tone={openDowntime > 0 ? "medium" : "low"}
+                />
+                <ListMetric
+                  title="Compliance follow-up"
+                  value={`${complianceWatch}`}
+                  detail="Compliance-related items that still need attention."
+                  tone={complianceWatch > 0 ? "medium" : "low"}
+                />
+                <ListMetric
+                  title="Utility cost"
+                  value={formatAmount(utilityCost)}
+                  detail="Water and electricity cost accumulated up to this analytics date."
+                  tone={utilityCost > 0 ? "low" : "medium"}
+                />
+                <ListMetric
+                  title="Finished product lines"
+                  value={`${finishedGoodsLines}`}
+                  detail="Tracked finished-product stock lines in inventory."
+                  tone={finishedGoodsLines > 0 ? "low" : "medium"}
+                />
+              </div>
+            </div>
+          </WindowCard>
+
+          <WindowCard
+            delay={0.28}
+            className="p-4"
+            onExpand={() => setExpandedCard("highlights")}
+            expandLabel="Expand highlights"
+          >
+            <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Highlights
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-slate-950">
+                    Snapshot notes
+                  </p>
+                </div>
+                <TrendingUp className="h-4 w-4 text-slate-300" />
+              </div>
+
+              <div className="grid min-h-0 content-start gap-3">
+                <div className="border border-slate-200/80 bg-slate-50/70 p-3">
+                  <p className="text-xs font-semibold text-slate-900">
+                    {topClient?.client_name || "No top client yet"}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {topClient
+                      ? `${topClient.order_count} order(s) contributing ${formatAmount(topClient.total_amount)}.`
+                      : "Sales analytics has not produced a top-client signal yet."}
+                  </p>
+                </div>
+                <div className="border border-slate-200/80 bg-slate-50/70 p-3">
+                  <p className="text-xs font-semibold text-slate-900">
+                    Profit estimate
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {formatAmount(profit)} based on {formatAmount(totalSales)}{" "}
+                    sales and {formatAmount(revenue)} recognized revenue.
+                  </p>
+                </div>
+                <div className="border border-slate-200/80 bg-slate-50/70 p-3">
+                  <p className="text-xs font-semibold text-slate-900">
+                    Inventory watch
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {lowStockItems.length > 0
+                      ? `${lowStockItems[0]?.item_name} is currently leading the low-stock list.`
+                      : "No low-stock item is leading the queue right now."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </WindowCard>
+        </div>
+      </div>
+      {expandedCard ? (
+        <DashboardModal
+          title={
+            expandedCard === "header"
+              ? "Dashboard Summary"
+              : expandedCard === "revenue"
+                ? "Revenue Snapshot"
+                : expandedCard === "growth"
+                  ? "Annual/Metric Growth"
+                  : expandedCard === "status"
+                    ? "Quick Status"
+                    : expandedCard === "overview"
+                      ? "Operations Overview"
+                      : expandedCard === "queue"
+                        ? "Current Queue"
+                        : "Highlights"
+          }
+          onClose={() => setExpandedCard(null)}
+        >
+          {renderExpandedCard()}
+        </DashboardModal>
+      ) : null}
     </div>
   );
 }
