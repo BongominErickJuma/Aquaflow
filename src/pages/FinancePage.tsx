@@ -183,14 +183,12 @@ function createEmptyExpenseForm(): ExpensePayload {
     expense_type: "",
     amount: "",
     vendor_name: "",
-    reference_number: "",
     notes: "",
   };
 }
 function createEmptyInvoiceForm(): InvoicePayload {
   return {
     order: 0,
-    invoice_number: "",
     invoice_date: "",
     due_date: "",
     status: "draft",
@@ -200,11 +198,9 @@ function createEmptyInvoiceForm(): InvoicePayload {
 function createEmptyReceiptForm(): ReceiptPayload {
   return {
     invoice: 0,
-    receipt_number: "",
     receipt_date: "",
     amount_received: "",
     payment_method: "",
-    reference_number: "",
     notes: "",
   };
 }
@@ -755,7 +751,6 @@ export function FinancePage() {
           expense_type: record.expense_type,
           amount: record.amount,
           vendor_name: record.vendor_name,
-          reference_number: record.reference_number,
           notes: record.notes,
         }),
       )
@@ -775,7 +770,6 @@ export function FinancePage() {
       .then((record) =>
         setInvoiceForm({
           order: record.order,
-          invoice_number: record.invoice_number,
           invoice_date: record.invoice_date,
           due_date: record.due_date,
           status: record.status,
@@ -798,11 +792,9 @@ export function FinancePage() {
       .then((record) =>
         setReceiptForm({
           invoice: record.invoice,
-          receipt_number: record.receipt_number,
           receipt_date: record.receipt_date,
           amount_received: record.amount_received,
           payment_method: record.payment_method,
-          reference_number: record.reference_number,
           notes: record.notes,
         }),
       )
@@ -1893,35 +1885,22 @@ export function FinancePage() {
                     required
                   />
                 </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Vendor name</span>
-                  <input
-                    className={fieldClassName}
+                  <label className="space-y-2 text-sm font-medium text-slate-700">
+                    <span>Vendor name</span>
+                    <input
+                      className={fieldClassName}
                     value={expenseForm.vendor_name}
                     onChange={(event) =>
                       setExpenseForm((current) => ({
                         ...current,
                         vendor_name: event.target.value,
                       }))
-                    }
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                  <span>Reference number</span>
-                  <input
-                    className={fieldClassName}
-                    value={expenseForm.reference_number}
-                    onChange={(event) =>
-                      setExpenseForm((current) => ({
-                        ...current,
-                        reference_number: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                  <span>Notes</span>
-                  <textarea
+                      }
+                    />
+                  </label>
+                  <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                    <span>Notes</span>
+                    <textarea
                     className={textAreaClassName}
                     value={expenseForm.notes}
                     onChange={(event) =>
@@ -2000,7 +1979,6 @@ export function FinancePage() {
                 payload: {
                   ...invoiceForm,
                   order: Number(invoiceForm.order),
-                  invoice_number: invoiceForm.invoice_number.trim(),
                   notes: invoiceForm.notes.trim(),
                 },
                 reset: resetInvoiceForm,
@@ -2053,24 +2031,10 @@ export function FinancePage() {
                     }
                   />
                 </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Invoice number</span>
-                  <input
-                    className={fieldClassName}
-                    value={invoiceForm.invoice_number}
-                    onChange={(event) =>
-                      setInvoiceForm((current) => ({
-                        ...current,
-                        invoice_number: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Invoice date</span>
-                  <input
-                    type="date"
+                  <label className="space-y-2 text-sm font-medium text-slate-700">
+                    <span>Invoice date</span>
+                    <input
+                      type="date"
                     className={fieldClassName}
                     value={invoiceForm.invoice_date}
                     onChange={(event) =>
@@ -2178,9 +2142,7 @@ export function FinancePage() {
                 payload: {
                   ...receiptForm,
                   invoice: Number(receiptForm.invoice),
-                  receipt_number: receiptForm.receipt_number.trim(),
                   payment_method: receiptForm.payment_method.trim(),
-                  reference_number: receiptForm.reference_number.trim(),
                   notes: receiptForm.notes.trim(),
                 },
                 reset: resetReceiptForm,
@@ -2234,24 +2196,10 @@ export function FinancePage() {
                     required
                   />
                 </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Receipt number</span>
-                  <input
-                    className={fieldClassName}
-                    value={receiptForm.receipt_number}
-                    onChange={(event) =>
-                      setReceiptForm((current) => ({
-                        ...current,
-                        receipt_number: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Receipt date</span>
-                  <input
-                    type="date"
+                  <label className="space-y-2 text-sm font-medium text-slate-700">
+                    <span>Receipt date</span>
+                    <input
+                      type="date"
                     className={fieldClassName}
                     value={receiptForm.receipt_date}
                     onChange={(event) =>
@@ -2276,22 +2224,9 @@ export function FinancePage() {
                     }
                   />
                 </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Reference number</span>
-                  <input
-                    className={fieldClassName}
-                    value={receiptForm.reference_number}
-                    onChange={(event) =>
-                      setReceiptForm((current) => ({
-                        ...current,
-                        reference_number: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                  <span>Notes</span>
-                  <textarea
+                  <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                    <span>Notes</span>
+                    <textarea
                     className={textAreaClassName}
                     value={receiptForm.notes}
                     onChange={(event) =>

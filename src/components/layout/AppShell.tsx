@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LoaderCircle,
   LogOut,
+  NotebookText,
   ShieldCheck,
   ShoppingCart,
   UserCircle2,
@@ -61,6 +62,12 @@ const navigation: NavigationItem[] = [
     allowedRoles: ["admin", "superuser", "hr"],
   },
   { label: "Sales", href: "/sales", icon: ShoppingCart, adminOnly: false },
+  {
+      label: "Logs",
+    href: "/sales-log",
+    icon: NotebookText,
+    adminOnly: false,
+  },
   { label: "Finance", href: "/finance", icon: Coins, adminOnly: false },
 ];
 
@@ -84,6 +91,13 @@ function formatModuleLabel(module: NotificationModule) {
 
 function getModuleRoute(module: NotificationModule) {
   return `/${module}`;
+}
+
+function getNotificationRoute(
+  module: NotificationModule,
+  targetPath: string | null | undefined,
+) {
+  return targetPath || getModuleRoute(module);
 }
 
 export function AppShell() {
@@ -132,6 +146,7 @@ export function AppShell() {
   const openNotificationModule = async (
     notificationId: number,
     module: NotificationModule,
+    targetPath: string,
     isRead: boolean,
   ) => {
     setActionId(notificationId);
@@ -146,7 +161,7 @@ export function AppShell() {
     } finally {
       setActionId(null);
       setIsNotificationOpen(false);
-      navigate(getModuleRoute(module));
+      navigate(getNotificationRoute(module, targetPath));
     }
   };
 
@@ -270,13 +285,14 @@ export function AppShell() {
                           <button
                             key={notification.id}
                             type="button"
-                            onClick={() =>
-                              void openNotificationModule(
-                                notification.id,
-                                notification.module,
-                                notification.is_read,
-                              )
-                            }
+                              onClick={() =>
+                                void openNotificationModule(
+                                  notification.id,
+                                  notification.module,
+                                  notification.target_path,
+                                  notification.is_read,
+                                )
+                              }
                             className={[
                               "w-full rounded-[24px] border p-4 text-left transition",
                               notification.is_read

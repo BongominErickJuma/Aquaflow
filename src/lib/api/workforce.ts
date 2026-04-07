@@ -2,6 +2,8 @@ import { apiRequest } from "./auth";
 import type {
   AttendancePayload,
   AttendanceRecord,
+  DepartmentPayload,
+  DepartmentRecord,
   EmployeePayload,
   EmployeeRecord,
   PayrollPayload,
@@ -53,6 +55,41 @@ function unpaginatedListPath(resource: string) {
 export async function fetchEmployeePage(params: FetchWorkforcePageParams = {}) {
   return apiRequest<WorkforcePaginatedResponse<EmployeeRecord>>(
     listPath("employees", params),
+  );
+}
+export async function fetchDepartmentPage(params: FetchWorkforcePageParams = {}) {
+  return apiRequest<WorkforcePaginatedResponse<DepartmentRecord>>(
+    listPath("departments", params),
+  );
+}
+export async function fetchDepartments() {
+  return apiRequest<DepartmentRecord[]>(unpaginatedListPath("departments"));
+}
+export async function fetchDepartment(id: number) {
+  return apiRequest<DepartmentRecord>(detailPath("departments", id));
+}
+export async function createDepartment(payload: DepartmentPayload) {
+  return apiRequest<DepartmentRecord>(
+    resourcePath("departments"),
+    { method: "POST", body: JSON.stringify(payload) },
+    { csrf: true },
+  );
+}
+export async function updateDepartment(
+  id: number,
+  payload: Partial<DepartmentPayload>,
+) {
+  return apiRequest<DepartmentRecord>(
+    detailPath("departments", id),
+    { method: "PATCH", body: JSON.stringify(payload) },
+    { csrf: true },
+  );
+}
+export async function deleteDepartment(id: number) {
+  return apiRequest<void>(
+    detailPath("departments", id),
+    { method: "DELETE" },
+    { csrf: true },
   );
 }
 export async function fetchEmployees() {

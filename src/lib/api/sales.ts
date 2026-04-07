@@ -12,8 +12,11 @@ import type {
   DeliveryScheduleRecord,
   OrderItemPayload,
   OrderItemRecord,
+  PaginatedSalesLogResponse,
   SalesOrderPayload,
   SalesOrderRecord,
+  SalesLogDetail,
+  SalesLogSummary,
 } from "../../types/sales";
 
 const SALES_BASE_PATH = "/api/sales";
@@ -110,3 +113,49 @@ export const fetchDeliveryRecord = deliveryRecords.detail;
 export const createDeliveryRecord = deliveryRecords.create;
 export const updateDeliveryRecord = deliveryRecords.update;
 export const deleteDeliveryRecord = deliveryRecords.remove;
+
+type FetchSalesLogParams = {
+  page?: number;
+  pageSize?: 5 | 6 | 10;
+  search?: string;
+  range?: "today" | "7days" | "month";
+  paginate?: boolean;
+};
+
+export async function fetchSalesLog(params: FetchSalesLogParams = {}) {
+  const query = new URLSearchParams();
+
+  if (params.page && params.page > 0) {
+    query.set("page", String(params.page));
+  }
+
+  if (params.pageSize && [5, 6, 10].includes(params.pageSize)) {
+    query.set("page_size", String(params.pageSize));
+  }
+
+  if (params.search?.trim()) {
+    query.set("search", params.search.trim());
+  }
+
+  if (params.range) {
+    query.set("range", params.range);
+  }
+
+  if (params.paginate === false) {
+    query.set("paginate", "false");
+  }
+
+  const path = query.size
+    ? `${SALES_BASE_PATH}/sales-log/?${query.toString()}`
+    : `${SALES_BASE_PATH}/sales-log/`;
+
+  return apiRequest<PaginatedSalesLogResponse | SalesLogDetail["entry"][]>(path);
+}
+
+export async function fetchSalesLogSummary() {
+  return apiRequest<SalesLogSummary>(`${SALES_BASE_PATH}/sales-log/summary/`);
+}
+
+export async function fetchSalesLogDetail(id: number) {
+  return apiRequest<SalesLogDetail>(`${SALES_BASE_PATH}/sales-log/${id}/`);
+}

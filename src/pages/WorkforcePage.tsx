@@ -21,12 +21,14 @@ import { useAuth } from "../features/auth/AuthProvider";
 import { ApiError, fetchAllUsers } from "../lib/api/auth";
 import {
   createAttendanceRecord,
+  createDepartment,
   createEmployee,
   createPayrollRecord,
   createPerformanceRecord,
   createShift,
   createTask,
   deleteAttendanceRecord,
+  deleteDepartment,
   deleteEmployee,
   deletePayrollRecord,
   deletePerformanceRecord,
@@ -34,6 +36,9 @@ import {
   deleteTask,
   fetchAttendancePage,
   fetchAttendanceRecord,
+  fetchDepartment,
+  fetchDepartmentPage,
+  fetchDepartments,
   fetchEmployee,
   fetchEmployees,
   fetchEmployeePage,
@@ -48,6 +53,7 @@ import {
   fetchTaskPage,
   fetchTasks,
   updateAttendanceRecord,
+  updateDepartment,
   updateEmployee,
   updatePayrollRecord,
   updatePerformanceRecord,
@@ -59,6 +65,8 @@ import type {
   AttendancePayload,
   AttendanceRecord,
   AttendanceStatus,
+  DepartmentPayload,
+  DepartmentRecord,
   EmployeePayload,
   EmployeeRecord,
   EmployeeStatus,
@@ -91,6 +99,7 @@ const tableActionButtonClassName =
   "inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50";
 
 type ActiveModal =
+  | "department"
   | "employee"
   | "shift"
   | "attendance"
@@ -228,13 +237,12 @@ function TablePaginationControls({
 function createEmptyEmployeeForm(): EmployeePayload {
   return {
     user: null,
-    employee_code: "",
     first_name: "",
     last_name: "",
     email: "",
     phone_number: "",
     job_title: "",
-    department: "",
+    department: null,
     work_role: "",
     hire_date: "",
     status: "active",
@@ -246,7 +254,6 @@ function buildEmployeeForm(record: EmployeeRecord | null): EmployeePayload {
   if (!record) return createEmptyEmployeeForm();
   return {
     user: record.user,
-    employee_code: record.employee_code,
     first_name: record.first_name,
     last_name: record.last_name,
     email: record.email,
@@ -258,6 +265,22 @@ function buildEmployeeForm(record: EmployeeRecord | null): EmployeePayload {
     status: record.status,
     termination_date: record.termination_date,
     notes: record.notes,
+  };
+}
+
+function createEmptyDepartmentForm(): DepartmentPayload {
+  return {
+    name: "",
+    notes: "",
+    is_active: true,
+  };
+}
+function buildDepartmentForm(record: DepartmentRecord | null): DepartmentPayload {
+  if (!record) return createEmptyDepartmentForm();
+  return {
+    name: record.name,
+    notes: record.notes,
+    is_active: record.is_active,
   };
 }
 
@@ -543,6 +566,7 @@ export function WorkforcePage() {
   const [activeTab, setActiveTab] = useState("employees");
 
   const tabs = [
+    { id: "departments", label: "Departments" },
     { id: "employees", label: "Employees" },
     { id: "shifts", label: "Shifts" },
     { id: "attendance", label: "Attendance" },
@@ -553,6 +577,11 @@ export function WorkforcePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState("");
 
+  const [departments, setDepartments] = useState<DepartmentRecord[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<
+    DepartmentRecord[]
+  >([]);
+  const [totalDepartments, setTotalDepartments] = useState(0);
   const [employees, setEmployees] = useState<EmployeeRecord[]>([]);
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeRecord[]>([]);
   const [totalEmployees, setTotalEmployees] = useState(0);
@@ -572,6 +601,7 @@ export function WorkforcePage() {
   const [totalPerformanceRecords, setTotalPerformanceRecords] = useState(0);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [pageSize, setPageSize] = useState<PageSizeOption>(10);
+  const [departmentPage, setDepartmentPage] = useState(1);
   const [employeePage, setEmployeePage] = useState(1);
   const [shiftPage, setShiftPage] = useState(1);
   const [attendancePage, setAttendancePage] = useState(1);
@@ -579,7 +609,11 @@ export function WorkforcePage() {
   const [taskPage, setTaskPage] = useState(1);
   const [performancePage, setPerformancePage] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
+  const [departmentForm, setDepartmentForm] = useState<DepartmentPayload>(
+    createEmptyDepartmentForm(),
+  );
   const [employeeForm, setEmployeeForm] = useState<EmployeePayload>(
     createEmptyEmployeeForm(),
   );
@@ -597,6 +631,9 @@ export function WorkforcePage() {
     createEmptyPerformanceForm(),
   );
 
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<
+    number | null
+  >(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
     null,
   );
@@ -612,6 +649,7 @@ export function WorkforcePage() {
     number | null
   >(null);
 
+  const [departmentError, setDepartmentError] = useState("");
   const [employeeError, setEmployeeError] = useState("");
   const [shiftError, setShiftError] = useState("");
   const [attendanceError, setAttendanceError] = useState("");
@@ -619,12 +657,42 @@ export function WorkforcePage() {
   const [taskError, setTaskError] = useState("");
   const [performanceError, setPerformanceError] = useState("");
 
+  const [isDepartmentPending, setIsDepartmentPending] = useState(false);
   const [isEmployeePending, setIsEmployeePending] = useState(false);
   const [isShiftPending, setIsShiftPending] = useState(false);
   const [isAttendancePending, setIsAttendancePending] = useState(false);
   const [isPayrollPending, setIsPayrollPending] = useState(false);
   const [isTaskPending, setIsTaskPending] = useState(false);
   const [isPerformancePending, setIsPerformancePending] = useState(false);
+
+  const buildAssignableDepartmentOptions = (
+    selectedDepartmentId?: number | null,
+  ) =>
+    departmentOptions.filter(
+      (item) => item.is_active || item.id === selectedDepartmentId,
+    );
+
+  const buildActiveReviewerOptions = (selectedReviewer?: string) =>
+    users
+      .filter((item) => item.is_active)
+      .map((item) => ({
+        label: `${item.first_name} ${item.last_name}`.trim() || item.email,
+        value: `${item.first_name} ${item.last_name}`.trim() || item.email,
+      }))
+      .filter(
+        (item, index, collection) =>
+          collection.findIndex((entry) => entry.value === item.value) === index,
+      )
+      .concat(
+        selectedReviewer &&
+          !users.some((item) => {
+            const displayName =
+              `${item.first_name} ${item.last_name}`.trim() || item.email;
+            return displayName === selectedReviewer;
+          })
+          ? [{ label: selectedReviewer, value: selectedReviewer }]
+          : [],
+      );
 
   const buildAssignableEmployeeOptions = (selectedEmployeeId?: number | null) =>
     employeeOptions.filter(
@@ -638,6 +706,10 @@ export function WorkforcePage() {
   const userEmailById = new Map(
     users.map((record) => [record.id, record.email]),
   );
+  const totalDepartmentPages = Math.max(
+    1,
+    Math.ceil(totalDepartments / pageSize),
+  );
   const totalEmployeePages = Math.max(1, Math.ceil(totalEmployees / pageSize));
   const totalShiftPages = Math.max(1, Math.ceil(totalShifts / pageSize));
   const totalAttendancePages = Math.max(
@@ -650,6 +722,7 @@ export function WorkforcePage() {
     1,
     Math.ceil(totalPerformanceRecords / pageSize),
   );
+  const departmentFillerRowCount = Math.max(pageSize - departments.length, 0);
   const employeeFillerRowCount = Math.max(pageSize - employees.length, 0);
   const shiftFillerRowCount = Math.max(pageSize - shifts.length, 0);
   const attendanceFillerRowCount = Math.max(pageSize - attendance.length, 0);
@@ -662,6 +735,7 @@ export function WorkforcePage() {
 
   async function reloadWorkforceData() {
     const [
+      nextDepartmentPage,
       nextEmployeePage,
       nextShiftPage,
       nextAttendancePage,
@@ -669,10 +743,12 @@ export function WorkforcePage() {
       nextTaskPage,
       nextTasks,
       nextPerformancePage,
+      nextDepartments,
       nextEmployeeOptions,
       nextShiftOptions,
       nextUsers,
     ] = await Promise.all([
+      fetchDepartmentPage({ page: departmentPage, pageSize }),
       fetchEmployeePage({ page: employeePage, pageSize }),
       fetchShiftPage({ page: shiftPage, pageSize }),
       fetchAttendancePage({ page: attendancePage, pageSize }),
@@ -680,11 +756,14 @@ export function WorkforcePage() {
       fetchTaskPage({ page: taskPage, pageSize }),
       fetchTasks(),
       fetchPerformanceRecordPage({ page: performancePage, pageSize }),
+      fetchDepartments(),
       fetchEmployees(),
       fetchShifts(),
       fetchAllUsers(),
     ]);
 
+    setDepartments(nextDepartmentPage.results);
+    setTotalDepartments(nextDepartmentPage.count);
     setEmployees(nextEmployeePage.results);
     setTotalEmployees(nextEmployeePage.count);
     setShifts(nextShiftPage.results);
@@ -698,6 +777,7 @@ export function WorkforcePage() {
     setTasks(nextTasks);
     setPerformanceRecords(nextPerformancePage.results);
     setTotalPerformanceRecords(nextPerformancePage.count);
+    setDepartmentOptions(nextDepartments);
     setEmployeeOptions(nextEmployeeOptions);
     setShiftOptions(nextShiftOptions);
     setUsers(nextUsers);
@@ -716,6 +796,9 @@ export function WorkforcePage() {
       setPageError("");
       try {
         await reloadWorkforceData();
+        if (isMounted) {
+          setHasLoadedOnce(true);
+        }
       } catch (error) {
         if (isMounted) {
           setPageError(
@@ -734,6 +817,7 @@ export function WorkforcePage() {
     };
   }, [
     attendancePage,
+    departmentPage,
     employeePage,
     pageSize,
     payrollPage,
@@ -743,6 +827,30 @@ export function WorkforcePage() {
     taskPage,
     canManageWorkforce,
   ]);
+
+  useEffect(() => {
+    if (!selectedDepartmentId) return;
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const record = await fetchDepartment(selectedDepartmentId);
+        if (isMounted) setDepartmentForm(buildDepartmentForm(record));
+      } catch {
+        if (isMounted) {
+          setDepartmentForm(
+            buildDepartmentForm(
+              departmentOptions.find((item) => item.id === selectedDepartmentId) ??
+                null,
+            ),
+          );
+        }
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, [departmentOptions, selectedDepartmentId]);
 
   useEffect(() => {
     if (!selectedEmployeeId) return;
@@ -946,6 +1054,7 @@ export function WorkforcePage() {
 
   const handlePageSizeChange = (value: PageSizeOption) => {
     setPageSize(value);
+    setDepartmentPage(1);
     setEmployeePage(1);
     setShiftPage(1);
     setAttendancePage(1);
@@ -954,6 +1063,11 @@ export function WorkforcePage() {
     setPerformancePage(1);
   };
 
+  const resetDepartmentState = () => {
+    setSelectedDepartmentId(null);
+    setDepartmentForm(createEmptyDepartmentForm());
+    setDepartmentError("");
+  };
   const resetEmployeeState = () => {
     setSelectedEmployeeId(null);
     setEmployeeForm(createEmptyEmployeeForm());
@@ -986,6 +1100,7 @@ export function WorkforcePage() {
   };
 
   const closeModal = () => {
+    resetDepartmentState();
     resetEmployeeState();
     resetShiftState();
     resetAttendanceState();
@@ -997,6 +1112,31 @@ export function WorkforcePage() {
 
   const refreshWorkforceData = () => {
     setReloadKey((current) => current + 1);
+  };
+
+  const handleDepartmentSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setDepartmentError("");
+    setIsDepartmentPending(true);
+    try {
+      const payload = {
+        ...departmentForm,
+        name: departmentForm.name.trim(),
+        notes: departmentForm.notes.trim(),
+      };
+      if (selectedDepartmentId) await updateDepartment(selectedDepartmentId, payload);
+      else await createDepartment(payload);
+      refreshWorkforceData();
+      closeModal();
+    } catch (error) {
+      setDepartmentError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to save the department right now.",
+      );
+    } finally {
+      setIsDepartmentPending(false);
+    }
   };
 
   const handleEmployeeSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -1017,13 +1157,12 @@ export function WorkforcePage() {
     try {
       const payload = {
         ...employeeForm,
-        employee_code: employeeForm.employee_code.trim(),
         first_name: employeeForm.first_name.trim(),
         last_name: employeeForm.last_name.trim(),
         email: employeeForm.email.trim(),
         phone_number: employeeForm.phone_number.trim(),
         job_title: employeeForm.job_title.trim(),
-        department: employeeForm.department.trim(),
+        department: employeeForm.department,
         termination_date:
           employeeForm.status === "terminated"
             ? employeeForm.termination_date
@@ -1147,7 +1286,7 @@ export function WorkforcePage() {
     try {
       const payload = {
         ...performanceForm,
-        reviewer_name: performanceForm.reviewer_name.trim(),
+        reviewer_name: performanceForm.reviewer_name,
         strengths: performanceForm.strengths.trim(),
         improvement_areas: performanceForm.improvement_areas.trim(),
         notes: performanceForm.notes.trim(),
@@ -1215,7 +1354,7 @@ export function WorkforcePage() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !hasLoadedOnce) {
     return (
       <section className="panel flex min-h-[320px] items-center justify-center p-8">
         <div className="flex items-center gap-3 text-slate-600">
@@ -1226,7 +1365,7 @@ export function WorkforcePage() {
     );
   }
 
-  if (pageError) {
+  if (pageError && !hasLoadedOnce) {
     return (
       <section className="panel max-w-3xl p-8">
         <p className="section-label">Workforce</p>
@@ -1294,6 +1433,146 @@ export function WorkforcePage() {
 
       <div className="module-page-stage justify-start">
         <div className="space-y-6">
+          {activeTab === "departments" ? (
+            <section className="panel p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="section-label">Departments</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                    Department setup
+                  </h2>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <TablePaginationControls
+                    pageSize={pageSize}
+                    currentPage={departmentPage}
+                    totalPages={totalDepartmentPages}
+                    onPageSizeChange={handlePageSizeChange}
+                    onPrevious={() =>
+                      setDepartmentPage((page) => Math.max(1, page - 1))
+                    }
+                    onNext={() =>
+                      setDepartmentPage((page) =>
+                        Math.min(totalDepartmentPages, page + 1),
+                      )
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetDepartmentState();
+                      setActiveModal("department");
+                    }}
+                    className={iconButtonClassName}
+                    aria-label="Add department"
+                    title="Add department"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-5 min-h-0 overflow-x-auto overflow-y-hidden">
+                {departments.length === 0 ? (
+                  <div className="flex min-h-[320px] items-start rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-6 text-sm text-slate-600">
+                    No departments defined yet.
+                  </div>
+                ) : (
+                  <table className="min-w-full border-separate border-spacing-0">
+                    <thead>
+                      <tr>
+                        <th className="rounded-tl-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                          Department
+                        </th>
+                        <th className="border-y border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                          Status
+                        </th>
+                        <th className="rounded-tr-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {departments.map((record, index) => {
+                        const rowClass =
+                          index === departments.length - 1 &&
+                          departmentFillerRowCount === 0
+                            ? "border-b border-slate-200/80"
+                            : "border-b border-slate-200/60";
+                        return (
+                          <tr key={record.id}>
+                            <td
+                              className={`${rowClass} border-l border-r border-slate-200/80 bg-white px-4 py-4`}
+                            >
+                              <p className="text-sm font-semibold text-slate-900">
+                                {record.name}
+                              </p>
+                              <p className="mt-1 text-sm text-slate-500">
+                                {record.notes || "No notes"}
+                              </p>
+                            </td>
+                            <td
+                              className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
+                            >
+                              <StatusBadge
+                                label={record.is_active ? "Active" : "Inactive"}
+                                tone={record.is_active ? "success" : "warning"}
+                              />
+                            </td>
+                            <td
+                              className={`${rowClass} rounded-br-2xl border-r border-slate-200/80 bg-white px-4 py-4`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedDepartmentId(record.id);
+                                  setDepartmentForm(buildDepartmentForm(record));
+                                  setActiveModal("department");
+                                }}
+                                className={tableActionButtonClassName}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {Array.from({ length: departmentFillerRowCount }).map(
+                        (_, index) => {
+                          const isLastFiller =
+                            index === departmentFillerRowCount - 1;
+                          const rowClass = isLastFiller
+                            ? "border-b border-slate-200/80"
+                            : "border-b border-slate-200/60";
+                          return (
+                            <tr key={`department-filler-${index}`} aria-hidden="true">
+                              <td
+                                className={`${rowClass} border-l border-r border-slate-200/80 bg-white px-4 py-4`}
+                              >
+                                <div className="h-11" />
+                              </td>
+                              <td
+                                className={`${rowClass} border-r border-slate-200/80 bg-white px-4 py-4`}
+                              >
+                                <div className="h-6" />
+                              </td>
+                              <td
+                                className={`${rowClass} rounded-br-2xl border-r border-slate-200/80 bg-white px-4 py-4`}
+                              >
+                                <div className="h-6" />
+                              </td>
+                            </tr>
+                          );
+                        },
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </section>
+          ) : null}
+
           {activeTab === "employees" ? (
             <section className="panel p-6">
               <div className="flex flex-col gap-4">
@@ -2447,6 +2726,105 @@ export function WorkforcePage() {
         </div>
       </div>
 
+      {activeModal === "department" ? (
+        <ModalShell
+          title={selectedDepartmentId ? "Edit department" : "Add department"}
+          onClose={closeModal}
+        >
+          <FormPanel label="Departments" title="Department details">
+            <form className="space-y-4" onSubmit={handleDepartmentSubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Name
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={departmentForm.name}
+                    onChange={(event) =>
+                      setDepartmentForm((current) => ({
+                        ...current,
+                        name: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+                <label className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={departmentForm.is_active}
+                    onChange={(event) =>
+                      setDepartmentForm((current) => ({
+                        ...current,
+                        is_active: event.target.checked,
+                      }))
+                    }
+                  />
+                  Active department
+                </label>
+              </div>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Notes
+                </span>
+                <textarea
+                  className={textAreaClassName}
+                  value={departmentForm.notes}
+                  onChange={(event) =>
+                    setDepartmentForm((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <FieldMessage message={departmentError} />
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className={secondaryButtonClassName}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void handleDelete(
+                      "department",
+                      selectedDepartmentId,
+                      setDepartmentError,
+                      setIsDepartmentPending,
+                      deleteDepartment,
+                    )
+                  }
+                  disabled={!selectedDepartmentId || isDepartmentPending}
+                  className={dangerButtonClassName}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDepartmentPending}
+                  className={primaryButtonClassName}
+                >
+                  {isDepartmentPending ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      Saving
+                    </>
+                  ) : (
+                    "Save department"
+                  )}
+                </button>
+              </div>
+            </form>
+          </FormPanel>
+        </ModalShell>
+      ) : null}
+
       {activeModal === "employee" ? (
         <ModalShell
           title={selectedEmployeeId ? "Edit employee" : "Add employee"}
@@ -2476,22 +2854,17 @@ export function WorkforcePage() {
                     }
                   />
                 </label>
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3">
+                  <p className="text-sm font-medium text-slate-700">
                     Employee code
-                  </span>
-                  <input
-                    className={fieldClassName}
-                    value={employeeForm.employee_code}
-                    onChange={(event) =>
-                      setEmployeeForm((current) => ({
-                        ...current,
-                        employee_code: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {selectedEmployeeId
+                      ? employeeOptions.find((item) => item.id === selectedEmployeeId)
+                          ?.employee_code ?? "Generated by the backend"
+                      : "Generated automatically by the backend when you save."}
+                  </p>
+                </div>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
                     First name
@@ -2595,13 +2968,23 @@ export function WorkforcePage() {
                   <span className="text-sm font-medium text-slate-700">
                     Department
                   </span>
-                  <input
-                    className={fieldClassName}
-                    value={employeeForm.department}
-                    onChange={(event) =>
+                  <PickerField
+                    value={employeeForm.department ? String(employeeForm.department) : ""}
+                    options={[
+                      { label: "No department", value: "" },
+                      ...buildAssignableDepartmentOptions(employeeForm.department).map(
+                        (record) => ({
+                          label: record.is_active
+                            ? record.name
+                            : `${record.name} (Inactive)`,
+                          value: String(record.id),
+                        }),
+                      ),
+                    ]}
+                    onChange={(value) =>
                       setEmployeeForm((current) => ({
                         ...current,
-                        department: event.target.value,
+                        department: value ? Number(value) : null,
                       }))
                     }
                   />
@@ -3546,16 +3929,18 @@ export function WorkforcePage() {
                   <span className="text-sm font-medium text-slate-700">
                     Reviewer name
                   </span>
-                  <input
-                    className={fieldClassName}
+                  <PickerField
                     value={performanceForm.reviewer_name}
-                    onChange={(event) =>
+                    options={[
+                      { label: "Select reviewer", value: "" },
+                      ...buildActiveReviewerOptions(performanceForm.reviewer_name),
+                    ]}
+                    onChange={(value) =>
                       setPerformanceForm((current) => ({
                         ...current,
-                        reviewer_name: event.target.value,
+                        reviewer_name: value,
                       }))
                     }
-                    required
                   />
                 </label>
                 <label className="block space-y-2">

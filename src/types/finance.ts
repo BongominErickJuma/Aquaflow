@@ -44,7 +44,7 @@ export type ExpenseRecord = FinanceTimestampFields & {
 
 export type ExpensePayload = Omit<
   ExpenseRecord,
-  "id" | "created_at" | "updated_at"
+  "id" | "created_at" | "updated_at" | "reference_number"
 >;
 
 export type InvoiceRecord = FinanceTimestampFields & {
@@ -60,7 +60,7 @@ export type InvoiceRecord = FinanceTimestampFields & {
 
 export type InvoicePayload = Omit<
   InvoiceRecord,
-  "id" | "created_at" | "updated_at" | "order_number" | "amount"
+  "id" | "created_at" | "updated_at" | "order_number" | "invoice_number" | "amount"
 >;
 
 export type ReceiptRecord = FinanceTimestampFields & {
@@ -76,7 +76,7 @@ export type ReceiptRecord = FinanceTimestampFields & {
 
 export type ReceiptPayload = Omit<
   ReceiptRecord,
-  "id" | "created_at" | "updated_at" | "invoice_number"
+  "id" | "created_at" | "updated_at" | "invoice_number" | "receipt_number" | "reference_number"
 >;
 
 export type InsuranceRecord = FinanceTimestampFields & {

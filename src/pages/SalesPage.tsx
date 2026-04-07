@@ -1,11 +1,4 @@
-import {
-  Check,
-  ChevronDown,
-  LoaderCircle,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Check, ChevronDown, LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   useEffect,
   useRef,
@@ -13,10 +6,12 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import { useLocation } from "react-router-dom";
 import { ModuleTabs } from "../components/layout/ModuleTabs";
 import { useAuth } from "../features/auth/AuthProvider";
 import { ApiError } from "../lib/api/auth";
 import { fetchFinishedProducts } from "../lib/api/inventory";
+import { fetchEmployees } from "../lib/api/workforce";
 import {
   createBrandingRecord,
   createClient,
@@ -72,9 +67,15 @@ import type {
   OrderItemPayload,
   OrderItemRecord,
   OrderStatus,
+  PaymentMethod,
   SalesOrderPayload,
   SalesOrderRecord,
 } from "../types/sales";
+
+type SalesOrderFormState = SalesOrderPayload & {
+  order_number: string;
+};
+import type { EmployeeRecord } from "../types/workforce";
 
 const fieldClassName =
   "w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300";
@@ -150,10 +151,16 @@ const brandingStatuses: BrandingStatus[] = ["active", "inactive", "archived"];
 const orderStatuses: OrderStatus[] = [
   "draft",
   "confirmed",
-  "processing",
+  "pending",
   "dispatched",
   "completed",
   "cancelled",
+];
+const paymentMethods: PaymentMethod[] = [
+  "cash",
+  "mobile_money",
+  "bank_transfer",
+  "credit",
 ];
 const deliveryScheduleStatuses: DeliveryScheduleStatus[] = [
   "scheduled",
@@ -195,13 +202,15 @@ function createEmptyBrandingForm(): BrandingPayload {
   };
 }
 
-function createEmptyOrderForm(): SalesOrderPayload {
+function createEmptyOrderForm(): SalesOrderFormState {
   return {
     client: 0,
+    assigned_seller: null,
     order_number: "",
     order_date: "",
     expected_delivery_date: null,
     status: "draft",
+    payment_method: "cash",
     notes: "",
   };
 }
@@ -220,6 +229,7 @@ function createEmptyItemForm(): OrderItemPayload {
 function createEmptyScheduleForm(): DeliverySchedulePayload {
   return {
     order: 0,
+    seller: null,
     scheduled_date: "",
     assigned_vehicle: "",
     assigned_driver: "",
@@ -235,7 +245,6 @@ function createEmptyDeliveryForm(): DeliveryRecordPayload {
     delivery_date: "",
     recipient_name: "",
     delivery_status: "pending",
-    proof_reference: "",
     delivery_note: "",
   };
 }
@@ -429,7 +438,23 @@ function formatDate(value: string | null) {
   );
 }
 
+function formatCurrency(value: number) {
+  if (!Number.isFinite(value)) {
+    return "UGX 0";
+  }
+
+  return `UGX ${new Intl.NumberFormat("en-UG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value)}`;
+}
+
+function formatCurrencyFromString(value: string) {
+  return formatCurrency(Number.parseFloat(value || "0"));
+}
+
 export function SalesPage() {
+  const location = useLocation();
   const { user } = useAuth();
   const isAdmin =
     user?.role.code === "admin" || user?.role.code === "superuser";
@@ -441,6 +466,7 @@ export function SalesPage() {
   const [orderItems, setOrderItems] = useState<OrderItemRecord[]>([]);
   const [schedules, setSchedules] = useState<DeliveryScheduleRecord[]>([]);
   const [deliveries, setDeliveries] = useState<DeliveryRecordType[]>([]);
+  const [employees, setEmployees] = useState<EmployeeRecord[]>([]);
   const [finishedProducts, setFinishedProducts] = useState<
     FinishedProductRecord[]
   >([]);
@@ -471,7 +497,7 @@ export function SalesPage() {
     createEmptyBrandingForm,
   );
   const [orderForm, setOrderForm] =
-    useState<SalesOrderPayload>(createEmptyOrderForm);
+    useState<SalesOrderFormState>(createEmptyOrderForm);
   const [itemForm, setItemForm] =
     useState<OrderItemPayload>(createEmptyItemForm);
   const [scheduleForm, setScheduleForm] = useState<DeliverySchedulePayload>(
@@ -501,16 +527,49 @@ export function SalesPage() {
   const [schedulePending, setSchedulePending] = useState(false);
   const [deliveryPending, setDeliveryPending] = useState(false);
   const [activeTab, setActiveTab] = useState("categories");
+  const [recentGeneratedOrderNumber, setRecentGeneratedOrderNumber] = useState<
+    string | null
+  >(null);
 
   const tabs = salesMilestoneFlow.map(({ id, label }) => ({ id, label }));
   const activeFlowItem =
     salesMilestoneFlow.find((item) => item.id === activeTab) ??
     salesMilestoneFlow[0];
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const requestedTab = params.get("tab");
+    if (
+      requestedTab &&
+      salesMilestoneFlow.some((item) => item.id === requestedTab)
+    ) {
+      setActiveTab(requestedTab);
+    }
+  }, [location.search]);
+
   const buildAssignableOrderOptions = (selectedOrderId?: number | null) =>
     orders.filter(
       (order) => order.status !== "cancelled" || order.id === selectedOrderId,
     );
+
+  const salesEmployees = employees.filter(
+    (employee) =>
+      employee.status === "active" && employee.work_role === "sales",
+  );
+
+  const selectedScheduleOrder =
+    orders.find((order) => order.id === Number(scheduleForm.order)) ?? null;
+  const selectedScheduleSellerName =
+    selectedScheduleOrder?.assigned_seller_name || "Select an order first";
+  const selectedScheduleSellerCode =
+    selectedScheduleOrder?.assigned_seller_code || "";
+  const selectedFinishedProduct =
+    finishedProducts.find(
+      (product) => product.id === Number(itemForm.finished_product),
+    ) ?? null;
+  const itemLineTotalPreview =
+    (Number.parseFloat(itemForm.quantity || "0") || 0) *
+    (Number.parseFloat(itemForm.unit_price || "0") || 0);
 
   const buildAssignableScheduleOptions = ({
     orderId,
@@ -534,6 +593,7 @@ export function SalesPage() {
       itemList,
       scheduleList,
       deliveryList,
+      employeeList,
       productList,
     ] = await Promise.all([
       fetchCustomerCategories(),
@@ -543,6 +603,7 @@ export function SalesPage() {
       fetchOrderItems(),
       fetchDeliverySchedules(),
       fetchDeliveryRecords(),
+      fetchEmployees(),
       fetchFinishedProducts(),
     ]);
 
@@ -553,6 +614,7 @@ export function SalesPage() {
     setOrderItems(itemList);
     setSchedules(scheduleList);
     setDeliveries(deliveryList);
+    setEmployees(employeeList);
     setFinishedProducts(productList);
   }
 
@@ -660,10 +722,12 @@ export function SalesPage() {
       .then((record) =>
         setOrderForm({
           client: record.client,
+          assigned_seller: record.assigned_seller ?? null,
           order_number: record.order_number,
           order_date: record.order_date,
           expected_delivery_date: record.expected_delivery_date,
           status: record.status,
+          payment_method: record.payment_method ?? "cash",
           notes: record.notes,
         }),
       )
@@ -708,9 +772,10 @@ export function SalesPage() {
       .then((record) =>
         setScheduleForm({
           order: record.order,
+          seller: record.seller ?? null,
           scheduled_date: record.scheduled_date,
-          assigned_vehicle: record.assigned_vehicle,
-          assigned_driver: record.assigned_driver,
+          assigned_vehicle: record.assigned_vehicle || "",
+          assigned_driver: record.assigned_driver || "",
           status: record.status,
           notes: record.notes,
         }),
@@ -737,7 +802,6 @@ export function SalesPage() {
           delivery_date: record.delivery_date,
           recipient_name: record.recipient_name,
           delivery_status: record.delivery_status,
-          proof_reference: record.proof_reference,
           delivery_note: record.delivery_note,
         }),
       )
@@ -751,6 +815,9 @@ export function SalesPage() {
   }, [selectedDeliveryId]);
 
   function closeModal() {
+    if (activeModal === "item" || activeModal === "schedule") {
+      setRecentGeneratedOrderNumber(null);
+    }
     setActiveModal(null);
     setCategoryError(null);
     setClientError(null);
@@ -891,22 +958,41 @@ export function SalesPage() {
     setOrderPending(true);
     setOrderError(null);
     try {
+      if (!orderForm.assigned_seller) {
+        setOrderError("Select the seller assigned to this order.");
+        return;
+      }
+
       const payload: SalesOrderPayload = {
         client: Number(orderForm.client),
-        order_number: orderForm.order_number.trim(),
+        assigned_seller: orderForm.assigned_seller
+          ? Number(orderForm.assigned_seller)
+          : null,
         order_date: orderForm.order_date,
         expected_delivery_date: orderForm.expected_delivery_date || null,
         status: orderForm.status,
+        payment_method: orderForm.payment_method ?? "cash",
         notes: orderForm.notes.trim(),
       };
       if (selectedOrderId) {
         await updateSalesOrder(selectedOrderId, payload);
+        await reloadSalesData();
+        resetOrderForm();
+        closeModal();
       } else {
-        await createSalesOrder(payload);
+        const createdOrder = await createSalesOrder(payload);
+        await reloadSalesData();
+        resetOrderForm();
+        setRecentGeneratedOrderNumber(createdOrder.order_number);
+        setItemForm({
+          ...createEmptyItemForm(),
+          order: createdOrder.id,
+        });
+        setActiveTab("items");
+        setSelectedItemId(null);
+        setActiveModal("item");
+        return;
       }
-      await reloadSalesData();
-      resetOrderForm();
-      closeModal();
     } catch (error) {
       setOrderError(
         error instanceof ApiError ? error.message : "Unable to save order.",
@@ -921,8 +1007,11 @@ export function SalesPage() {
     setItemPending(true);
     setItemError(null);
     try {
+      const currentOrderId = Number(itemForm.order);
+      const linkedOrder =
+        orders.find((order) => order.id === currentOrderId) ?? null;
       const payload: OrderItemPayload = {
-        order: Number(itemForm.order),
+        order: currentOrderId,
         finished_product: itemForm.finished_product
           ? Number(itemForm.finished_product)
           : null,
@@ -933,12 +1022,24 @@ export function SalesPage() {
       };
       if (selectedItemId) {
         await updateOrderItem(selectedItemId, payload);
+        await reloadSalesData();
+        resetItemForm();
+        closeModal();
       } else {
         await createOrderItem(payload);
+        await reloadSalesData();
+        resetItemForm();
+        setScheduleForm({
+          ...createEmptyScheduleForm(),
+          order: currentOrderId,
+          seller: linkedOrder?.assigned_seller ?? null,
+          scheduled_date: linkedOrder?.expected_delivery_date ?? "",
+        });
+        setActiveTab("schedules");
+        setSelectedScheduleId(null);
+        setActiveModal("schedule");
+        return;
       }
-      await reloadSalesData();
-      resetItemForm();
-      closeModal();
     } catch (error) {
       setItemError(
         error instanceof ApiError
@@ -955,11 +1056,20 @@ export function SalesPage() {
     setSchedulePending(true);
     setScheduleError(null);
     try {
+      const linkedOrder =
+        orders.find((order) => order.id === Number(scheduleForm.order)) ?? null;
+
+      if (!linkedOrder?.assigned_seller) {
+        setScheduleError("Choose an order that already has an assigned seller.");
+        return;
+      }
+
       const payload: DeliverySchedulePayload = {
         order: Number(scheduleForm.order),
+        seller: scheduleForm.seller ?? linkedOrder?.assigned_seller ?? null,
         scheduled_date: scheduleForm.scheduled_date,
-        assigned_vehicle: scheduleForm.assigned_vehicle.trim(),
-        assigned_driver: scheduleForm.assigned_driver.trim(),
+        assigned_vehicle: "",
+        assigned_driver: "",
         status: scheduleForm.status,
         notes: scheduleForm.notes.trim(),
       };
@@ -991,7 +1101,6 @@ export function SalesPage() {
         delivery_date: deliveryForm.delivery_date,
         recipient_name: deliveryForm.recipient_name.trim(),
         delivery_status: deliveryForm.delivery_status,
-        proof_reference: deliveryForm.proof_reference.trim(),
         delivery_note: deliveryForm.delivery_note.trim(),
       };
       if (selectedDeliveryId) {
@@ -1315,8 +1424,16 @@ export function SalesPage() {
                             value={record.client_name}
                           />
                           <DetailItem
+                            label="Seller"
+                            value={record.assigned_seller_name || "Not assigned"}
+                          />
+                          <DetailItem
                             label="Order date"
                             value={formatDate(record.order_date)}
+                          />
+                          <DetailItem
+                            label="Payment"
+                            value={(record.payment_method ?? "cash").replaceAll("_", " ")}
                           />
                           <DetailItem
                             label="Total"
@@ -1452,12 +1569,12 @@ export function SalesPage() {
                             value={formatDate(record.scheduled_date)}
                           />
                           <DetailItem
-                            label="Vehicle"
-                            value={record.assigned_vehicle || "Not assigned"}
+                            label="Seller"
+                            value={record.seller_name || "Not assigned"}
                           />
                           <DetailItem
-                            label="Driver"
-                            value={record.assigned_driver || "Not assigned"}
+                            label="Seller code"
+                            value={record.seller_code || "Not assigned"}
                           />
                         </div>
                       </div>
@@ -1979,13 +2096,13 @@ export function SalesPage() {
       {activeModal === "order" ? (
         <ModalShell
           title={selectedOrderId ? "Edit sales order" : "Add sales order"}
-          description="Create or update a customer order."
+          description="Create or update a sales order and assign the seller responsible for it."
           onClose={closeModal}
         >
           <form className="space-y-6" onSubmit={handleOrderSubmit}>
             <FormPanel
               title="Order details"
-              description="Use the sales orders endpoint fields here."
+              description="Capture the client, seller, dates, and order status."
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2 text-sm font-medium text-slate-700">
@@ -2024,18 +2141,61 @@ export function SalesPage() {
                   />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Order number</span>
-                  <input
-                    className={fieldClassName}
-                    value={orderForm.order_number}
-                    onChange={(event) =>
+                  <span>Assigned seller</span>
+                  <PickerField
+                    value={
+                      orderForm.assigned_seller
+                        ? String(orderForm.assigned_seller)
+                        : ""
+                    }
+                    options={[
+                      { label: "Select seller", value: "" },
+                      ...salesEmployees.map((employee) => ({
+                        label: `${employee.full_name} (${employee.employee_code})`,
+                        value: String(employee.id),
+                      })),
+                    ]}
+                    onChange={(value) =>
                       setOrderForm((current) => ({
                         ...current,
-                        order_number: event.target.value,
+                        assigned_seller: value ? Number(value) : null,
                       }))
                     }
-                    required
                   />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Payment method</span>
+                  <PickerField
+                    value={orderForm.payment_method ?? "cash"}
+                    options={paymentMethods.map((method) => ({
+                      label: method.replaceAll("_", " "),
+                      value: method,
+                    }))}
+                    onChange={(value) =>
+                      setOrderForm((current) => ({
+                        ...current,
+                        payment_method: value as PaymentMethod,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Order number</span>
+                  <input
+                    className={`${fieldClassName} bg-slate-50 text-slate-500`}
+                    value={
+                      selectedOrderId
+                        ? orderForm.order_number || "Saved order number"
+                        : "Will be generated automatically by the backend"
+                    }
+                    disabled
+                    readOnly
+                  />
+                  <p className="text-xs text-slate-500">
+                    {selectedOrderId
+                      ? "Order numbers are backend-managed and cannot be edited."
+                      : "The backend will assign the next ORD number when you create the order."}
+                  </p>
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700">
                   <span>Order date</span>
@@ -2121,7 +2281,7 @@ export function SalesPage() {
                   {orderPending ? (
                     <LoaderCircle className="h-4 w-4 animate-spin" />
                   ) : null}
-                  {selectedOrderId ? "Save changes" : "Create order"}
+                  {selectedOrderId ? "Save changes" : "Add order item"}
                 </button>
               </div>
             </div>
@@ -2136,6 +2296,13 @@ export function SalesPage() {
           onClose={closeModal}
         >
           <form className="space-y-6" onSubmit={handleItemSubmit}>
+            {!selectedItemId && recentGeneratedOrderNumber ? (
+              <div className="rounded-[28px] border border-sky-200 bg-[linear-gradient(135deg,rgba(224,242,254,0.95),rgba(186,230,253,0.78))] px-5 py-4 shadow-[0_18px_40px_rgba(14,116,144,0.14)]">
+                <p className="text-base font-semibold text-sky-950">
+                  {`Your generated order number is ${recentGeneratedOrderNumber}. Create the order item for that order below.`}
+                </p>
+              </div>
+            ) : null}
             <FormPanel
               title="Item details"
               description="Use either a finished product link or a direct product name."
@@ -2176,16 +2343,22 @@ export function SalesPage() {
                     options={[
                       { label: "Direct product name", value: "" },
                       ...finishedProducts.map((product) => ({
-                        label: product.name,
+                        label: `${product.name} (${formatCurrency(Number.parseFloat(product.unit_price))})`,
                         value: String(product.id),
                       })),
                     ]}
-                    onChange={(value) =>
+                    onChange={(value) => {
+                      const matchedProduct = finishedProducts.find(
+                        (product) => product.id === Number(value),
+                      );
                       setItemForm((current) => ({
                         ...current,
                         finished_product: value ? Number(value) : null,
-                      }))
-                    }
+                        unit_price: matchedProduct
+                          ? matchedProduct.unit_price
+                          : current.unit_price,
+                      }));
+                    }}
                   />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
@@ -2219,7 +2392,10 @@ export function SalesPage() {
                 <label className="space-y-2 text-sm font-medium text-slate-700">
                   <span>Unit price</span>
                   <input
-                    className={fieldClassName}
+                    className={`${fieldClassName} ${selectedFinishedProduct ? "cursor-not-allowed bg-slate-100 text-slate-500" : ""}`}
+                    type="number"
+                    min="0"
+                    step="0.01"
                     value={itemForm.unit_price}
                     onChange={(event) =>
                       setItemForm((current) => ({
@@ -2227,9 +2403,26 @@ export function SalesPage() {
                         unit_price: event.target.value,
                       }))
                     }
+                    readOnly={Boolean(selectedFinishedProduct)}
                     required
                   />
+                  <p className="text-xs text-slate-500">
+                    {selectedFinishedProduct
+                      ? `${selectedFinishedProduct.name} price applied automatically: ${formatCurrencyFromString(itemForm.unit_price)}`
+                      : "Enter the unit price only when using a direct product name."}
+                  </p>
                 </label>
+                <div className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                  <span>Line total</span>
+                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
+                    {formatCurrency(itemLineTotalPreview)}
+                    {selectedFinishedProduct ? (
+                      <span className="ml-2 text-slate-500">
+                        from {selectedFinishedProduct.name}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
                 <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
                   <span>Notes</span>
                   <textarea
@@ -2300,13 +2493,20 @@ export function SalesPage() {
               ? "Edit delivery schedule"
               : "Add delivery schedule"
           }
-          description="Plan dispatch timing and vehicle assignment."
+          description="Plan the delivery date while keeping the order's assigned seller attached."
           onClose={closeModal}
         >
           <form className="space-y-6" onSubmit={handleScheduleSubmit}>
+            {!selectedScheduleId && recentGeneratedOrderNumber ? (
+              <div className="rounded-[28px] border border-sky-200 bg-[linear-gradient(135deg,rgba(224,242,254,0.95),rgba(186,230,253,0.78))] px-5 py-4 shadow-[0_18px_40px_rgba(14,116,144,0.14)]">
+                <p className="text-base font-semibold text-sky-950">
+                  {`Your generated order number is ${recentGeneratedOrderNumber}. Create the delivery schedule for that order below.`}
+                </p>
+              </div>
+            ) : null}
             <FormPanel
               title="Schedule details"
-              description="Use the delivery schedules endpoint fields here."
+              description="Schedules now inherit the seller from the selected sales order."
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2 text-sm font-medium text-slate-700">
@@ -2326,10 +2526,17 @@ export function SalesPage() {
                       ),
                     ]}
                     onChange={(value) =>
-                      setScheduleForm((current) => ({
-                        ...current,
-                        order: Number(value),
-                      }))
+                      setScheduleForm((current) => {
+                        const nextOrder = orders.find(
+                          (order) => order.id === Number(value),
+                        );
+
+                        return {
+                          ...current,
+                          order: Number(value),
+                          seller: nextOrder?.assigned_seller ?? null,
+                        };
+                      })
                     }
                   />
                 </label>
@@ -2365,29 +2572,19 @@ export function SalesPage() {
                   />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Assigned vehicle</span>
+                  <span>Seller</span>
                   <input
                     className={fieldClassName}
-                    value={scheduleForm.assigned_vehicle}
-                    onChange={(event) =>
-                      setScheduleForm((current) => ({
-                        ...current,
-                        assigned_vehicle: event.target.value,
-                      }))
-                    }
+                    value={selectedScheduleSellerName}
+                    disabled
                   />
                 </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                  <span>Assigned driver</span>
+                <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Seller code</span>
                   <input
                     className={fieldClassName}
-                    value={scheduleForm.assigned_driver}
-                    onChange={(event) =>
-                      setScheduleForm((current) => ({
-                        ...current,
-                        assigned_driver: event.target.value,
-                      }))
-                    }
+                    value={selectedScheduleSellerCode || "Will follow the order"}
+                    disabled
                   />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
@@ -2458,7 +2655,7 @@ export function SalesPage() {
           title={
             selectedDeliveryId ? "Edit delivery record" : "Add delivery record"
           }
-          description="Capture the final delivery outcome and proof details."
+          description="Capture the final delivery outcome."
           onClose={closeModal}
         >
           <form className="space-y-6" onSubmit={handleDeliverySubmit}>
@@ -2559,19 +2756,6 @@ export function SalesPage() {
                       setDeliveryForm((current) => ({
                         ...current,
                         recipient_name: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Proof reference</span>
-                  <input
-                    className={fieldClassName}
-                    value={deliveryForm.proof_reference}
-                    onChange={(event) =>
-                      setDeliveryForm((current) => ({
-                        ...current,
-                        proof_reference: event.target.value,
                       }))
                     }
                   />

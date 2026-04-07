@@ -123,7 +123,6 @@ type DocumentFormState = {
   title: string;
   document_type: string;
   issue_date: string;
-  expiry_date: string;
   status: DocumentStatus;
   notes: string;
   file: File | null;
@@ -159,7 +158,7 @@ function createEmptyHygieneForm(): HygieneCheckPayload {
 function createEmptyWaterForm(): WaterQualityTestPayload {
   return {
     test_date: "",
-    sample_location: "",
+    location: "",
     parameter_name: "",
     result_value: "",
     unit_name: "",
@@ -189,7 +188,6 @@ function createEmptyTrainingForm(): TrainingPayload {
     training_title: "",
     training_date: "",
     trainer_name: "",
-    expiry_date: null,
     certificate_number: "",
     notes: "",
   };
@@ -200,13 +198,23 @@ function createEmptyDocumentForm(): DocumentFormState {
     title: "",
     document_type: "",
     issue_date: "",
-    expiry_date: "",
     status: "draft",
     notes: "",
     file: null,
     remove_file: false,
   };
 }
+
+const supportedDocumentTypes = [
+  "License",
+  "Permit",
+  "Certificate",
+  "SOP",
+  "Report",
+  "Policy",
+] as const;
+
+const maxDocumentFileSizeLabel = "10 MB";
 
 function FieldMessage({ message }: { message: string | null }) {
   if (!message) {
@@ -410,7 +418,6 @@ function buildDocumentPayload(
     title: form.title.trim(),
     document_type: form.document_type.trim(),
     issue_date: form.issue_date || null,
-    expiry_date: form.expiry_date || null,
     status: form.status,
     notes: form.notes.trim(),
     file: form.file ?? undefined,
@@ -571,7 +578,7 @@ export function CompliancePage() {
       .then((record) =>
         setWaterForm({
           test_date: record.test_date,
-          sample_location: record.sample_location,
+          location: record.location,
           parameter_name: record.parameter_name,
           result_value: record.result_value,
           unit_name: record.unit_name,
@@ -631,7 +638,6 @@ export function CompliancePage() {
           training_title: record.training_title,
           training_date: record.training_date,
           trainer_name: record.trainer_name,
-          expiry_date: record.expiry_date,
           certificate_number: record.certificate_number,
           notes: record.notes,
         }),
@@ -657,7 +663,6 @@ export function CompliancePage() {
           title: record.title,
           document_type: record.document_type,
           issue_date: record.issue_date ?? "",
-          expiry_date: record.expiry_date ?? "",
           status: record.status,
           notes: record.notes,
           file: null,
@@ -766,10 +771,21 @@ export function CompliancePage() {
     setWaterError(null);
 
     try {
+      const payload: WaterQualityTestPayload = {
+        ...waterForm,
+        location: waterForm.location.trim(),
+        parameter_name: waterForm.parameter_name.trim(),
+        result_value: waterForm.result_value.trim(),
+        unit_name: waterForm.unit_name.trim(),
+        standard_limit: waterForm.standard_limit.trim(),
+        tested_by: waterForm.tested_by.trim(),
+        notes: waterForm.notes.trim(),
+      };
+
       if (selectedWaterId) {
-        await updateWaterQualityTest(selectedWaterId, waterForm);
+        await updateWaterQualityTest(selectedWaterId, payload);
       } else {
-        await createWaterQualityTest(waterForm);
+        await createWaterQualityTest(payload);
       }
 
       await reloadComplianceData();
@@ -823,7 +839,6 @@ export function CompliancePage() {
         training_title: trainingForm.training_title.trim(),
         training_date: trainingForm.training_date,
         trainer_name: trainingForm.trainer_name.trim(),
-        expiry_date: trainingForm.expiry_date || null,
         certificate_number: trainingForm.certificate_number.trim(),
         notes: trainingForm.notes.trim(),
       };
@@ -1029,7 +1044,7 @@ export function CompliancePage() {
             {activeTab === "water" ? (
               <SectionCard
                 title="Water quality tests"
-                description="Lab results, sample points, and accepted limits."
+                description="Lab results, locations, and accepted limits."
                 action={
                   canManageCompliance ? (
                     <button
@@ -1074,7 +1089,7 @@ export function CompliancePage() {
                         <div className="flex-1 space-y-3">
                           <DetailItem
                             label="Location"
-                            value={record.sample_location}
+                            value={record.location}
                           />
                           <DetailItem
                             label="Result"
@@ -1216,10 +1231,6 @@ export function CompliancePage() {
                             label="Date"
                             value={formatDate(record.training_date)}
                           />
-                          <DetailItem
-                            label="Expiry"
-                            value={formatDate(record.expiry_date)}
-                          />
                         </div>
                       </div>
                     </article>
@@ -1233,7 +1244,7 @@ export function CompliancePage() {
             {activeTab === "documents" ? (
               <SectionCard
                 title="Compliance documents"
-                description="Official files with issue dates, expiry dates, and attachments."
+                description="Official files with issue dates and attachments."
                 action={
                   canManageCompliance ? (
                     <button
@@ -1476,7 +1487,7 @@ export function CompliancePage() {
               ? "Edit water quality test"
               : "Add water quality test"
           }
-          description="Capture lab values, sample location, and the accepted limit."
+          description="Capture lab values, location, and the accepted limit."
           onClose={closeModal}
         >
           <form className="space-y-6" onSubmit={handleWaterSubmit}>
@@ -1517,14 +1528,14 @@ export function CompliancePage() {
                   />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Sample location</span>
+                  <span>Location</span>
                   <input
                     className={fieldClassName}
-                    value={waterForm.sample_location}
+                    value={waterForm.location}
                     onChange={(event) =>
                       setWaterForm((current) => ({
                         ...current,
-                        sample_location: event.target.value,
+                        location: event.target.value,
                       }))
                     }
                     required
@@ -1904,20 +1915,6 @@ export function CompliancePage() {
                   />
                 </label>
                 <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Expiry date</span>
-                  <input
-                    type="date"
-                    className={fieldClassName}
-                    value={trainingForm.expiry_date ?? ""}
-                    onChange={(event) =>
-                      setTrainingForm((current) => ({
-                        ...current,
-                        expiry_date: event.target.value || null,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
                   <span>Trainer name</span>
                   <input
                     className={fieldClassName}
@@ -2053,6 +2050,10 @@ export function CompliancePage() {
                     required
                   />
                 </label>
+                <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 md:col-span-2">
+                  Supported document types: {supportedDocumentTypes.join(", ")}.
+                  Maximum file size: {maxDocumentFileSizeLabel}.
+                </div>
                 <label className="space-y-2 text-sm font-medium text-slate-700">
                   <span>Status</span>
                   <PickerField
@@ -2079,20 +2080,6 @@ export function CompliancePage() {
                       setDocumentForm((current) => ({
                         ...current,
                         issue_date: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium text-slate-700">
-                  <span>Expiry date</span>
-                  <input
-                    type="date"
-                    className={fieldClassName}
-                    value={documentForm.expiry_date}
-                    onChange={(event) =>
-                      setDocumentForm((current) => ({
-                        ...current,
-                        expiry_date: event.target.value,
                       }))
                     }
                   />

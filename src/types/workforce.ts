@@ -11,6 +11,17 @@ export type WorkforcePaginatedResponse<T> = {
   results: T[];
 };
 
+export type DepartmentRecord = WorkforceTimestampFields & {
+  name: string;
+  notes: string;
+  is_active: boolean;
+};
+
+export type DepartmentPayload = Omit<
+  DepartmentRecord,
+  "id" | "created_at" | "updated_at"
+>;
+
 export type EmployeeStatus = "active" | "inactive" | "terminated";
 export type EmployeeWorkRole =
   | "operator"
@@ -28,7 +39,8 @@ export type EmployeeRecord = WorkforceTimestampFields & {
   email: string;
   phone_number: string;
   job_title: string;
-  department: string;
+  department: number | null;
+  department_name: string;
   work_role: EmployeeWorkRole;
   hire_date: string;
   status: EmployeeStatus;
@@ -38,7 +50,7 @@ export type EmployeeRecord = WorkforceTimestampFields & {
 
 export type EmployeePayload = Omit<
   EmployeeRecord,
-  "id" | "created_at" | "updated_at" | "full_name"
+  "id" | "created_at" | "updated_at" | "full_name" | "employee_code" | "department_name"
 >;
 
 export type ShiftRecord = WorkforceTimestampFields & {

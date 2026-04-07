@@ -13,6 +13,7 @@ import { NotificationsPage } from "../pages/NotificationsPage";
 import { ProductionPage } from "../pages/ProductionPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { SalesPage } from "../pages/SalesPage";
+import { SalesLogPage } from "../pages/SalesLogPage";
 import { WorkforcePage } from "../pages/WorkforcePage";
 
 export const router = createBrowserRouter([
@@ -63,6 +64,10 @@ export const router = createBrowserRouter([
           {
             path: "sales",
             element: <SalesPage />,
+          },
+          {
+            path: "sales-log",
+            element: <SalesLogPage />,
           },
           {
             path: "finance",

@@ -12,7 +12,6 @@ export type MachineStatus =
 
 export type MachineRecord = ProductionTimestampFields & {
   name: string;
-  code: string;
   machine_type: string;
   manufacturer: string;
   model_number: string;
@@ -51,11 +50,18 @@ export type MaintenanceFrequency =
   | "yearly"
   | "custom";
 
+export type MaintenanceType =
+  | "preventive"
+  | "corrective"
+  | "inspection"
+  | "calibration"
+  | "emergency";
+
 export type MaintenanceScheduleRecord = ProductionTimestampFields & {
   machine: number;
   machine_name: string;
   title: string;
-  maintenance_type: string;
+  maintenance_type: MaintenanceType;
   frequency: MaintenanceFrequency;
   interval_days: number | null;
   next_due_date: string;
@@ -77,7 +83,7 @@ export type MaintenanceLogRecord = ProductionTimestampFields & {
   schedule: number | null;
   schedule_title: string;
   maintenance_date: string;
-  maintenance_type: string;
+  maintenance_type: MaintenanceType;
   status: MaintenanceLogStatus;
   performed_by_name: string;
   cost: string;

@@ -22,7 +22,7 @@ export type HygieneCheckPayload = Omit<
 
 export type WaterQualityTestRecord = ComplianceTimestampFields & {
   test_date: string;
-  sample_location: string;
+  location: string;
   parameter_name: string;
   result_value: string;
   unit_name: string;
@@ -62,7 +62,6 @@ export type TrainingRecord = ComplianceTimestampFields & {
   training_title: string;
   training_date: string;
   trainer_name: string;
-  expiry_date: string | null;
   certificate_number: string;
   notes: string;
 };
@@ -78,7 +77,6 @@ export type ComplianceDocumentRecord = ComplianceTimestampFields & {
   title: string;
   document_type: string;
   issue_date: string | null;
-  expiry_date: string | null;
   file: string | null;
   status: DocumentStatus;
   notes: string;
@@ -88,7 +86,6 @@ export type ComplianceDocumentPayload = {
   title?: string;
   document_type?: string;
   issue_date?: string | null;
-  expiry_date?: string | null;
   file?: File;
   remove_file?: boolean;
   status?: DocumentStatus;

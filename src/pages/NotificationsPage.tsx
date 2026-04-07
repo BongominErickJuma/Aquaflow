@@ -53,6 +53,10 @@ function getModuleRoute(module: NotificationModule) {
   return `/${module}`;
 }
 
+function getNotificationRoute(notification: NotificationItem) {
+  return notification.target_path || getModuleRoute(notification.module);
+}
+
 function getSeverityClasses(severity: NotificationItem["severity"]) {
   switch (severity) {
     case "critical":
@@ -609,7 +613,7 @@ export function NotificationsPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            navigate(getModuleRoute(notification.module))
+                            navigate(getNotificationRoute(notification))
                           }
                           aria-label={`Open ${formatModuleLabel(notification.module)} module`}
                           title="Open module"

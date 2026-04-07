@@ -60,6 +60,7 @@ import type {
   MachineUsageLogPayload,
   MachineUsageLogRecord,
   MaintenanceFrequency,
+  MaintenanceType,
   MaintenanceLogPayload,
   MaintenanceLogRecord,
   MaintenanceLogStatus,
@@ -155,6 +156,13 @@ const maintenanceFrequencies: MaintenanceFrequency[] = [
   "yearly",
   "custom",
 ];
+const maintenanceTypes: MaintenanceType[] = [
+  "preventive",
+  "corrective",
+  "inspection",
+  "calibration",
+  "emergency",
+];
 const maintenanceLogStatuses: MaintenanceLogStatus[] = [
   "completed",
   "partial",
@@ -178,7 +186,6 @@ const utilityTypes: UtilityType[] = [
 function createEmptyMachineForm(): MachinePayload {
   return {
     name: "",
-    code: "",
     machine_type: "",
     manufacturer: "",
     model_number: "",
@@ -197,7 +204,6 @@ function buildMachineForm(record: MachineRecord | null): MachinePayload {
 
   return {
     name: record.name,
-    code: record.code,
     machine_type: record.machine_type,
     manufacturer: record.manufacturer,
     model_number: record.model_number,
@@ -241,7 +247,7 @@ function createEmptyScheduleForm(): MaintenanceSchedulePayload {
   return {
     machine: 0,
     title: "",
-    maintenance_type: "",
+    maintenance_type: "preventive",
     frequency: "monthly",
     interval_days: null,
     next_due_date: "",
@@ -276,7 +282,7 @@ function createEmptyMaintenanceLogForm(): MaintenanceLogPayload {
     machine: 0,
     schedule: null,
     maintenance_date: "",
-    maintenance_type: "",
+    maintenance_type: "preventive",
     status: "completed",
     performed_by_name: "",
     cost: "0.00",
@@ -985,14 +991,13 @@ export function ProductionPage() {
     event.preventDefault();
     setMachineError("");
     setIsMachinePending(true);
-    try {
-      const payload = {
-        ...machineForm,
-        name: machineForm.name.trim(),
-        code: machineForm.code.trim(),
-        machine_type: machineForm.machine_type.trim(),
-        manufacturer: machineForm.manufacturer.trim(),
-        model_number: machineForm.model_number.trim(),
+      try {
+        const payload = {
+          ...machineForm,
+          name: machineForm.name.trim(),
+          machine_type: machineForm.machine_type.trim(),
+          manufacturer: machineForm.manufacturer.trim(),
+          model_number: machineForm.model_number.trim(),
         serial_number: machineForm.serial_number?.trim() || null,
         location_name: machineForm.location_name.trim(),
         notes: machineForm.notes.trim(),
@@ -1087,13 +1092,12 @@ export function ProductionPage() {
     setScheduleError("");
     setIsSchedulePending(true);
     try {
-      const payload = {
-        ...scheduleForm,
-        title: scheduleForm.title.trim(),
-        maintenance_type: scheduleForm.maintenance_type.trim(),
-        interval_days:
-          scheduleForm.frequency === "custom"
-            ? scheduleForm.interval_days
+        const payload = {
+          ...scheduleForm,
+          title: scheduleForm.title.trim(),
+          interval_days:
+            scheduleForm.frequency === "custom"
+              ? scheduleForm.interval_days
             : null,
         notes: scheduleForm.notes.trim(),
       };
@@ -1141,13 +1145,12 @@ export function ProductionPage() {
     setMaintenanceLogError("");
     setIsMaintenanceLogPending(true);
     try {
-      const payload = {
-        ...maintenanceLogForm,
-        schedule: maintenanceLogForm.schedule || null,
-        maintenance_type: maintenanceLogForm.maintenance_type.trim(),
-        performed_by_name: maintenanceLogForm.performed_by_name.trim(),
-        notes: maintenanceLogForm.notes.trim(),
-      };
+        const payload = {
+          ...maintenanceLogForm,
+          schedule: maintenanceLogForm.schedule || null,
+          performed_by_name: maintenanceLogForm.performed_by_name.trim(),
+          notes: maintenanceLogForm.notes.trim(),
+        };
       if (selectedMaintenanceLogId) {
         await updateMaintenanceLog(selectedMaintenanceLogId, payload);
       } else {
@@ -1600,7 +1603,9 @@ export function ProductionPage() {
                             {record.name}
                           </p>
                           <p className="mt-1 text-sm text-slate-500">
-                            {record.code} / {record.machine_type}
+                            {record.model_number
+                              ? `${record.machine_type} / ${record.model_number}`
+                              : record.machine_type}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             {record.location_name || "No location recorded"}
@@ -1985,23 +1990,6 @@ export function ProductionPage() {
                       setMachineForm((current) => ({
                         ...current,
                         name: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Code
-                  </span>
-                  <input
-                    className={fieldClassName}
-                    value={machineForm.code}
-                    onChange={(event) =>
-                      setMachineForm((current) => ({
-                        ...current,
-                        code: event.target.value,
                       }))
                     }
                     required
@@ -2404,16 +2392,18 @@ export function ProductionPage() {
                   <span className="text-sm font-medium text-slate-700">
                     Maintenance type
                   </span>
-                  <input
-                    className={fieldClassName}
+                  <PickerField
                     value={scheduleForm.maintenance_type}
-                    onChange={(event) =>
+                    options={maintenanceTypes.map((value) => ({
+                      label: titleCase(value),
+                      value,
+                    }))}
+                    onChange={(value) =>
                       setScheduleForm((current) => ({
                         ...current,
-                        maintenance_type: event.target.value,
+                        maintenance_type: value as MaintenanceType,
                       }))
                     }
-                    required
                   />
                 </label>
 
@@ -2598,6 +2588,7 @@ export function ProductionPage() {
                         ...current,
                         machine: value ? Number(value) : 0,
                         schedule: null,
+                        maintenance_type: "preventive",
                       }))
                     }
                   />
@@ -2627,10 +2618,18 @@ export function ProductionPage() {
                         })),
                     ]}
                     onChange={(value) =>
-                      setMaintenanceLogForm((current) => ({
-                        ...current,
-                        schedule: value ? Number(value) : null,
-                      }))
+                      setMaintenanceLogForm((current) => {
+                        const selectedSchedule = maintenanceSchedules.find(
+                          (record) => record.id === Number(value),
+                        );
+                        return {
+                          ...current,
+                          schedule: value ? Number(value) : null,
+                          maintenance_type:
+                            selectedSchedule?.maintenance_type ??
+                            current.maintenance_type,
+                        };
+                      })
                     }
                   />
                 </label>
@@ -2657,17 +2656,30 @@ export function ProductionPage() {
                   <span className="text-sm font-medium text-slate-700">
                     Maintenance type
                   </span>
-                  <input
-                    className={fieldClassName}
-                    value={maintenanceLogForm.maintenance_type}
-                    onChange={(event) =>
-                      setMaintenanceLogForm((current) => ({
-                        ...current,
-                        maintenance_type: event.target.value,
-                      }))
-                    }
-                    required
-                  />
+                  {maintenanceLogForm.schedule ? (
+                    <div className="space-y-2">
+                      <div className={fieldClassName}>
+                        {titleCase(maintenanceLogForm.maintenance_type)}
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        This follows the linked maintenance schedule.
+                      </p>
+                    </div>
+                  ) : (
+                    <PickerField
+                      value={maintenanceLogForm.maintenance_type}
+                      options={maintenanceTypes.map((value) => ({
+                        label: titleCase(value),
+                        value,
+                      }))}
+                      onChange={(value) =>
+                        setMaintenanceLogForm((current) => ({
+                          ...current,
+                          maintenance_type: value as MaintenanceType,
+                        }))
+                      }
+                    />
+                  )}
                 </label>
 
                 <label className="block space-y-2">

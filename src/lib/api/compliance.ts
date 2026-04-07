@@ -162,9 +162,6 @@ function buildDocumentBody(payload: ComplianceDocumentPayload | FormData) {
   if (payload.issue_date !== undefined && payload.issue_date !== null) {
     formData.append("issue_date", payload.issue_date);
   }
-  if (payload.expiry_date !== undefined && payload.expiry_date !== null) {
-    formData.append("expiry_date", payload.expiry_date);
-  }
   if (payload.file) formData.append("file", payload.file);
   if (payload.remove_file !== undefined)
     formData.append("remove_file", String(payload.remove_file));

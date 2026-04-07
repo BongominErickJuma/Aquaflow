@@ -213,7 +213,6 @@ function buildSupplierForm(record: SupplierRecord | null): SupplierPayload {
 function createEmptyLocationForm(): StorageLocationPayload {
   return {
     name: "",
-    code: "",
     description: "",
     is_active: true,
   };
@@ -228,7 +227,6 @@ function buildLocationForm(
 
   return {
     name: record.name,
-    code: record.code,
     description: record.description,
     is_active: record.is_active,
   };
@@ -237,7 +235,6 @@ function buildLocationForm(
 function createEmptyRawMaterialForm(): RawMaterialPayload {
   return {
     name: "",
-    sku: "",
     description: "",
     unit: 0,
     supplier: null,
@@ -256,7 +253,6 @@ function buildRawMaterialForm(
 
   return {
     name: record.name,
-    sku: record.sku,
     description: record.description,
     unit: record.unit,
     supplier: record.supplier,
@@ -269,9 +265,9 @@ function buildRawMaterialForm(
 function createEmptyFinishedProductForm(): FinishedProductPayload {
   return {
     name: "",
-    sku: "",
     description: "",
     unit: 0,
+    unit_price: "0.00",
     reorder_level: "0.00",
     notes: "",
     is_active: true,
@@ -287,9 +283,9 @@ function buildFinishedProductForm(
 
   return {
     name: record.name,
-    sku: record.sku,
     description: record.description,
     unit: record.unit,
+    unit_price: record.unit_price,
     reorder_level: record.reorder_level,
     notes: record.notes,
     is_active: record.is_active,
@@ -569,6 +565,18 @@ function humanizeMovementType(value: StockMovementType) {
 
 function formatQuantity(value: string, unitName?: string) {
   return unitName ? `${value} ${unitName}` : value;
+}
+
+function formatCurrency(value: string) {
+  const numericValue = Number.parseFloat(value);
+  if (!Number.isFinite(numericValue)) {
+    return "UGX 0";
+  }
+
+  return `UGX ${new Intl.NumberFormat("en-UG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(numericValue)}`;
 }
 
 export function InventoryPage() {
@@ -1121,7 +1129,6 @@ export function InventoryPage() {
     try {
       const payload: StorageLocationPayload = {
         name: locationForm.name.trim(),
-        code: locationForm.code.trim(),
         description: locationForm.description.trim(),
         is_active: locationForm.is_active,
       };
@@ -1176,7 +1183,6 @@ export function InventoryPage() {
     try {
       const payload: RawMaterialPayload = {
         name: rawMaterialForm.name.trim(),
-        sku: rawMaterialForm.sku.trim(),
         description: rawMaterialForm.description.trim(),
         unit: rawMaterialForm.unit,
         supplier: rawMaterialForm.supplier,
@@ -1237,9 +1243,9 @@ export function InventoryPage() {
     try {
       const payload: FinishedProductPayload = {
         name: finishedProductForm.name.trim(),
-        sku: finishedProductForm.sku.trim(),
         description: finishedProductForm.description.trim(),
         unit: finishedProductForm.unit,
+        unit_price: finishedProductForm.unit_price,
         reorder_level: finishedProductForm.reorder_level,
         notes: finishedProductForm.notes.trim(),
         is_active: finishedProductForm.is_active,
@@ -1678,9 +1684,6 @@ export function InventoryPage() {
                           <p className="font-semibold text-slate-900">
                             {record.name}
                           </p>
-                          <p className="mt-1 text-sm text-slate-500">
-                            {record.sku}
-                          </p>
                           <p className="mt-2 text-sm text-slate-600">
                             Unit: {record.unit_name}
                           </p>
@@ -1756,11 +1759,11 @@ export function InventoryPage() {
                           <p className="font-semibold text-slate-900">
                             {record.name}
                           </p>
-                          <p className="mt-1 text-sm text-slate-500">
-                            {record.sku}
-                          </p>
                           <p className="mt-2 text-sm text-slate-600">
                             Unit: {record.unit_name}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Price: {formatCurrency(record.unit_price)}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             Reorder:{" "}
@@ -1905,9 +1908,6 @@ export function InventoryPage() {
                         <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
                           <p className="font-semibold text-slate-900">
                             {record.name}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-500">
-                            {record.code}
                           </p>
                           <p className="mt-2 text-sm leading-6 text-slate-600">
                             {record.description || "No description recorded"}
@@ -2368,22 +2368,6 @@ export function InventoryPage() {
                     required
                   />
                 </label>
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Code
-                  </span>
-                  <input
-                    className={fieldClassName}
-                    value={locationForm.code}
-                    onChange={(event) =>
-                      setLocationForm((current) => ({
-                        ...current,
-                        code: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
               </div>
               <label className="block space-y-2">
                 <span className="text-sm font-medium text-slate-700">
@@ -2472,24 +2456,6 @@ export function InventoryPage() {
                       setRawMaterialForm((current) => ({
                         ...current,
                         name: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-
-                {/* SKU */}
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    SKU
-                  </span>
-                  <input
-                    className={fieldClassName}
-                    value={rawMaterialForm.sku}
-                    onChange={(event) =>
-                      setRawMaterialForm((current) => ({
-                        ...current,
-                        sku: event.target.value,
                       }))
                     }
                     required
@@ -2691,24 +2657,6 @@ export function InventoryPage() {
                   />
                 </label>
 
-                {/* SKU */}
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    SKU
-                  </span>
-                  <input
-                    className={fieldClassName}
-                    value={finishedProductForm.sku}
-                    onChange={(event) =>
-                      setFinishedProductForm((current) => ({
-                        ...current,
-                        sku: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-
                 {/* Unit */}
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
@@ -2751,6 +2699,26 @@ export function InventoryPage() {
                       setFinishedProductForm((current) => ({
                         ...current,
                         reorder_level: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Unit price
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={fieldClassName}
+                    value={finishedProductForm.unit_price}
+                    onChange={(event) =>
+                      setFinishedProductForm((current) => ({
+                        ...current,
+                        unit_price: event.target.value,
                       }))
                     }
                     required

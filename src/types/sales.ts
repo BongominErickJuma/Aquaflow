@@ -8,10 +8,15 @@ export type BrandingStatus = "active" | "inactive" | "archived";
 export type OrderStatus =
   | "draft"
   | "confirmed"
-  | "processing"
+  | "pending"
   | "dispatched"
   | "completed"
   | "cancelled";
+export type PaymentMethod =
+  | "cash"
+  | "mobile_money"
+  | "bank_transfer"
+  | "credit";
 export type DeliveryScheduleStatus =
   | "scheduled"
   | "rescheduled"
@@ -68,18 +73,27 @@ export type BrandingPayload = Omit<
 export type SalesOrderRecord = SalesTimestampFields & {
   client: number;
   client_name: string;
+  assigned_seller?: number | null;
+  assigned_seller_name?: string;
+  assigned_seller_code?: string;
   order_number: string;
   order_date: string;
   expected_delivery_date: string | null;
   status: OrderStatus;
+  payment_method?: PaymentMethod;
   total_amount: string;
   notes: string;
 };
 
-export type SalesOrderPayload = Omit<
-  SalesOrderRecord,
-  "id" | "created_at" | "updated_at" | "client_name" | "total_amount"
->;
+export type SalesOrderPayload = {
+  client: number;
+  assigned_seller?: number | null;
+  order_date: string;
+  expected_delivery_date: string | null;
+  status: OrderStatus;
+  payment_method?: PaymentMethod;
+  notes: string;
+};
 
 export type OrderItemRecord = SalesTimestampFields & {
   order: number;
@@ -107,16 +121,24 @@ export type DeliveryScheduleRecord = SalesTimestampFields & {
   order: number;
   order_number: string;
   scheduled_date: string;
+  seller?: number | null;
+  seller_name?: string;
+  seller_code?: string;
   assigned_vehicle: string;
   assigned_driver: string;
   status: DeliveryScheduleStatus;
   notes: string;
 };
 
-export type DeliverySchedulePayload = Omit<
-  DeliveryScheduleRecord,
-  "id" | "created_at" | "updated_at" | "order_number"
->;
+export type DeliverySchedulePayload = {
+  order: number;
+  scheduled_date: string;
+  seller?: number | null;
+  assigned_vehicle: string;
+  assigned_driver: string;
+  status: DeliveryScheduleStatus;
+  notes: string;
+};
 
 export type DeliveryRecord = SalesTimestampFields & {
   order: number;
@@ -129,7 +151,57 @@ export type DeliveryRecord = SalesTimestampFields & {
   delivery_note: string;
 };
 
-export type DeliveryRecordPayload = Omit<
-  DeliveryRecord,
-  "id" | "created_at" | "updated_at" | "order_number"
->;
+export type DeliveryRecordPayload = {
+  order: number;
+  schedule: number | null;
+  delivery_date: string;
+  recipient_name: string;
+  delivery_status: DeliveryRecordStatus;
+  delivery_note: string;
+};
+
+export type SalesLogTone = "success" | "warning" | "danger" | "neutral";
+
+export type SalesLogRecord = {
+  id: number;
+  sale_id: string;
+  business_date: string;
+  logged_at: string;
+  seller_name: string;
+  seller_code: string;
+  customer_name: string;
+  product_summary: string;
+  quantity_total: number;
+  item_count: number;
+  amount: number;
+  payment_method: PaymentMethod;
+  payment_method_label: string;
+  status_label: string;
+  status_tone: SalesLogTone;
+};
+
+export type SalesLogSummary = {
+  total_sales_today: number;
+  total_sales_amount: number;
+  average_sale_value: number;
+  cancelled_sales_count: number;
+  top_client_name: string | null;
+  top_client_amount: number;
+  top_seller_name: string | null;
+  top_seller_names: string[];
+  top_seller_sales_count: number;
+};
+
+export type PaginatedSalesLogResponse = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: SalesLogRecord[];
+};
+
+export type SalesLogDetail = {
+  entry: SalesLogRecord;
+  order: SalesOrderRecord;
+  items: OrderItemRecord[];
+  deliveries: DeliveryRecord[];
+};

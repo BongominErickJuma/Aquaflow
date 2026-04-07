@@ -29,7 +29,6 @@ export type SupplierPayload = Omit<
 
 export type StorageLocationRecord = InventoryTimestampFields & {
   name: string;
-  code: string;
   description: string;
   is_active: boolean;
 };
@@ -41,7 +40,6 @@ export type StorageLocationPayload = Omit<
 
 export type RawMaterialRecord = InventoryTimestampFields & {
   name: string;
-  sku: string;
   description: string;
   unit: number;
   unit_name: string;
@@ -63,6 +61,7 @@ export type FinishedProductRecord = InventoryTimestampFields & {
   description: string;
   unit: number;
   unit_name: string;
+  unit_price: string;
   reorder_level: string;
   notes: string;
   is_active: boolean;
@@ -70,7 +69,7 @@ export type FinishedProductRecord = InventoryTimestampFields & {
 
 export type FinishedProductPayload = Omit<
   FinishedProductRecord,
-  "id" | "created_at" | "updated_at" | "unit_name"
+  "id" | "created_at" | "updated_at" | "unit_name" | "sku"
 >;
 
 export type StockItemRecord = InventoryTimestampFields & {
