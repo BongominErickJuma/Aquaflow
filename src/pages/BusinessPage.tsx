@@ -309,17 +309,30 @@ function PickerField({
   value,
   options,
   onChange,
+  searchable = false,
+  searchPlaceholder = "Search options",
 }: {
   value: string;
-  options: Array<{ label: string; value: string }>;
+  options: Array<{ label: string; value: string; searchText?: string }>;
   onChange: (value: string) => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const selectedLabel =
     options.find((option) => option.value === value)?.label ??
     options[0]?.label ??
     "Select";
+  const normalizedSearchValue = searchValue.trim().toLowerCase();
+  const filteredOptions = searchable
+    ? options.filter((option) =>
+        (option.searchText ?? option.label)
+          .toLowerCase()
+          .includes(normalizedSearchValue),
+      )
+    : options;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -332,6 +345,12 @@ function PickerField({
 
     window.addEventListener("mousedown", handlePointerDown);
     return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchValue("");
+    }
   }, [isOpen]);
 
   return (
@@ -354,8 +373,19 @@ function PickerField({
 
       {isOpen ? (
         <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-          <div className="space-y-1">
-            {options.map((option) => (
+          {searchable ? (
+            <div className="border-b border-slate-200 px-1 pb-2">
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300"
+              />
+            </div>
+          ) : null}
+          <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
+            {filteredOptions.length ? filteredOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -373,7 +403,11 @@ function PickerField({
                 <span>{option.label}</span>
                 {value === option.value ? <Check className="h-4 w-4" /> : null}
               </button>
-            ))}
+            )) : (
+              <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
+                No matches found.
+              </div>
+            )}
           </div>
         </div>
       ) : null}
@@ -808,6 +842,54 @@ export function BusinessPage() {
   const locationOptions = company?.locations ?? [];
   const kpiOptions = company?.kpis ?? [];
   const planOptions = company?.strategic_plans ?? [];
+  const buildLicenseOptions = () =>
+    licenseOptions.map((record) => ({
+      label: buildOptionLabel(record.license_name, record.license_number),
+      value: String(record.id),
+      searchText: [
+        record.license_name,
+        record.license_number,
+        record.issuing_authority,
+        record.status,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildLocationOptions = () =>
+    locationOptions.map((record) => ({
+      label: buildOptionLabel(record.label, record.city),
+      value: String(record.id),
+      searchText: [
+        record.label,
+        record.city,
+        record.country,
+        record.address_line_1,
+        record.state_or_district,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildKpiOptions = () =>
+    kpiOptions.map((record) => ({
+      label: buildOptionLabel(record.name, record.record_date),
+      value: String(record.id),
+      searchText: [record.name, record.value, record.unit, record.record_date]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildPlanOptions = () =>
+    planOptions.map((record) => ({
+      label: buildOptionLabel(record.title, record.status),
+      value: String(record.id),
+      searchText: [
+        record.title,
+        record.objective,
+        record.owner_name,
+        record.status,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
 
   const handleCompanySubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -2249,14 +2331,10 @@ export function BusinessPage() {
                     value={selectedLicenseId ? String(selectedLicenseId) : ""}
                     options={[
                       { label: "Create new license", value: "" },
-                      ...licenseOptions.map((record) => ({
-                        label: buildOptionLabel(
-                          record.license_name,
-                          record.license_number,
-                        ),
-                        value: String(record.id),
-                      })),
+                      ...buildLicenseOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search licenses"
                     onChange={(value) =>
                       setSelectedLicenseId(value ? Number(value) : null)
                     }
@@ -2462,11 +2540,10 @@ export function BusinessPage() {
                     value={selectedLocationId ? String(selectedLocationId) : ""}
                     options={[
                       { label: "Create new location", value: "" },
-                      ...locationOptions.map((record) => ({
-                        label: buildOptionLabel(record.label, record.city),
-                        value: String(record.id),
-                      })),
+                      ...buildLocationOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search locations"
                     onChange={(value) =>
                       setSelectedLocationId(value ? Number(value) : null)
                     }
@@ -2703,14 +2780,10 @@ export function BusinessPage() {
                     value={selectedKpiId ? String(selectedKpiId) : ""}
                     options={[
                       { label: "Create new KPI record", value: "" },
-                      ...kpiOptions.map((record) => ({
-                        label: buildOptionLabel(
-                          record.name,
-                          record.record_date,
-                        ),
-                        value: String(record.id),
-                      })),
+                      ...buildKpiOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search KPIs"
                     onChange={(value) =>
                       setSelectedKpiId(value ? Number(value) : null)
                     }
@@ -2878,11 +2951,10 @@ export function BusinessPage() {
                     value={selectedPlanId ? String(selectedPlanId) : ""}
                     options={[
                       { label: "Create new strategic plan", value: "" },
-                      ...planOptions.map((record) => ({
-                        label: buildOptionLabel(record.title, record.status),
-                        value: String(record.id),
-                      })),
+                      ...buildPlanOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search plans"
                     onChange={(value) =>
                       setSelectedPlanId(value ? Number(value) : null)
                     }

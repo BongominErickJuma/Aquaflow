@@ -423,21 +423,54 @@ function FieldMessage({ message }: { message: string }) {
   );
 }
 
+function TableSearchField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <input
+      type="search"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      className={`${fieldClassName} max-w-sm`}
+    />
+  );
+}
+
 function PickerField({
   value,
   options,
   onChange,
+  searchable = false,
+  searchPlaceholder = "Search options",
 }: {
   value: string;
-  options: Array<{ label: string; value: string }>;
+  options: Array<{ label: string; value: string; searchText?: string }>;
   onChange: (value: string) => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const selectedLabel =
     options.find((option) => option.value === value)?.label ??
     options[0]?.label ??
     "Select";
+  const normalizedSearchValue = searchValue.trim().toLowerCase();
+  const filteredOptions = searchable
+    ? options.filter((option) =>
+        (option.searchText ?? option.label)
+          .toLowerCase()
+          .includes(normalizedSearchValue),
+      )
+    : options;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -450,6 +483,12 @@ function PickerField({
 
     window.addEventListener("mousedown", handlePointerDown);
     return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchValue("");
+    }
   }, [isOpen]);
 
   return (
@@ -472,8 +511,19 @@ function PickerField({
 
       {isOpen ? (
         <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-          <div className="space-y-1">
-            {options.map((option) => (
+          {searchable ? (
+            <div className="border-b border-slate-200 px-1 pb-2">
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300"
+              />
+            </div>
+          ) : null}
+          <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
+            {filteredOptions.length ? filteredOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -491,7 +541,11 @@ function PickerField({
                 <span>{option.label}</span>
                 {value === option.value ? <Check className="h-4 w-4" /> : null}
               </button>
-            ))}
+            )) : (
+              <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
+                No matches found.
+              </div>
+            )}
           </div>
         </div>
       ) : null}
@@ -563,7 +617,7 @@ export function WorkforcePage() {
     user?.role.code === "superuser" ||
     user?.role.code === "hr";
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
-  const [activeTab, setActiveTab] = useState("employees");
+  const [activeTab, setActiveTab] = useState("departments");
 
   const tabs = [
     { id: "departments", label: "Departments" },
@@ -608,6 +662,11 @@ export function WorkforcePage() {
   const [payrollPage, setPayrollPage] = useState(1);
   const [taskPage, setTaskPage] = useState(1);
   const [performancePage, setPerformancePage] = useState(1);
+  const [employeeSearch, setEmployeeSearch] = useState("");
+  const [attendanceSearch, setAttendanceSearch] = useState("");
+  const [payrollSearch, setPayrollSearch] = useState("");
+  const [taskSearch, setTaskSearch] = useState("");
+  const [performanceSearch, setPerformanceSearch] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
@@ -698,11 +757,40 @@ export function WorkforcePage() {
     employeeOptions.filter(
       (item) => item.status === "active" || item.id === selectedEmployeeId,
     );
+  const buildEmployeePickerOptions = (selectedEmployeeId?: number | null) =>
+    buildAssignableEmployeeOptions(selectedEmployeeId).map((record) => ({
+      label:
+        record.status === "active"
+          ? record.full_name
+          : `${record.full_name} (${titleCase(record.status)})`,
+      value: String(record.id),
+      searchText: [
+        record.full_name,
+        record.employee_code,
+        record.email,
+        record.job_title,
+        record.work_role,
+        record.status,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
 
   const buildAssignableShiftOptions = (selectedShiftId?: number | null) =>
     shiftOptions.filter(
       (item) => item.is_active || item.id === selectedShiftId,
     );
+  const buildSupervisorOptions = (selectedUserId?: number | null) =>
+    users
+      .filter((item) => item.is_active || item.id === selectedUserId)
+      .map((item) => {
+        const fullName = `${item.first_name} ${item.last_name}`.trim();
+        return {
+          label: fullName || item.email,
+          value: String(item.id),
+          searchText: `${fullName} ${item.email}`.trim(),
+        };
+      });
   const userEmailById = new Map(
     users.map((record) => [record.id, record.email]),
   );
@@ -749,13 +837,29 @@ export function WorkforcePage() {
       nextUsers,
     ] = await Promise.all([
       fetchDepartmentPage({ page: departmentPage, pageSize }),
-      fetchEmployeePage({ page: employeePage, pageSize }),
+      fetchEmployeePage({
+        page: employeePage,
+        pageSize,
+        search: employeeSearch,
+      }),
       fetchShiftPage({ page: shiftPage, pageSize }),
-      fetchAttendancePage({ page: attendancePage, pageSize }),
-      fetchPayrollPage({ page: payrollPage, pageSize }),
-      fetchTaskPage({ page: taskPage, pageSize }),
+      fetchAttendancePage({
+        page: attendancePage,
+        pageSize,
+        search: attendanceSearch,
+      }),
+      fetchPayrollPage({
+        page: payrollPage,
+        pageSize,
+        search: payrollSearch,
+      }),
+      fetchTaskPage({ page: taskPage, pageSize, search: taskSearch }),
       fetchTasks(),
-      fetchPerformanceRecordPage({ page: performancePage, pageSize }),
+      fetchPerformanceRecordPage({
+        page: performancePage,
+        pageSize,
+        search: performanceSearch,
+      }),
       fetchDepartments(),
       fetchEmployees(),
       fetchShifts(),
@@ -817,16 +921,41 @@ export function WorkforcePage() {
     };
   }, [
     attendancePage,
+    attendanceSearch,
     departmentPage,
     employeePage,
+    employeeSearch,
     pageSize,
     payrollPage,
+    payrollSearch,
     performancePage,
+    performanceSearch,
     reloadKey,
     shiftPage,
     taskPage,
+    taskSearch,
     canManageWorkforce,
   ]);
+
+  useEffect(() => {
+    setEmployeePage(1);
+  }, [employeeSearch]);
+
+  useEffect(() => {
+    setAttendancePage(1);
+  }, [attendanceSearch]);
+
+  useEffect(() => {
+    setPayrollPage(1);
+  }, [payrollSearch]);
+
+  useEffect(() => {
+    setTaskPage(1);
+  }, [taskSearch]);
+
+  useEffect(() => {
+    setPerformancePage(1);
+  }, [performanceSearch]);
 
   useEffect(() => {
     if (!selectedDepartmentId) return;
@@ -1577,11 +1706,12 @@ export function WorkforcePage() {
             <section className="panel p-6">
               <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="section-label">Employees</p>
-                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                      Workforce roster
-                    </h2>
+                  <div className="flex-1 min-w-[240px]">
+                    <TableSearchField
+                      value={employeeSearch}
+                      onChange={setEmployeeSearch}
+                      placeholder="Search employees"
+                    />
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     <TablePaginationControls
@@ -1966,11 +2096,12 @@ export function WorkforcePage() {
           {activeTab === "attendance" ? (
             <section className="panel p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Attendance</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Daily presence
-                  </h2>
+                <div className="flex-1 min-w-[240px]">
+                  <TableSearchField
+                    value={attendanceSearch}
+                    onChange={setAttendanceSearch}
+                    placeholder="Search attendance"
+                  />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <TablePaginationControls
@@ -2158,11 +2289,12 @@ export function WorkforcePage() {
           {activeTab === "payroll" ? (
             <section className="panel p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Payroll</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Pay period records
-                  </h2>
+                <div className="flex-1 min-w-[240px]">
+                  <TableSearchField
+                    value={payrollSearch}
+                    onChange={setPayrollSearch}
+                    placeholder="Search payroll"
+                  />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <TablePaginationControls
@@ -2348,11 +2480,12 @@ export function WorkforcePage() {
           {activeTab === "tasks" ? (
             <section className="panel p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Tasks</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Assignments
-                  </h2>
+                <div className="flex-1 min-w-[240px]">
+                  <TableSearchField
+                    value={taskSearch}
+                    onChange={setTaskSearch}
+                    placeholder="Search tasks"
+                  />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <TablePaginationControls
@@ -2546,11 +2679,12 @@ export function WorkforcePage() {
           {activeTab === "performance" ? (
             <section className="panel p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="section-label">Performance</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                    Review records
-                  </h2>
+                <div className="flex-1 min-w-[240px]">
+                  <TableSearchField
+                    value={performanceSearch}
+                    onChange={setPerformanceSearch}
+                    placeholder="Search reviews"
+                  />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <TablePaginationControls
@@ -2750,18 +2884,28 @@ export function WorkforcePage() {
                     required
                   />
                 </label>
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={departmentForm.is_active}
-                    onChange={(event) =>
-                      setDepartmentForm((current) => ({
-                        ...current,
-                        is_active: event.target.checked,
-                      }))
-                    }
-                  />
-                  Active department
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Status
+                  </span>
+                  <div
+                    className={`${fieldClassName} flex min-h-[50px] items-center gap-3`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-300"
+                      checked={departmentForm.is_active}
+                      onChange={(event) =>
+                        setDepartmentForm((current) => ({
+                          ...current,
+                          is_active: event.target.checked,
+                        }))
+                      }
+                    />
+                    <span className="text-sm font-medium text-slate-700">
+                      Active department
+                    </span>
+                  </div>
                 </label>
               </div>
               <label className="block space-y-2">
@@ -2835,17 +2979,16 @@ export function WorkforcePage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
-                    Linked user
+                    Supervisor
                   </span>
                   <PickerField
                     value={employeeForm.user ? String(employeeForm.user) : ""}
                     options={[
-                      { label: "No linked user", value: "" },
-                      ...users.map((user) => ({
-                        label: user.email,
-                        value: String(user.id),
-                      })),
+                      { label: "No supervisor", value: "" },
+                      ...buildSupervisorOptions(employeeForm.user),
                     ]}
+                    searchable
+                    searchPlaceholder="Search supervisors"
                     onChange={(value) =>
                       setEmployeeForm((current) => ({
                         ...current,
@@ -2854,17 +2997,6 @@ export function WorkforcePage() {
                     }
                   />
                 </label>
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3">
-                  <p className="text-sm font-medium text-slate-700">
-                    Employee code
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {selectedEmployeeId
-                      ? employeeOptions.find((item) => item.id === selectedEmployeeId)
-                          ?.employee_code ?? "Generated by the backend"
-                      : "Generated automatically by the backend when you save."}
-                  </p>
-                </div>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
                     First name
@@ -3273,16 +3405,10 @@ export function WorkforcePage() {
                     }
                     options={[
                       { label: "Select employee", value: "" },
-                      ...buildAssignableEmployeeOptions(
-                        attendanceForm.employee,
-                      ).map((record) => ({
-                        label:
-                          record.status === "active"
-                            ? record.full_name
-                            : `${record.full_name} (${titleCase(record.status)})`,
-                        value: String(record.id),
-                      })),
+                      ...buildEmployeePickerOptions(attendanceForm.employee),
                     ]}
+                    searchable
+                    searchPlaceholder="Search employees"
                     onChange={(value) =>
                       setAttendanceForm((current) => ({
                         ...current,
@@ -3465,16 +3591,10 @@ export function WorkforcePage() {
                     }
                     options={[
                       { label: "Select employee", value: "" },
-                      ...buildAssignableEmployeeOptions(
-                        payrollForm.employee,
-                      ).map((record) => ({
-                        label:
-                          record.status === "active"
-                            ? record.full_name
-                            : `${record.full_name} (${titleCase(record.status)})`,
-                        value: String(record.id),
-                      })),
+                      ...buildEmployeePickerOptions(payrollForm.employee),
                     ]}
+                    searchable
+                    searchPlaceholder="Search employees"
                     onChange={(value) =>
                       setPayrollForm((current) => ({
                         ...current,
@@ -3686,16 +3806,10 @@ export function WorkforcePage() {
                     value={taskForm.employee ? String(taskForm.employee) : ""}
                     options={[
                       { label: "Select employee", value: "" },
-                      ...buildAssignableEmployeeOptions(taskForm.employee).map(
-                        (record) => ({
-                          label:
-                            record.status === "active"
-                              ? record.full_name
-                              : `${record.full_name} (${titleCase(record.status)})`,
-                          value: String(record.id),
-                        }),
-                      ),
+                      ...buildEmployeePickerOptions(taskForm.employee),
                     ]}
+                    searchable
+                    searchPlaceholder="Search employees"
                     onChange={(value) =>
                       setTaskForm((current) => ({
                         ...current,
@@ -3890,16 +4004,10 @@ export function WorkforcePage() {
                     }
                     options={[
                       { label: "Select employee", value: "" },
-                      ...buildAssignableEmployeeOptions(
-                        performanceForm.employee,
-                      ).map((record) => ({
-                        label:
-                          record.status === "active"
-                            ? record.full_name
-                            : `${record.full_name} (${titleCase(record.status)})`,
-                        value: String(record.id),
-                      })),
+                      ...buildEmployeePickerOptions(performanceForm.employee),
                     ]}
+                    searchable
+                    searchPlaceholder="Search employees"
                     onChange={(value) =>
                       setPerformanceForm((current) => ({
                         ...current,
@@ -3927,7 +4035,7 @@ export function WorkforcePage() {
                 </label>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
-                    Reviewer name
+                    Reviewer
                   </span>
                   <PickerField
                     value={performanceForm.reviewer_name}
@@ -3935,6 +4043,8 @@ export function WorkforcePage() {
                       { label: "Select reviewer", value: "" },
                       ...buildActiveReviewerOptions(performanceForm.reviewer_name),
                     ]}
+                    searchable
+                    searchPlaceholder="Search reviewers"
                     onChange={(value) =>
                       setPerformanceForm((current) => ({
                         ...current,

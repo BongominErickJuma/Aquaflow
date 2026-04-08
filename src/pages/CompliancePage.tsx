@@ -232,17 +232,30 @@ function PickerField({
   value,
   options,
   onChange,
+  searchable = false,
+  searchPlaceholder = "Search options",
 }: {
   value: string;
-  options: Array<{ label: string; value: string }>;
+  options: Array<{ label: string; value: string; searchText?: string }>;
   onChange: (value: string) => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const selectedLabel =
     options.find((option) => option.value === value)?.label ??
     options[0]?.label ??
     "Select";
+  const normalizedSearchValue = searchValue.trim().toLowerCase();
+  const filteredOptions = searchable
+    ? options.filter((option) =>
+        (option.searchText ?? option.label)
+          .toLowerCase()
+          .includes(normalizedSearchValue),
+      )
+    : options;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -255,6 +268,12 @@ function PickerField({
 
     window.addEventListener("mousedown", handlePointerDown);
     return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchValue("");
+    }
   }, [isOpen]);
 
   return (
@@ -277,8 +296,19 @@ function PickerField({
 
       {isOpen ? (
         <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-          <div className="space-y-1">
-            {options.map((option) => (
+          {searchable ? (
+            <div className="border-b border-slate-200 px-1 pb-2">
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300"
+              />
+            </div>
+          ) : null}
+          <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
+            {filteredOptions.length ? filteredOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -296,7 +326,11 @@ function PickerField({
                 <span>{option.label}</span>
                 {value === option.value ? <Check className="h-4 w-4" /> : null}
               </button>
-            ))}
+            )) : (
+              <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
+                No matches found.
+              </div>
+            )}
           </div>
         </div>
       ) : null}
@@ -485,6 +519,25 @@ export function CompliancePage() {
   const activeFlowItem =
     complianceMilestoneFlow.find((item) => item.id === activeTab) ??
     complianceMilestoneFlow[0];
+  const buildEmployeePickerOptions = (selectedEmployeeId?: number | null) =>
+    employees
+      .filter(
+        (employee) =>
+          employee.status === "active" || employee.id === selectedEmployeeId,
+      )
+      .map((employee) => ({
+        label: employee.full_name,
+        value: String(employee.id),
+        searchText: [
+          employee.full_name,
+          employee.employee_code,
+          employee.email,
+          employee.job_title,
+          employee.work_role,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      }));
 
   async function reloadComplianceData() {
     const [hygiene, water, safety, training, docs, staff] = await Promise.all([
@@ -1872,11 +1925,10 @@ export function CompliancePage() {
                     }
                     options={[
                       { label: "Select employee", value: "" },
-                      ...employees.map((employee) => ({
-                        label: employee.full_name,
-                        value: String(employee.id),
-                      })),
+                      ...buildEmployeePickerOptions(trainingForm.employee),
                     ]}
+                    searchable
+                    searchPlaceholder="Search employees"
                     onChange={(value) =>
                       setTrainingForm((current) => ({
                         ...current,

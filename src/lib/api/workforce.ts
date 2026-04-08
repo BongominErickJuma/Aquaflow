@@ -30,6 +30,7 @@ function detailPath(resource: string, id: number) {
 type FetchWorkforcePageParams = {
   page?: number;
   pageSize?: number;
+  search?: string;
 };
 
 function listPath(resource: string, params?: FetchWorkforcePageParams) {
@@ -41,6 +42,10 @@ function listPath(resource: string, params?: FetchWorkforcePageParams) {
 
   if (params?.pageSize && [5, 6, 10].includes(params.pageSize)) {
     query.set("page_size", String(params.pageSize));
+  }
+
+  if (params?.search?.trim()) {
+    query.set("search", params.search.trim());
   }
 
   return query.size

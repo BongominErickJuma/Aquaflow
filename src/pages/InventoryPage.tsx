@@ -352,17 +352,30 @@ function PickerField({
   value,
   options,
   onChange,
+  searchable = false,
+  searchPlaceholder = "Search options",
 }: {
   value: string;
-  options: Array<{ label: string; value: string }>;
+  options: Array<{ label: string; value: string; searchText?: string }>;
   onChange: (value: string) => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const selectedLabel =
     options.find((option) => option.value === value)?.label ??
     options[0]?.label ??
     "Select";
+  const normalizedSearchValue = searchValue.trim().toLowerCase();
+  const filteredOptions = searchable
+    ? options.filter((option) =>
+        (option.searchText ?? option.label)
+          .toLowerCase()
+          .includes(normalizedSearchValue),
+      )
+    : options;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -375,6 +388,12 @@ function PickerField({
 
     window.addEventListener("mousedown", handlePointerDown);
     return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchValue("");
+    }
   }, [isOpen]);
 
   return (
@@ -397,8 +416,19 @@ function PickerField({
 
       {isOpen ? (
         <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-          <div className="space-y-1">
-            {options.map((option) => (
+          {searchable ? (
+            <div className="border-b border-slate-200 px-1 pb-2">
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300"
+              />
+            </div>
+          ) : null}
+          <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
+            {filteredOptions.length ? filteredOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -416,7 +446,11 @@ function PickerField({
                 <span>{option.label}</span>
                 {value === option.value ? <Check className="h-4 w-4" /> : null}
               </button>
-            ))}
+            )) : (
+              <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
+                No matches found.
+              </div>
+            )}
           </div>
         </div>
       ) : null}
@@ -490,14 +524,18 @@ function ModalShell({
   title,
   onClose,
   children,
+  panelClassName = "",
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  panelClassName?: string;
 }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/32 px-4 py-6 backdrop-blur-sm">
-      <div className="panel scrollbar-hidden max-h-[90vh] w-full max-w-3xl overflow-y-auto p-6">
+      <div
+        className={`panel scrollbar-hidden flex max-h-[90vh] w-full max-w-3xl flex-col overflow-y-auto p-6 ${panelClassName}`.trim()}
+      >
         <div className="flex items-start justify-between gap-4">
           <h2 className="text-2xl font-semibold text-slate-900">{title}</h2>
           <button
@@ -508,7 +546,7 @@ function ModalShell({
             Close
           </button>
         </div>
-        <div className="mt-6">{children}</div>
+        <div className="mt-8 flex-1">{children}</div>
       </div>
     </div>
   );
@@ -671,6 +709,68 @@ export function InventoryPage() {
   const locationNameById = new Map(
     locations.map((record) => [record.id, record.name]),
   );
+  const buildSupplierOptions = () =>
+    suppliers.map((record) => ({
+      label: record.name,
+      value: String(record.id),
+      searchText: [
+        record.name,
+        record.contact_person,
+        record.email,
+        record.phone_number,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildLocationOptions = () =>
+    locations.map((record) => ({
+      label: record.name,
+      value: String(record.id),
+      searchText: [record.name, record.description]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildRawMaterialOptions = () =>
+    rawMaterials.map((record) => ({
+      label: record.name,
+      value: String(record.id),
+      searchText: [
+        record.name,
+        record.supplier_name,
+        record.unit_name,
+        record.description,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildFinishedProductOptions = () =>
+    finishedProducts.map((record) => ({
+      label: record.name,
+      value: String(record.id),
+      searchText: [
+        record.name,
+        record.sku,
+        record.unit_name,
+        record.description,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildStockItemOptions = () =>
+    stockItems.map((record) => ({
+      label: `${record.item_name} - ${
+        locationNameById.get(record.location) ?? `#${record.location}`
+      }`,
+      value: String(record.id),
+      searchText: [
+        record.item_name,
+        locationNameById.get(record.location),
+        record.item_type,
+        record.unit_name,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
 
   async function reloadInventoryData() {
     const [
@@ -2500,11 +2600,10 @@ export function InventoryPage() {
                     }
                     options={[
                       { label: "No supplier", value: "" },
-                      ...suppliers.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildSupplierOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search suppliers"
                     onChange={(value) =>
                       setRawMaterialForm((current) => ({
                         ...current,
@@ -2823,9 +2922,11 @@ export function InventoryPage() {
         <ModalShell
           title={selectedStockItemId ? "Edit stock item" : "Add stock item"}
           onClose={closeModal}
+          panelClassName="min-h-[760px]"
         >
-          <FormPanel label="Stock Items" title="Stock item form">
-            <form className="space-y-4" onSubmit={handleStockItemSubmit}>
+          <div className="pt-14">
+            <FormPanel label="Stock Items" title="Stock item form">
+              <form className="space-y-4 py-4" onSubmit={handleStockItemSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Item type */}
                 <label className="block space-y-2">
@@ -2862,11 +2963,10 @@ export function InventoryPage() {
                     }
                     options={[
                       { label: "Select location", value: "" },
-                      ...locations.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildLocationOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search locations"
                     onChange={(value) =>
                       setStockItemForm((current) => ({
                         ...current,
@@ -2887,11 +2987,10 @@ export function InventoryPage() {
                     value={stockItemForm.raw_material ?? ""}
                     options={[
                       { label: "Select raw material", value: "" },
-                      ...rawMaterials.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildRawMaterialOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search raw materials"
                     onChange={(value) =>
                       setStockItemForm((current) => ({
                         ...current,
@@ -2910,11 +3009,10 @@ export function InventoryPage() {
                     value={stockItemForm.finished_product ?? ""}
                     options={[
                       { label: "Select finished product", value: "" },
-                      ...finishedProducts.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildFinishedProductOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search finished products"
                     onChange={(value) =>
                       setStockItemForm((current) => ({
                         ...current,
@@ -3008,8 +3106,9 @@ export function InventoryPage() {
                   )}
                 </button>
               </div>
-            </form>
-          </FormPanel>
+              </form>
+            </FormPanel>
+          </div>
         </ModalShell>
       ) : null}
 
@@ -3019,9 +3118,11 @@ export function InventoryPage() {
             selectedMovementId ? "Edit stock movement" : "Record stock movement"
           }
           onClose={closeModal}
+          panelClassName="min-h-[760px]"
         >
-          <FormPanel label="Stock Movements" title="Stock movement form">
-            <form className="space-y-4" onSubmit={handleMovementSubmit}>
+          <div className="pt-14">
+            <FormPanel label="Stock Movements" title="Stock movement form">
+              <form className="space-y-4 py-4" onSubmit={handleMovementSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Stock item */}
                 <label className="block space-y-2">
@@ -3032,14 +3133,10 @@ export function InventoryPage() {
                     value={movementForm.stock_item ?? ""}
                     options={[
                       { label: "Select stock item", value: "" },
-                      ...stockItems.map((record) => ({
-                        label: `${record.item_name} - ${
-                          locationNameById.get(record.location) ??
-                          `#${record.location}`
-                        }`,
-                        value: String(record.id),
-                      })),
+                      ...buildStockItemOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search stock items"
                     onChange={(value) =>
                       setMovementForm((current) => ({
                         ...current,
@@ -3172,8 +3269,9 @@ export function InventoryPage() {
                   )}
                 </button>
               </div>
-            </form>
-          </FormPanel>
+              </form>
+            </FormPanel>
+          </div>
         </ModalShell>
       ) : null}
     </div>

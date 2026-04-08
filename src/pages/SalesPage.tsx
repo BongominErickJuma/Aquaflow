@@ -262,17 +262,30 @@ function PickerField({
   value,
   options,
   onChange,
+  searchable = false,
+  searchPlaceholder = "Search options",
 }: {
   value: string;
-  options: Array<{ label: string; value: string }>;
+  options: Array<{ label: string; value: string; searchText?: string }>;
   onChange: (value: string) => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const selectedLabel =
     options.find((option) => option.value === value)?.label ??
     options[0]?.label ??
     "Select";
+  const normalizedSearchValue = searchValue.trim().toLowerCase();
+  const filteredOptions = searchable
+    ? options.filter((option) =>
+        (option.searchText ?? option.label)
+          .toLowerCase()
+          .includes(normalizedSearchValue),
+      )
+    : options;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -285,6 +298,12 @@ function PickerField({
 
     window.addEventListener("mousedown", handlePointerDown);
     return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchValue("");
+    }
   }, [isOpen]);
 
   return (
@@ -307,8 +326,19 @@ function PickerField({
 
       {isOpen ? (
         <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-          <div className="space-y-1">
-            {options.map((option) => (
+          {searchable ? (
+            <div className="border-b border-slate-200 px-1 pb-2">
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300"
+              />
+            </div>
+          ) : null}
+          <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
+            {filteredOptions.length ? filteredOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -326,7 +356,11 @@ function PickerField({
                 <span>{option.label}</span>
                 {value === option.value ? <Check className="h-4 w-4" /> : null}
               </button>
-            ))}
+            )) : (
+              <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
+                No matches found.
+              </div>
+            )}
           </div>
         </div>
       ) : null}
@@ -551,6 +585,64 @@ export function SalesPage() {
     orders.filter(
       (order) => order.status !== "cancelled" || order.id === selectedOrderId,
     );
+  const buildClientPickerOptions = () =>
+    clients.map((client) => ({
+      label: client.name,
+      value: String(client.id),
+      searchText: [
+        client.name,
+        client.contact_person,
+        client.email,
+        client.phone_number,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildSellerPickerOptions = () =>
+    salesEmployees.map((employee) => ({
+      label: `${employee.full_name} (${employee.employee_code})`,
+      value: String(employee.id),
+      searchText: [
+        employee.full_name,
+        employee.employee_code,
+        employee.email,
+        employee.job_title,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildOrderPickerOptions = (selectedOrderId?: number | null) =>
+    buildAssignableOrderOptions(selectedOrderId).map((order) => ({
+      label:
+        order.status === "cancelled"
+          ? `${order.order_number} (Cancelled)`
+          : order.order_number,
+      value: String(order.id),
+      searchText: [
+        order.order_number,
+        order.client_name,
+        order.assigned_seller_name,
+        order.assigned_seller_code,
+        order.status,
+        order.total_amount,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildFinishedProductPickerOptions = () =>
+    finishedProducts.map((product) => ({
+      label: `${product.name} (${formatCurrency(Number.parseFloat(product.unit_price))})`,
+      value: String(product.id),
+      searchText: [
+        product.name,
+        product.sku,
+        product.description,
+        product.unit_name,
+        product.unit_price,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
 
   const salesEmployees = employees.filter(
     (employee) =>
@@ -582,6 +674,33 @@ export function SalesPage() {
       (schedule) =>
         (!orderId || schedule.order === orderId) &&
         (schedule.status !== "cancelled" || schedule.id === selectedScheduleId),
+    );
+  const buildSchedulePickerOptions = ({
+    orderId,
+    selectedScheduleId,
+  }: {
+    orderId?: number | null;
+    selectedScheduleId?: number | null;
+  }) =>
+    buildAssignableScheduleOptions({ orderId, selectedScheduleId }).map(
+      (schedule) => ({
+        label:
+          schedule.status === "cancelled"
+            ? `${schedule.order_number} - ${formatDate(schedule.scheduled_date)} (Cancelled)`
+            : `${schedule.order_number} - ${formatDate(schedule.scheduled_date)}`,
+        value: String(schedule.id),
+        searchText: [
+          schedule.order_number,
+          schedule.seller_name,
+          schedule.seller_code,
+          schedule.scheduled_date,
+          schedule.status,
+          schedule.assigned_vehicle,
+          schedule.assigned_driver,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      }),
     );
 
   async function reloadSalesData() {
@@ -2111,11 +2230,10 @@ export function SalesPage() {
                     value={orderForm.client ? String(orderForm.client) : ""}
                     options={[
                       { label: "Select client", value: "" },
-                      ...clients.map((client) => ({
-                        label: client.name,
-                        value: String(client.id),
-                      })),
+                      ...buildClientPickerOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search clients"
                     onChange={(value) =>
                       setOrderForm((current) => ({
                         ...current,
@@ -2150,11 +2268,10 @@ export function SalesPage() {
                     }
                     options={[
                       { label: "Select seller", value: "" },
-                      ...salesEmployees.map((employee) => ({
-                        label: `${employee.full_name} (${employee.employee_code})`,
-                        value: String(employee.id),
-                      })),
+                      ...buildSellerPickerOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search sellers"
                     onChange={(value) =>
                       setOrderForm((current) => ({
                         ...current,
@@ -2314,16 +2431,10 @@ export function SalesPage() {
                     value={itemForm.order ? String(itemForm.order) : ""}
                     options={[
                       { label: "Select order", value: "" },
-                      ...buildAssignableOrderOptions(itemForm.order).map(
-                        (order) => ({
-                          label:
-                            order.status === "cancelled"
-                              ? `${order.order_number} (Cancelled)`
-                              : order.order_number,
-                          value: String(order.id),
-                        }),
-                      ),
+                      ...buildOrderPickerOptions(itemForm.order),
                     ]}
+                    searchable
+                    searchPlaceholder="Search orders"
                     onChange={(value) =>
                       setItemForm((current) => ({
                         ...current,
@@ -2342,11 +2453,10 @@ export function SalesPage() {
                     }
                     options={[
                       { label: "Direct product name", value: "" },
-                      ...finishedProducts.map((product) => ({
-                        label: `${product.name} (${formatCurrency(Number.parseFloat(product.unit_price))})`,
-                        value: String(product.id),
-                      })),
+                      ...buildFinishedProductPickerOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search products"
                     onChange={(value) => {
                       const matchedProduct = finishedProducts.find(
                         (product) => product.id === Number(value),
@@ -2515,16 +2625,10 @@ export function SalesPage() {
                     value={scheduleForm.order ? String(scheduleForm.order) : ""}
                     options={[
                       { label: "Select order", value: "" },
-                      ...buildAssignableOrderOptions(scheduleForm.order).map(
-                        (order) => ({
-                          label:
-                            order.status === "cancelled"
-                              ? `${order.order_number} (Cancelled)`
-                              : order.order_number,
-                          value: String(order.id),
-                        }),
-                      ),
+                      ...buildOrderPickerOptions(scheduleForm.order),
                     ]}
+                    searchable
+                    searchPlaceholder="Search orders"
                     onChange={(value) =>
                       setScheduleForm((current) => {
                         const nextOrder = orders.find(
@@ -2670,16 +2774,10 @@ export function SalesPage() {
                     value={deliveryForm.order ? String(deliveryForm.order) : ""}
                     options={[
                       { label: "Select order", value: "" },
-                      ...buildAssignableOrderOptions(deliveryForm.order).map(
-                        (order) => ({
-                          label:
-                            order.status === "cancelled"
-                              ? `${order.order_number} (Cancelled)`
-                              : order.order_number,
-                          value: String(order.id),
-                        }),
-                      ),
+                      ...buildOrderPickerOptions(deliveryForm.order),
                     ]}
+                    searchable
+                    searchPlaceholder="Search orders"
                     onChange={(value) =>
                       setDeliveryForm((current) => ({
                         ...current,
@@ -2697,17 +2795,13 @@ export function SalesPage() {
                     }
                     options={[
                       { label: "No linked schedule", value: "" },
-                      ...buildAssignableScheduleOptions({
+                      ...buildSchedulePickerOptions({
                         orderId: deliveryForm.order || null,
                         selectedScheduleId: deliveryForm.schedule,
-                      }).map((schedule) => ({
-                        label:
-                          schedule.status === "cancelled"
-                            ? `${schedule.order_number} - ${formatDate(schedule.scheduled_date)} (Cancelled)`
-                            : `${schedule.order_number} - ${formatDate(schedule.scheduled_date)}`,
-                        value: String(schedule.id),
-                      })),
+                      }),
                     ]}
+                    searchable
+                    searchPlaceholder="Search schedules"
                     onChange={(value) =>
                       setDeliveryForm((current) => ({
                         ...current,

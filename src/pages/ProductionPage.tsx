@@ -359,17 +359,32 @@ function PickerField({
   value,
   options,
   onChange,
+  searchable = false,
+  searchPlaceholder = "Search options",
+  menuClassName = "max-h-[280px]",
 }: {
   value: string;
-  options: Array<{ label: string; value: string }>;
+  options: Array<{ label: string; value: string; searchText?: string }>;
   onChange: (value: string) => void;
+  searchable?: boolean;
+  searchPlaceholder?: string;
+  menuClassName?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const selectedLabel =
     options.find((option) => option.value === value)?.label ??
     options[0]?.label ??
     "Select";
+  const normalizedSearchValue = searchValue.trim().toLowerCase();
+  const filteredOptions = searchable
+    ? options.filter((option) =>
+        (option.searchText ?? option.label)
+          .toLowerCase()
+          .includes(normalizedSearchValue),
+      )
+    : options;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -382,6 +397,12 @@ function PickerField({
 
     window.addEventListener("mousedown", handlePointerDown);
     return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchValue("");
+    }
   }, [isOpen]);
 
   return (
@@ -404,8 +425,21 @@ function PickerField({
 
       {isOpen ? (
         <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-          <div className="space-y-1">
-            {options.map((option) => (
+          {searchable ? (
+            <div className="border-b border-slate-200 px-1 pb-2">
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300"
+              />
+            </div>
+          ) : null}
+          <div
+            className={`scrollbar-hidden mt-2 space-y-1 overflow-y-auto pr-1 ${menuClassName}`.trim()}
+          >
+            {filteredOptions.length ? filteredOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -423,7 +457,11 @@ function PickerField({
                 <span>{option.label}</span>
                 {value === option.value ? <Check className="h-4 w-4" /> : null}
               </button>
-            ))}
+            )) : (
+              <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
+                No matches found.
+              </div>
+            )}
           </div>
         </div>
       ) : null}
@@ -502,29 +540,33 @@ function ModalShell({
   title,
   onClose,
   children,
+  panelClassName = "",
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  panelClassName?: string;
 }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/32 px-4 py-6 backdrop-blur-sm">
-      <div className="panel scrollbar-hidden max-h-[90vh] w-full max-w-3xl overflow-y-auto p-6">
+      <div
+        className={`panel scrollbar-hidden flex max-h-[90vh] w-full max-w-3xl flex-col overflow-y-auto p-6 ${panelClassName}`.trim()}
+      >
         <div className="flex items-start justify-between gap-4">
           <h2 className="text-2xl font-semibold text-slate-900">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-          >
-            Close
-          </button>
+            >
+              Close
+            </button>
+          </div>
+          <div className="mt-8 flex-1">{children}</div>
         </div>
-        <div className="mt-6">{children}</div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -692,6 +734,22 @@ export function ProductionPage() {
   const resolvedDowntimeAlerts = downtimeAlerts.filter(
     (item) => item.status === "resolved",
   );
+  const buildMachineOptions = () =>
+    machines.map((machine) => ({
+      label: machine.name,
+      value: String(machine.id),
+      searchText: [
+        machine.name,
+        machine.machine_type,
+        machine.manufacturer,
+        machine.model_number,
+        machine.serial_number,
+        machine.location_name,
+        machine.status,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }));
   const buildOperatorOptions = (selectedOperatorName?: string) => {
     const options = operatorEmployees
       .filter(
@@ -701,6 +759,14 @@ export function ProductionPage() {
       .map((employee) => ({
         label: employee.full_name,
         value: employee.full_name,
+        searchText: [
+          employee.full_name,
+          employee.employee_code,
+          employee.email,
+          employee.job_title,
+        ]
+          .filter(Boolean)
+          .join(" "),
       }));
 
     if (
@@ -710,6 +776,7 @@ export function ProductionPage() {
       options.push({
         label: `${selectedOperatorName} (Unavailable)`,
         value: selectedOperatorName,
+        searchText: selectedOperatorName,
       });
     }
 
@@ -725,6 +792,7 @@ export function ProductionPage() {
         return {
           label,
           value: label,
+          searchText: `${label} ${member.email}`.trim(),
         };
       });
 
@@ -735,11 +803,35 @@ export function ProductionPage() {
       options.push({
         label: `${selectedMemberName} (Unavailable)`,
         value: selectedMemberName,
+        searchText: selectedMemberName,
       });
     }
 
     return options;
   };
+  const buildMaintenanceScheduleOptions = (
+    machineId: number,
+    selectedScheduleId?: number | null,
+  ) =>
+    maintenanceSchedules
+      .filter(
+        (item) =>
+          item.machine === machineId &&
+          (item.is_active || item.id === selectedScheduleId),
+      )
+      .map((record) => ({
+        label: record.title,
+        value: String(record.id),
+        searchText: [
+          record.title,
+          record.machine_name,
+          record.maintenance_type,
+          record.frequency,
+          record.next_due_date,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      }));
 
   async function reloadProductionData() {
     const [
@@ -2187,11 +2279,10 @@ export function ProductionPage() {
                     value={usageForm.machine ? String(usageForm.machine) : ""}
                     options={[
                       { label: "Select machine", value: "" },
-                      ...machines.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildMachineOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search machines"
                     onChange={(value) =>
                       setUsageForm((current) => ({
                         ...current,
@@ -2249,6 +2340,8 @@ export function ProductionPage() {
                       { label: "Select operator", value: "" },
                       ...buildOperatorOptions(usageForm.operator_name),
                     ]}
+                    searchable
+                    searchPlaceholder="Search operators"
                     onChange={(value) =>
                       setUsageForm((current) => ({
                         ...current,
@@ -2357,11 +2450,10 @@ export function ProductionPage() {
                     }
                     options={[
                       { label: "Select machine", value: "" },
-                      ...machines.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildMachineOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search machines"
                     onChange={(value) =>
                       setScheduleForm((current) => ({
                         ...current,
@@ -2562,9 +2654,14 @@ export function ProductionPage() {
               : "Add maintenance log"
           }
           onClose={closeModal}
+          panelClassName="min-h-[760px]"
         >
-          <FormPanel label="Maintenance Logs" title="Maintenance log form">
-            <form className="space-y-4" onSubmit={handleMaintenanceLogSubmit}>
+          <div className="pt-14">
+            <FormPanel label="Maintenance Logs" title="Maintenance log form">
+              <form
+                className="space-y-4 py-4"
+                onSubmit={handleMaintenanceLogSubmit}
+              >
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
@@ -2578,11 +2675,10 @@ export function ProductionPage() {
                     }
                     options={[
                       { label: "Select machine", value: "" },
-                      ...machines.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildMachineOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search machines"
                     onChange={(value) =>
                       setMaintenanceLogForm((current) => ({
                         ...current,
@@ -2606,17 +2702,13 @@ export function ProductionPage() {
                     }
                     options={[
                       { label: "No linked schedule", value: "" },
-                      ...maintenanceSchedules
-                        .filter(
-                          (item) =>
-                            item.machine === maintenanceLogForm.machine &&
-                            item.is_active,
-                        )
-                        .map((record) => ({
-                          label: record.title,
-                          value: String(record.id),
-                        })),
+                      ...buildMaintenanceScheduleOptions(
+                        maintenanceLogForm.machine,
+                        maintenanceLogForm.schedule,
+                      ),
                     ]}
+                    searchable
+                    searchPlaceholder="Search schedules"
                     onChange={(value) =>
                       setMaintenanceLogForm((current) => {
                         const selectedSchedule = maintenanceSchedules.find(
@@ -2713,6 +2805,9 @@ export function ProductionPage() {
                         maintenanceLogForm.performed_by_name,
                       ),
                     ]}
+                    searchable
+                    searchPlaceholder="Search members"
+                    menuClassName="max-h-[180px]"
                     onChange={(value) =>
                       setMaintenanceLogForm((current) => ({
                         ...current,
@@ -2815,8 +2910,9 @@ export function ProductionPage() {
                   )}
                 </button>
               </div>
-            </form>
-          </FormPanel>
+              </form>
+            </FormPanel>
+          </div>
         </ModalShell>
       ) : null}
 
@@ -2840,11 +2936,10 @@ export function ProductionPage() {
                     }
                     options={[
                       { label: "Select machine", value: "" },
-                      ...machines.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildMachineOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search machines"
                     onChange={(value) =>
                       setDowntimeForm((current) => ({
                         ...current,
@@ -3040,11 +3135,10 @@ export function ProductionPage() {
                     }
                     options={[
                       { label: "Facility level", value: "" },
-                      ...machines.map((record) => ({
-                        label: record.name,
-                        value: String(record.id),
-                      })),
+                      ...buildMachineOptions(),
                     ]}
+                    searchable
+                    searchPlaceholder="Search machines"
                     onChange={(value) =>
                       setUtilityForm((current) => ({
                         ...current,
