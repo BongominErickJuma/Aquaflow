@@ -385,25 +385,29 @@ function PickerField({
             </div>
           ) : null}
           <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
-            {filteredOptions.length ? filteredOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={[
-                  "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                  value === option.value
-                    ? "bg-sky-50 text-sky-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                ].join(" ")}
-              >
-                <span>{option.label}</span>
-                {value === option.value ? <Check className="h-4 w-4" /> : null}
-              </button>
-            )) : (
+            {filteredOptions.length ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={[
+                    "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                    value === option.value
+                      ? "bg-sky-50 text-sky-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                  ].join(" ")}
+                >
+                  <span>{option.label}</span>
+                  {value === option.value ? (
+                    <Check className="h-4 w-4" />
+                  ) : null}
+                </button>
+              ))
+            ) : (
               <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
                 No matches found.
               </div>

@@ -5,6 +5,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   useEffect,
@@ -13,53 +14,63 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import QRCode from "qrcode";
+import { useNavigate, useParams } from "react-router-dom";
 import { ModuleTabs } from "../components/layout/ModuleTabs";
 import { useAuth } from "../features/auth/AuthProvider";
-import { ApiError } from "../lib/api/auth";
+import { ApiError, resolveApiAssetUrl } from "../lib/api/auth";
 import {
-  createFinishedProduct,
+  acknowledgeStockAlert,
+  createCategory,
+  createProduct,
   createRawMaterial,
-  createStockItem,
   createStockMovement,
-  createStorageLocation,
+  createWarehouse,
+  createWarehouseStock,
   createSupplier,
   createUnit,
-  deleteFinishedProduct,
+  deleteCategory,
+  deleteProduct,
   deleteRawMaterial,
-  deleteStockItem,
   deleteStockMovement,
-  deleteStorageLocation,
+  deleteWarehouse,
+  deleteWarehouseStock,
   deleteSupplier,
   deleteUnit,
-  fetchFinishedProduct,
-  fetchFinishedProducts,
+  fetchCategories,
+  fetchCategory,
+  fetchProduct,
+  fetchProducts,
   fetchRawMaterial,
   fetchRawMaterials,
-  fetchReorderAlerts,
-  fetchStockItem,
-  fetchStockItems,
+  fetchStockAlerts,
   fetchStockMovement,
   fetchStockMovements,
-  fetchStorageLocation,
-  fetchStorageLocations,
   fetchSupplier,
   fetchSuppliers,
   fetchUnit,
   fetchUnits,
-  updateFinishedProduct,
+  fetchWarehouse,
+  fetchWarehouses,
+  fetchWarehouseStock,
+  fetchWarehouseStockItem,
+  updateCategory,
+  updateProduct,
   updateRawMaterial,
-  updateStockItem,
   updateStockMovement,
-  updateStorageLocation,
+  updateWarehouse,
+  updateWarehouseStock,
   updateSupplier,
   updateUnit,
 } from "../lib/api/inventory";
 import type {
+  CategoryPayload,
+  CategoryRecord,
   FinishedProductPayload,
   FinishedProductRecord,
   RawMaterialPayload,
   RawMaterialRecord,
-  ReorderAlertRecord,
+  StockAlertRecord,
   StockItemPayload,
   StockItemRecord,
   StockMovementPayload,
@@ -85,7 +96,7 @@ const dangerButtonClassName =
 const iconButtonClassName =
   "inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70";
 const recordCardClassName =
-  "group relative flex h-[220px] min-w-[280px] max-w-[280px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4";
+  "group relative flex h-[320px] min-w-[300px] max-w-[300px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4";
 const recordEditButtonClassName = `${iconButtonClassName} absolute right-4 top-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto`;
 
 const inventoryMilestoneFlow = [
@@ -99,48 +110,55 @@ const inventoryMilestoneFlow = [
     id: "suppliers",
     label: "Suppliers",
     detail:
-      "Add and update suppliers here. Before this, make sure the units are ready. Next, create storage locations.",
+      "Add and update suppliers here. Before this, make sure the units are ready. Next, build product categories.",
   },
   {
-    id: "locations",
-    label: "Storage Locations",
+    id: "categories",
+    label: "Categories",
     detail:
-      "Set up storage locations here. Before this, confirm suppliers are in place. Next, add raw materials.",
+      "Organize product categories here. Before this, suppliers should already be in place. Next, set up warehouses.",
+  },
+  {
+    id: "warehouses",
+    label: "Warehouses",
+    detail:
+      "Set up warehouses, cold rooms, and stores here. Before this, confirm categories are in place. Next, add raw materials.",
   },
   {
     id: "raw",
     label: "Raw Materials",
     detail:
-      "Create and edit raw materials here. Before this, storage locations should already exist. Next, add finished products.",
+      "Create and edit raw materials here. Before this, warehouses should already exist. Next, add products.",
   },
   {
-    id: "finished",
-    label: "Finished Products",
+    id: "products",
+    label: "Products",
     detail:
-      "Set up finished products here. Before this, make sure raw materials are ready. Next, create stock items.",
+      "Set up products here with category, supplier, pricing, reorder rules, and default warehouse context. Next, create warehouse stock.",
   },
   {
     id: "stock",
-    label: "Stock Items",
+    label: "Warehouse Stock",
     detail:
-      "Create stock items here and link them to locations. Before this, finished products should be in place. Next, record stock movements.",
+      "Create warehouse stock records here and link them to warehouses. Before this, products should be in place. Next, record stock movements.",
   },
   {
     id: "movements",
     label: "Stock Movements",
     detail:
-      "Capture stock movement entries here. Before this, the stock items should already exist. Next, review reorder alerts.",
+      "Capture stock movement entries here. Before this, warehouse stock should already exist. Next, review stock alerts.",
   },
   {
     id: "alerts",
-    label: "Reorder Alerts",
+    label: "Stock Alerts",
     detail:
-      "Review reorder alerts here. Before this, you should have stock movements recorded. This is the last inventory step.",
+      "Review low-stock and out-of-stock alerts here. Before this, you should have stock movements recorded. This is the last inventory step.",
   },
 ] as const;
 
 type ActiveModal =
   | "unit"
+  | "category"
   | "supplier"
   | "location"
   | "rawMaterial"
@@ -155,16 +173,124 @@ type StockItemFormState = {
   finished_product: string;
   location: string;
   opening_stock: string;
-  notes: string;
+  bin_location: string;
 };
 
 type StockMovementFormState = {
   stock_item: string;
   movement_type: StockMovementType;
   quantity: string;
-  reference_note: string;
+  notes: string;
   movement_date: string;
 };
+
+function ProductQrPreview({
+  value,
+  size = 144,
+  className = "",
+}: {
+  value: string;
+  size?: number;
+  className?: string;
+}) {
+  const [src, setSrc] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void QRCode.toDataURL(value, {
+      width: size,
+      margin: 1,
+      color: {
+        dark: "#0f172a",
+        light: "#00000000",
+      },
+    })
+      .then((nextSrc: string) => {
+        if (isMounted) {
+          setSrc(nextSrc);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setSrc("");
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [size, value]);
+
+  if (!src) {
+    return (
+      <div
+        className={`flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 text-xs text-slate-500 ${className}`.trim()}
+        style={{ width: size, height: size }}
+      >
+        QR preview
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt="Product QR code"
+      className={`rounded-2xl border border-slate-200 bg-white object-contain p-2 ${className}`.trim()}
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
+function ProductImagePreview({
+  image,
+  alt,
+  className = "",
+}: {
+  image: File | string | null;
+  alt: string;
+  className?: string;
+}) {
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!image) {
+      setSrc(null);
+      return;
+    }
+
+    if (typeof image === "string") {
+      setSrc(resolveApiAssetUrl(image));
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(image);
+    setSrc(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [image]);
+
+  if (!src) {
+    return (
+      <div
+        className={`flex items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500 ${className}`.trim()}
+      >
+        No image
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={`rounded-3xl object-cover ${className}`.trim()}
+    />
+  );
+}
 
 function createEmptyUnitForm(): UnitPayload {
   return { name: "", symbol: "", description: "" };
@@ -182,14 +308,35 @@ function buildUnitForm(record: UnitRecord | null): UnitPayload {
   };
 }
 
+function createEmptyCategoryForm(): CategoryPayload {
+  return {
+    name: "",
+    parent: null,
+    description: "",
+  };
+}
+
+function buildCategoryForm(record: CategoryRecord | null): CategoryPayload {
+  if (!record) {
+    return createEmptyCategoryForm();
+  }
+
+  return {
+    name: record.name,
+    parent: record.parent,
+    description: record.description,
+  };
+}
+
 function createEmptySupplierForm(): SupplierPayload {
   return {
     name: "",
     contact_person: "",
     email: "",
-    phone_number: "",
+    phone: "",
     address: "",
-    notes: "",
+    payment_terms: "",
+    lead_days: 0,
     is_active: true,
   };
 }
@@ -203,9 +350,10 @@ function buildSupplierForm(record: SupplierRecord | null): SupplierPayload {
     name: record.name,
     contact_person: record.contact_person,
     email: record.email,
-    phone_number: record.phone_number,
+    phone: record.phone,
     address: record.address,
-    notes: record.notes,
+    payment_terms: record.payment_terms,
+    lead_days: record.lead_days,
     is_active: record.is_active,
   };
 }
@@ -213,6 +361,8 @@ function buildSupplierForm(record: SupplierRecord | null): SupplierPayload {
 function createEmptyLocationForm(): StorageLocationPayload {
   return {
     name: "",
+    location: "",
+    manager: null,
     description: "",
     is_active: true,
   };
@@ -227,6 +377,8 @@ function buildLocationForm(
 
   return {
     name: record.name,
+    location: record.location,
+    manager: record.manager,
     description: record.description,
     is_active: record.is_active,
   };
@@ -266,10 +418,16 @@ function createEmptyFinishedProductForm(): FinishedProductPayload {
   return {
     name: "",
     description: "",
+    category: null,
+    supplier: null,
     unit: 0,
     unit_price: "0.00",
+    cost_price: "0.00",
     reorder_level: "0.00",
-    notes: "",
+    reorder_quantity: "0.00",
+    location: null,
+    image: null,
+    clear_image: false,
     is_active: true,
   };
 }
@@ -284,10 +442,16 @@ function buildFinishedProductForm(
   return {
     name: record.name,
     description: record.description,
+    category: record.category,
+    supplier: record.supplier,
     unit: record.unit,
     unit_price: record.unit_price,
+    cost_price: record.cost_price,
     reorder_level: record.reorder_level,
-    notes: record.notes,
+    reorder_quantity: record.reorder_quantity,
+    location: record.location,
+    image: record.image,
+    clear_image: false,
     is_active: record.is_active,
   };
 }
@@ -299,7 +463,7 @@ function createEmptyStockItemForm(): StockItemFormState {
     finished_product: "",
     location: "",
     opening_stock: "0.00",
-    notes: "",
+    bin_location: "",
   };
 }
 
@@ -318,7 +482,7 @@ function buildStockItemForm(
       : "",
     location: String(record.location),
     opening_stock: "0.00",
-    notes: record.notes,
+    bin_location: record.bin_location,
   };
 }
 
@@ -327,7 +491,7 @@ function createEmptyMovementForm(): StockMovementFormState {
     stock_item: "",
     movement_type: "stock_in",
     quantity: "",
-    reference_note: "",
+    notes: "",
     movement_date: formatDateTimeInput(new Date().toISOString()),
   };
 }
@@ -343,7 +507,7 @@ function buildMovementForm(
     stock_item: String(record.stock_item),
     movement_type: record.movement_type,
     quantity: record.quantity,
-    reference_note: record.reference_note,
+    notes: record.notes,
     movement_date: formatDateTimeInput(record.movement_date),
   };
 }
@@ -428,25 +592,29 @@ function PickerField({
             </div>
           ) : null}
           <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
-            {filteredOptions.length ? filteredOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={[
-                  "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                  value === option.value
-                    ? "bg-sky-50 text-sky-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                ].join(" ")}
-              >
-                <span>{option.label}</span>
-                {value === option.value ? <Check className="h-4 w-4" /> : null}
-              </button>
-            )) : (
+            {filteredOptions.length ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={[
+                    "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                    value === option.value
+                      ? "bg-sky-50 text-sky-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                  ].join(" ")}
+                >
+                  <span>{option.label}</span>
+                  {value === option.value ? (
+                    <Check className="h-4 w-4" />
+                  ) : null}
+                </button>
+              ))
+            ) : (
               <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
                 No matches found.
               </div>
@@ -617,10 +785,93 @@ function formatCurrency(value: string) {
   }).format(numericValue)}`;
 }
 
+function parseProductRouteId(value: string | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const numericValue = Number(value);
+  return Number.isInteger(numericValue) && numericValue > 0
+    ? numericValue
+    : null;
+}
+
+function resolveProductQrValue(record: FinishedProductRecord) {
+  if (typeof window !== "undefined") {
+    return new URL(record.detail_path, window.location.origin).toString();
+  }
+
+  return record.qr_code_value || record.detail_url || record.detail_path;
+}
+
+async function normalizeProductImage(file: File) {
+  if (typeof window === "undefined") {
+    return file;
+  }
+
+  const imageUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Unable to load selected image."));
+      img.src = imageUrl;
+    });
+
+    const squareSize = 1200;
+    const sourceSize = Math.min(image.width, image.height);
+    const sourceX = Math.max(0, (image.width - sourceSize) / 2);
+    const sourceY = Math.max(0, (image.height - sourceSize) / 2);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = squareSize;
+    canvas.height = squareSize;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return file;
+    }
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, squareSize, squareSize);
+    context.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceSize,
+      sourceSize,
+      0,
+      0,
+      squareSize,
+      squareSize,
+    );
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/jpeg", 0.92);
+    });
+
+    if (!blob) {
+      return file;
+    }
+
+    const normalizedName = file.name.replace(/\.[^.]+$/, "") || "product-image";
+    return new File([blob], `${normalizedName}.jpg`, {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
 export function InventoryPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { productId: productIdParam } = useParams();
   const isAdmin =
     user?.role.code === "admin" || user?.role.code === "superuser";
+  const routedProductId = parseProductRouteId(productIdParam);
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [activeTab, setActiveTab] = useState("units");
@@ -633,6 +884,7 @@ export function InventoryPage() {
   const [pageError, setPageError] = useState("");
 
   const [units, setUnits] = useState<UnitRecord[]>([]);
+  const [categories, setCategories] = useState<CategoryRecord[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierRecord[]>([]);
   const [locations, setLocations] = useState<StorageLocationRecord[]>([]);
   const [rawMaterials, setRawMaterials] = useState<RawMaterialRecord[]>([]);
@@ -643,9 +895,12 @@ export function InventoryPage() {
   const [stockMovements, setStockMovements] = useState<StockMovementRecord[]>(
     [],
   );
-  const [reorderAlerts, setReorderAlerts] = useState<ReorderAlertRecord[]>([]);
+  const [stockAlerts, setStockAlerts] = useState<StockAlertRecord[]>([]);
 
   const [unitForm, setUnitForm] = useState<UnitPayload>(createEmptyUnitForm());
+  const [categoryForm, setCategoryForm] = useState<CategoryPayload>(
+    createEmptyCategoryForm(),
+  );
   const [supplierForm, setSupplierForm] = useState<SupplierPayload>(
     createEmptySupplierForm(),
   );
@@ -665,6 +920,9 @@ export function InventoryPage() {
   );
 
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
+    null,
+  );
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(
     null,
   );
@@ -687,6 +945,9 @@ export function InventoryPage() {
   const [unitError, setUnitError] = useState("");
   const [isUnitPending, setIsUnitPending] = useState(false);
 
+  const [categoryError, setCategoryError] = useState("");
+  const [isCategoryPending, setIsCategoryPending] = useState(false);
+
   const [supplierError, setSupplierError] = useState("");
   const [isSupplierPending, setIsSupplierPending] = useState(false);
 
@@ -705,6 +966,13 @@ export function InventoryPage() {
 
   const [movementError, setMovementError] = useState("");
   const [isMovementPending, setIsMovementPending] = useState(false);
+  const editingFinishedProductRecord =
+    selectedFinishedProductId === null
+      ? null
+      : finishedProducts.find((record) => record.id === selectedFinishedProductId) ??
+        null;
+  const [isQrExpanded, setIsQrExpanded] = useState(false);
+  const [isRemoveImageConfirming, setIsRemoveImageConfirming] = useState(false);
 
   const locationNameById = new Map(
     locations.map((record) => [record.id, record.name]),
@@ -717,8 +985,16 @@ export function InventoryPage() {
         record.name,
         record.contact_person,
         record.email,
-        record.phone_number,
+        record.phone,
       ]
+        .filter(Boolean)
+        .join(" "),
+    }));
+  const buildCategoryOptions = () =>
+    categories.map((record) => ({
+      label: record.name,
+      value: String(record.id),
+      searchText: [record.name, record.parent_name, record.description]
         .filter(Boolean)
         .join(" "),
     }));
@@ -726,7 +1002,7 @@ export function InventoryPage() {
     locations.map((record) => ({
       label: record.name,
       value: String(record.id),
-      searchText: [record.name, record.description]
+      searchText: [record.name, record.location, record.manager_name, record.description]
         .filter(Boolean)
         .join(" "),
     }));
@@ -749,7 +1025,9 @@ export function InventoryPage() {
       value: String(record.id),
       searchText: [
         record.name,
-        record.sku,
+        record.barcode,
+        record.category_name,
+        record.supplier_name,
         record.unit_name,
         record.description,
       ]
@@ -775,32 +1053,35 @@ export function InventoryPage() {
   async function reloadInventoryData() {
     const [
       nextUnits,
+      nextCategories,
       nextSuppliers,
       nextLocations,
       nextRawMaterials,
       nextFinishedProducts,
       nextStockItems,
       nextStockMovements,
-      nextAlerts,
+      nextStockAlerts,
     ] = await Promise.all([
       fetchUnits(),
+      fetchCategories(),
       fetchSuppliers(),
-      fetchStorageLocations(),
+      fetchWarehouses(),
       fetchRawMaterials(),
-      fetchFinishedProducts(),
-      fetchStockItems(),
+      fetchProducts(),
+      fetchWarehouseStock(),
       fetchStockMovements(),
-      fetchReorderAlerts(),
+      fetchStockAlerts(),
     ]);
 
     setUnits(nextUnits);
+    setCategories(nextCategories);
     setSuppliers(nextSuppliers);
     setLocations(nextLocations);
     setRawMaterials(nextRawMaterials);
     setFinishedProducts(nextFinishedProducts);
     setStockItems(nextStockItems);
     setStockMovements(nextStockMovements);
-    setReorderAlerts(nextAlerts);
+    setStockAlerts(nextStockAlerts);
   }
 
   useEffect(() => {
@@ -835,6 +1116,30 @@ export function InventoryPage() {
   }, []);
 
   useEffect(() => {
+    if (routedProductId !== null) {
+      setActiveTab("products");
+    }
+  }, [routedProductId]);
+
+  useEffect(() => {
+    if (routedProductId === null) {
+      return;
+    }
+
+    const matchedProduct = finishedProducts.find(
+      (record) => record.id === routedProductId,
+    );
+
+    if (!matchedProduct) {
+      return;
+    }
+
+    setSelectedFinishedProductId(matchedProduct.id);
+    setFinishedProductForm(buildFinishedProductForm(matchedProduct));
+    setActiveModal("finishedProduct");
+  }, [routedProductId, finishedProducts]);
+
+  useEffect(() => {
     if (!selectedUnitId) {
       return;
     }
@@ -864,6 +1169,38 @@ export function InventoryPage() {
       isMounted = false;
     };
   }, [selectedUnitId, units]);
+
+  useEffect(() => {
+    if (!selectedCategoryId) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const load = async () => {
+      try {
+        const record = await fetchCategory(selectedCategoryId);
+        if (isMounted) {
+          setCategoryForm(buildCategoryForm(record));
+        }
+      } catch {
+        if (isMounted) {
+          setCategoryForm(
+            buildCategoryForm(
+              categories.find((item) => item.id === selectedCategoryId) ??
+                null,
+            ),
+          );
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [categories, selectedCategoryId]);
 
   useEffect(() => {
     if (!selectedSupplierId) {
@@ -905,7 +1242,7 @@ export function InventoryPage() {
 
     const load = async () => {
       try {
-        const record = await fetchStorageLocation(selectedLocationId);
+        const record = await fetchWarehouse(selectedLocationId);
         if (isMounted) {
           setLocationForm(buildLocationForm(record));
         }
@@ -968,7 +1305,7 @@ export function InventoryPage() {
 
     const load = async () => {
       try {
-        const record = await fetchFinishedProduct(selectedFinishedProductId);
+        const record = await fetchProduct(selectedFinishedProductId);
         if (isMounted) {
           setFinishedProductForm(buildFinishedProductForm(record));
         }
@@ -1001,7 +1338,7 @@ export function InventoryPage() {
 
     const load = async () => {
       try {
-        const record = await fetchStockItem(selectedStockItemId);
+        const record = await fetchWarehouseStockItem(selectedStockItemId);
         if (isMounted) {
           setStockItemForm(buildStockItemForm(record));
         }
@@ -1062,6 +1399,12 @@ export function InventoryPage() {
     setUnitError("");
   };
 
+  const resetCategoryState = () => {
+    setSelectedCategoryId(null);
+    setCategoryForm(createEmptyCategoryForm());
+    setCategoryError("");
+  };
+
   const resetSupplierState = () => {
     setSelectedSupplierId(null);
     setSupplierForm(createEmptySupplierForm());
@@ -1084,6 +1427,8 @@ export function InventoryPage() {
     setSelectedFinishedProductId(null);
     setFinishedProductForm(createEmptyFinishedProductForm());
     setFinishedProductError("");
+    setIsQrExpanded(false);
+    setIsRemoveImageConfirming(false);
   };
 
   const resetStockItemState = () => {
@@ -1099,7 +1444,9 @@ export function InventoryPage() {
   };
 
   const closeModal = () => {
+    const shouldReturnToInventory = routedProductId !== null;
     resetUnitState();
+    resetCategoryState();
     resetSupplierState();
     resetLocationState();
     resetRawMaterialState();
@@ -1107,6 +1454,9 @@ export function InventoryPage() {
     resetStockItemState();
     resetMovementState();
     setActiveModal(null);
+    if (shouldReturnToInventory) {
+      navigate("/inventory");
+    }
   };
 
   const handleUnitSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -1163,6 +1513,60 @@ export function InventoryPage() {
     }
   };
 
+  const handleCategorySubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCategoryError("");
+    setIsCategoryPending(true);
+
+    try {
+      const payload: CategoryPayload = {
+        name: categoryForm.name.trim(),
+        parent: categoryForm.parent,
+        description: categoryForm.description.trim(),
+      };
+
+      if (selectedCategoryId) {
+        await updateCategory(selectedCategoryId, payload);
+      } else {
+        await createCategory(payload);
+      }
+
+      await reloadInventoryData();
+      closeModal();
+    } catch (error) {
+      setCategoryError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to save the category right now.",
+      );
+    } finally {
+      setIsCategoryPending(false);
+    }
+  };
+
+  const handleCategoryDelete = async () => {
+    if (!selectedCategoryId) {
+      return;
+    }
+
+    setCategoryError("");
+    setIsCategoryPending(true);
+
+    try {
+      await deleteCategory(selectedCategoryId);
+      await reloadInventoryData();
+      closeModal();
+    } catch (error) {
+      setCategoryError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to delete the category right now.",
+      );
+    } finally {
+      setIsCategoryPending(false);
+    }
+  };
+
   const handleSupplierSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSupplierError("");
@@ -1173,9 +1577,10 @@ export function InventoryPage() {
         name: supplierForm.name.trim(),
         contact_person: supplierForm.contact_person.trim(),
         email: supplierForm.email.trim(),
-        phone_number: supplierForm.phone_number.trim(),
+        phone: supplierForm.phone.trim(),
         address: supplierForm.address.trim(),
-        notes: supplierForm.notes.trim(),
+        payment_terms: supplierForm.payment_terms.trim(),
+        lead_days: supplierForm.lead_days,
         is_active: supplierForm.is_active,
       };
 
@@ -1229,14 +1634,16 @@ export function InventoryPage() {
     try {
       const payload: StorageLocationPayload = {
         name: locationForm.name.trim(),
+        location: locationForm.location.trim(),
+        manager: locationForm.manager,
         description: locationForm.description.trim(),
         is_active: locationForm.is_active,
       };
 
       if (selectedLocationId) {
-        await updateStorageLocation(selectedLocationId, payload);
+        await updateWarehouse(selectedLocationId, payload);
       } else {
-        await createStorageLocation(payload);
+        await createWarehouse(payload);
       }
 
       await reloadInventoryData();
@@ -1261,14 +1668,15 @@ export function InventoryPage() {
     setIsLocationPending(true);
 
     try {
-      await deleteStorageLocation(selectedLocationId);
+      await deleteWarehouse(selectedLocationId);
+
       await reloadInventoryData();
       closeModal();
     } catch (error) {
       setLocationError(
         error instanceof ApiError
           ? error.message
-          : "Unable to delete the location right now.",
+          : "Unable to delete the warehouse right now.",
       );
     } finally {
       setIsLocationPending(false);
@@ -1344,17 +1752,23 @@ export function InventoryPage() {
       const payload: FinishedProductPayload = {
         name: finishedProductForm.name.trim(),
         description: finishedProductForm.description.trim(),
+        category: finishedProductForm.category,
+        supplier: finishedProductForm.supplier,
         unit: finishedProductForm.unit,
         unit_price: finishedProductForm.unit_price,
+        cost_price: finishedProductForm.cost_price,
         reorder_level: finishedProductForm.reorder_level,
-        notes: finishedProductForm.notes.trim(),
+        reorder_quantity: finishedProductForm.reorder_quantity,
+        location: finishedProductForm.location,
+        image: finishedProductForm.image,
+        clear_image: finishedProductForm.clear_image,
         is_active: finishedProductForm.is_active,
       };
 
       if (selectedFinishedProductId) {
-        await updateFinishedProduct(selectedFinishedProductId, payload);
+        await updateProduct(selectedFinishedProductId, payload);
       } else {
-        await createFinishedProduct(payload);
+        await createProduct(payload);
       }
 
       await reloadInventoryData();
@@ -1363,7 +1777,7 @@ export function InventoryPage() {
       setFinishedProductError(
         error instanceof ApiError
           ? error.message
-          : "Unable to save the finished product right now.",
+          : "Unable to save the product right now.",
       );
     } finally {
       setIsFinishedProductPending(false);
@@ -1379,14 +1793,14 @@ export function InventoryPage() {
     setIsFinishedProductPending(true);
 
     try {
-      await deleteFinishedProduct(selectedFinishedProductId);
+      await deleteProduct(selectedFinishedProductId);
       await reloadInventoryData();
       closeModal();
     } catch (error) {
       setFinishedProductError(
         error instanceof ApiError
           ? error.message
-          : "Unable to delete the finished product right now.",
+          : "Unable to delete the product right now.",
       );
     } finally {
       setIsFinishedProductPending(false);
@@ -1401,7 +1815,7 @@ export function InventoryPage() {
     try {
       const payload: StockItemPayload = {
         location: Number(stockItemForm.location),
-        notes: stockItemForm.notes.trim(),
+        bin_location: stockItemForm.bin_location.trim(),
       };
 
       if (stockItemForm.item_kind === "raw_material") {
@@ -1421,9 +1835,9 @@ export function InventoryPage() {
       }
 
       if (selectedStockItemId) {
-        await updateStockItem(selectedStockItemId, payload);
+        await updateWarehouseStock(selectedStockItemId, payload);
       } else {
-        await createStockItem(payload);
+        await createWarehouseStock(payload);
       }
 
       await reloadInventoryData();
@@ -1432,7 +1846,7 @@ export function InventoryPage() {
       setStockItemError(
         error instanceof ApiError
           ? error.message
-          : "Unable to save the stock item right now.",
+          : "Unable to save the warehouse stock right now.",
       );
     } finally {
       setIsStockItemPending(false);
@@ -1448,14 +1862,14 @@ export function InventoryPage() {
     setIsStockItemPending(true);
 
     try {
-      await deleteStockItem(selectedStockItemId);
+      await deleteWarehouseStock(selectedStockItemId);
       await reloadInventoryData();
       closeModal();
     } catch (error) {
       setStockItemError(
         error instanceof ApiError
           ? error.message
-          : "Unable to delete the stock item right now.",
+          : "Unable to delete the warehouse stock right now.",
       );
     } finally {
       setIsStockItemPending(false);
@@ -1472,7 +1886,7 @@ export function InventoryPage() {
         stock_item: Number(movementForm.stock_item),
         movement_type: movementForm.movement_type,
         quantity: movementForm.quantity.trim(),
-        reference_note: movementForm.reference_note.trim(),
+        notes: movementForm.notes.trim(),
         movement_date: movementForm.movement_date,
       };
 
@@ -1518,6 +1932,19 @@ export function InventoryPage() {
     }
   };
 
+  const handleAlertAcknowledge = async (id: number) => {
+    try {
+      await acknowledgeStockAlert(id);
+      await reloadInventoryData();
+    } catch (error) {
+      setPageError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to acknowledge the stock alert right now.",
+      );
+    }
+  };
+
   if (isLoading) {
     return (
       <section className="panel flex min-h-[320px] items-center justify-center p-8">
@@ -1553,24 +1980,23 @@ export function InventoryPage() {
             </div>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
-                Stock control workspace
+                Inventory control workspace
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-slate-600">
-                Quantities live on stock items, and quantity changes happen
-                through stock movements. This page keeps the records visible and
-                the edits tucked into modals.
+                Manage products, suppliers, warehouses, stock levels, and
+                stock movements in one place.
               </p>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="hero-metric-card">
-              <p className="hero-metric-label">Stock items</p>
-              <p className="hero-metric-value">{stockItems.length}</p>
+              <p className="hero-metric-label">Products</p>
+              <p className="hero-metric-value">{finishedProducts.length}</p>
             </div>
             <div className="hero-metric-card">
-              <p className="hero-metric-label">Alerts</p>
-              <p className="hero-metric-value">{reorderAlerts.length}</p>
+              <p className="hero-metric-label">Stock alerts</p>
+              <p className="hero-metric-value">{stockAlerts.length}</p>
             </div>
             <div className="hero-metric-card">
               <p className="hero-metric-label">Suppliers</p>
@@ -1579,7 +2005,7 @@ export function InventoryPage() {
               </p>
             </div>
             <div className="hero-metric-card">
-              <p className="hero-metric-label">Locations</p>
+              <p className="hero-metric-label">Warehouses</p>
               <p className="hero-metric-value">
                 {locations.filter((item) => item.is_active).length}
               </p>
@@ -1595,21 +2021,21 @@ export function InventoryPage() {
             {activeTab === "alerts" ? (
               <section className="panel p-6">
                 <div>
-                  <p className="section-label">Reorder Alerts</p>
+                  <p className="section-label">Stock Alerts</p>
                   <h2 className="mt-1 text-2xl font-semibold text-slate-900">
                     Attention needed
                   </h2>
                 </div>
 
                 <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-                  {reorderAlerts.length === 0 ? (
+                  {stockAlerts.length === 0 ? (
                     <EmptyState
-                      title="No reorder alerts"
-                      description="All tracked items are above their reorder levels right now."
+                      title="No stock alerts"
+                      description="All tracked inventory is above its alert thresholds right now."
                       className={`${recordCardClassName} justify-center`}
                     />
                   ) : (
-                    reorderAlerts.map((record) => (
+                    stockAlerts.map((record) => (
                       <div key={record.id} className={recordCardClassName}>
                         <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-2">
                           <p className="font-semibold text-slate-900">
@@ -1618,29 +2044,41 @@ export function InventoryPage() {
                           <p className="mt-1 text-sm text-slate-500">
                             {record.item_type === "raw_material"
                               ? "Raw material"
-                              : "Finished product"}
+                              : "Product"}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
-                            Location:{" "}
-                            {locationNameById.get(record.location) ??
-                              `#${record.location}`}
+                            Warehouse: {record.warehouse_name}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             In stock:{" "}
-                            {formatQuantity(record.quantity, record.unit_name)}
-                          </p>
-                          <p className="mt-2 text-sm text-slate-600">
-                            Reorder level:{" "}
-                            {formatQuantity(
-                              record.reorder_level,
-                              record.unit_name,
-                            )}
+                            {record.quantity}
                           </p>
                           <p className="mt-2 text-sm font-medium text-amber-700">
-                            Shortage:{" "}
-                            {formatQuantity(record.shortage, record.unit_name)}
+                            Alert type:{" "}
+                            {record.alert_type === "out_of_stock"
+                              ? "Out of stock"
+                              : record.alert_type === "low"
+                                ? "Low stock"
+                                : "Expiry"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Triggered: {formatDateTime(record.triggered_at)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            {record.is_acknowledged
+                              ? "Acknowledged"
+                              : "Waiting for acknowledgement"}
                           </p>
                         </div>
+                        {!record.is_acknowledged && isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleAlertAcknowledge(record.id)}
+                            className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+                          >
+                            Acknowledge
+                          </button>
+                        ) : null}
                       </div>
                     ))
                   )}
@@ -1652,7 +2090,7 @@ export function InventoryPage() {
               <section className="panel p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="section-label">Stock Items</p>
+                    <p className="section-label">Warehouse Stock</p>
                     <h2 className="mt-1 text-2xl font-semibold text-slate-900">
                       Current balances
                     </h2>
@@ -1665,8 +2103,8 @@ export function InventoryPage() {
                         setActiveModal("stockItem");
                       }}
                       className={iconButtonClassName}
-                      aria-label="Add stock item"
-                      title="Add stock item"
+                      aria-label="Add warehouse stock"
+                      title="Add warehouse stock"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -1676,8 +2114,8 @@ export function InventoryPage() {
                 <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
                   {stockItems.length === 0 ? (
                     <EmptyState
-                      title="No stock items yet"
-                      description="Create stock items to start tracking balances by location."
+                      title="No warehouse stock yet"
+                      description="Create warehouse stock records to start tracking balances by warehouse."
                       className={`${recordCardClassName} justify-center`}
                     />
                   ) : (
@@ -1690,16 +2128,20 @@ export function InventoryPage() {
                           <p className="mt-1 text-sm text-slate-500">
                             {record.item_type === "raw_material"
                               ? "Raw material"
-                              : "Finished product"}
+                              : "Product"}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
-                            Location:{" "}
-                            {locationNameById.get(record.location) ??
+                            Warehouse:{" "}
+                            {record.warehouse_name ||
+                              locationNameById.get(record.location) ||
                               `#${record.location}`}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             Quantity:{" "}
                             {formatQuantity(record.quantity, record.unit_name)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Bin: {record.bin_location || "Not set"}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             Reorder:{" "}
@@ -1820,13 +2262,13 @@ export function InventoryPage() {
               </section>
             ) : null}
 
-            {activeTab === "finished" ? (
+            {activeTab === "products" ? (
               <section className="panel p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="section-label">Finished Products</p>
+                    <p className="section-label">Products</p>
                     <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                      Sellable outputs
+                      Sellable inventory
                     </h2>
                   </div>
                   {isAdmin ? (
@@ -1837,8 +2279,8 @@ export function InventoryPage() {
                         setActiveModal("finishedProduct");
                       }}
                       className={iconButtonClassName}
-                      aria-label="Add finished product"
-                      title="Add finished product"
+                      aria-label="Add product"
+                      title="Add product"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -1848,8 +2290,8 @@ export function InventoryPage() {
                 <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
                   {finishedProducts.length === 0 ? (
                     <EmptyState
-                      title="No finished products yet"
-                      description="Add the packaged products the business keeps in stock."
+                      title="No products yet"
+                      description="Add the products the business sells and tracks in inventory."
                       className={`${recordCardClassName} justify-center`}
                     />
                   ) : (
@@ -1860,10 +2302,16 @@ export function InventoryPage() {
                             {record.name}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
-                            Unit: {record.unit_name}
+                            Category: {record.category_name || "Not assigned"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Supplier: {record.supplier_name || "Not linked"}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             Price: {formatCurrency(record.unit_price)}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Current stock: {record.current_stock} {record.unit_name}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             Reorder:{" "}
@@ -1879,7 +2327,8 @@ export function InventoryPage() {
                         {isAdmin ? (
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(event) => {
+                              event.stopPropagation();
                               setSelectedFinishedProductId(record.id);
                               setFinishedProductForm(
                                 buildFinishedProductForm(record),
@@ -1902,6 +2351,74 @@ export function InventoryPage() {
           </div>
 
           <div className="space-y-6">
+            {activeTab === "categories" ? (
+              <section className="panel p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="section-label">Categories</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                      Product classification
+                    </h2>
+                  </div>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetCategoryState();
+                        setActiveModal("category");
+                      }}
+                      className={iconButtonClassName}
+                      aria-label="Add category"
+                      title="Add category"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  {categories.length === 0 ? (
+                    <EmptyState
+                      title="No categories yet"
+                      description="Create categories so products are grouped clearly across the inventory workflow."
+                      className={`${recordCardClassName} justify-center`}
+                    />
+                  ) : (
+                    categories.map((record) => (
+                      <div key={record.id} className={recordCardClassName}>
+                        <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                          <p className="font-semibold text-slate-900">
+                            {record.name}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Parent: {record.parent_name || "Top-level"}
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">
+                            {record.description || "No description recorded"}
+                          </p>
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategoryId(record.id);
+                              setCategoryForm(buildCategoryForm(record));
+                              setActiveModal("category");
+                            }}
+                            className={recordEditButtonClassName}
+                            aria-label={`Edit ${record.name}`}
+                            title={`Edit ${record.name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            ) : null}
+
             {activeTab === "units" ? (
               <section className="panel p-6">
                 <div className="flex items-start justify-between gap-4">
@@ -1970,11 +2487,11 @@ export function InventoryPage() {
               </section>
             ) : null}
 
-            {activeTab === "locations" ? (
+            {activeTab === "warehouses" ? (
               <section className="panel p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="section-label">Storage Locations</p>
+                    <p className="section-label">Warehouses</p>
                     <h2 className="mt-1 text-2xl font-semibold text-slate-900">
                       Where stock lives
                     </h2>
@@ -1987,8 +2504,8 @@ export function InventoryPage() {
                         setActiveModal("location");
                       }}
                       className={iconButtonClassName}
-                      aria-label="Add storage location"
-                      title="Add storage location"
+                      aria-label="Add warehouse"
+                      title="Add warehouse"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -1998,7 +2515,7 @@ export function InventoryPage() {
                 <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
                   {locations.length === 0 ? (
                     <EmptyState
-                      title="No storage locations yet"
+                      title="No warehouses yet"
                       description="Add warehouses, cold rooms, or stores before assigning stock."
                       className={`${recordCardClassName} justify-center`}
                     />
@@ -2011,6 +2528,12 @@ export function InventoryPage() {
                           </p>
                           <p className="mt-2 text-sm leading-6 text-slate-600">
                             {record.description || "No description recorded"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Site: {record.location || "Not set"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Manager: {record.manager_name || "Not assigned"}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             {record.is_active ? "Active" : "Inactive"}
@@ -2083,10 +2606,16 @@ export function InventoryPage() {
                             {record.contact_person || "No contact person"}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
-                            {record.phone_number || "No phone number"}
+                            {record.phone || "No phone number"}
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             {record.email || "No email address"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Terms: {record.payment_terms || "Not set"}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600">
+                            Lead time: {record.lead_days} day(s)
                           </p>
                           <p className="mt-2 text-sm text-slate-600">
                             {record.is_active ? "Active" : "Inactive"}
@@ -2163,7 +2692,7 @@ export function InventoryPage() {
                             {formatDateTime(record.movement_date)}
                           </p>
                           <p className="mt-2 text-sm leading-6 text-slate-600">
-                            {record.reference_note || "No reference note"}
+                            {record.notes || "No notes recorded"}
                           </p>
                         </div>
                         {isAdmin ? (
@@ -2290,6 +2819,107 @@ export function InventoryPage() {
         </ModalShell>
       ) : null}
 
+      {activeModal === "category" ? (
+        <ModalShell
+          title={selectedCategoryId ? "Edit category" : "Add category"}
+          onClose={closeModal}
+        >
+          <FormPanel label="Categories" title="Category form">
+            <form className="space-y-4" onSubmit={handleCategorySubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Name
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={categoryForm.name}
+                    onChange={(event) =>
+                      setCategoryForm((current) => ({
+                        ...current,
+                        name: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Parent category
+                  </span>
+                  <PickerField
+                    value={categoryForm.parent ? String(categoryForm.parent) : ""}
+                    options={[
+                      { label: "Top-level category", value: "" },
+                      ...buildCategoryOptions().filter(
+                        (option) =>
+                          option.value !== String(selectedCategoryId ?? ""),
+                      ),
+                    ]}
+                    searchable
+                    searchPlaceholder="Search categories"
+                    onChange={(value) =>
+                      setCategoryForm((current) => ({
+                        ...current,
+                        parent: value ? Number(value) : null,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Description
+                </span>
+                <textarea
+                  className={textAreaClassName}
+                  value={categoryForm.description}
+                  onChange={(event) =>
+                    setCategoryForm((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <FieldMessage message={categoryError} tone="error" />
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className={secondaryButtonClassName}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleCategoryDelete()}
+                  disabled={!selectedCategoryId || isCategoryPending}
+                  className={dangerButtonClassName}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCategoryPending}
+                  className={primaryButtonClassName}
+                >
+                  {isCategoryPending ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      Saving
+                    </>
+                  ) : (
+                    "Save category"
+                  )}
+                </button>
+              </div>
+            </form>
+          </FormPanel>
+        </ModalShell>
+      ) : null}
+
       {activeModal === "supplier" ? (
         <ModalShell
           title={selectedSupplierId ? "Edit supplier" : "Add supplier"}
@@ -2333,11 +2963,11 @@ export function InventoryPage() {
                   </span>
                   <input
                     className={fieldClassName}
-                    value={supplierForm.phone_number}
+                    value={supplierForm.phone}
                     onChange={(event) =>
                       setSupplierForm((current) => ({
                         ...current,
-                        phone_number: event.target.value,
+                        phone: event.target.value,
                       }))
                     }
                   />
@@ -2354,6 +2984,38 @@ export function InventoryPage() {
                       setSupplierForm((current) => ({
                         ...current,
                         email: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Payment terms
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={supplierForm.payment_terms}
+                    onChange={(event) =>
+                      setSupplierForm((current) => ({
+                        ...current,
+                        payment_terms: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Lead days
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    className={fieldClassName}
+                    value={supplierForm.lead_days}
+                    onChange={(event) =>
+                      setSupplierForm((current) => ({
+                        ...current,
+                        lead_days: Number(event.target.value) || 0,
                       }))
                     }
                   />
@@ -2383,21 +3045,6 @@ export function InventoryPage() {
                     setSupplierForm((current) => ({
                       ...current,
                       address: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">
-                  Notes
-                </span>
-                <textarea
-                  className={textAreaClassName}
-                  value={supplierForm.notes}
-                  onChange={(event) =>
-                    setSupplierForm((current) => ({
-                      ...current,
-                      notes: event.target.value,
                     }))
                   }
                 />
@@ -2442,14 +3089,10 @@ export function InventoryPage() {
 
       {activeModal === "location" ? (
         <ModalShell
-          title={
-            selectedLocationId
-              ? "Edit storage location"
-              : "Add storage location"
-          }
+          title={selectedLocationId ? "Edit warehouse" : "Add warehouse"}
           onClose={closeModal}
         >
-          <FormPanel label="Storage Locations" title="Storage location form">
+          <FormPanel label="Warehouses" title="Warehouse form">
             <form className="space-y-4" onSubmit={handleLocationSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
@@ -2468,7 +3111,40 @@ export function InventoryPage() {
                     required
                   />
                 </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Site or location
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    value={locationForm.location}
+                    onChange={(event) =>
+                      setLocationForm((current) => ({
+                        ...current,
+                        location: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
               </div>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Manager
+                </span>
+                <input
+                  className={fieldClassName}
+                  value={locationForm.manager ? String(locationForm.manager) : ""}
+                  onChange={(event) =>
+                    setLocationForm((current) => ({
+                      ...current,
+                      manager: event.target.value
+                        ? Number(event.target.value)
+                        : null,
+                    }))
+                  }
+                  placeholder="Enter employee ID if known"
+                />
+              </label>
               <label className="block space-y-2">
                 <span className="text-sm font-medium text-slate-700">
                   Description
@@ -2495,7 +3171,7 @@ export function InventoryPage() {
                     }))
                   }
                 />
-                Active location
+                Active warehouse
               </label>
               <FieldMessage message={locationError} tone="error" />
               <div className="flex flex-wrap justify-end gap-3">
@@ -2526,7 +3202,7 @@ export function InventoryPage() {
                       Saving
                     </>
                   ) : (
-                    "Save location"
+                    "Save warehouse"
                   )}
                 </button>
               </div>
@@ -2728,15 +3404,125 @@ export function InventoryPage() {
 
       {activeModal === "finishedProduct" ? (
         <ModalShell
-          title={
-            selectedFinishedProductId
-              ? "Edit finished product"
-              : "Add finished product"
-          }
+          title={selectedFinishedProductId ? "Edit product" : "Add product"}
           onClose={closeModal}
         >
-          <FormPanel label="Finished Products" title="Finished product form">
-            <form className="space-y-4" onSubmit={handleFinishedProductSubmit}>
+          <FormPanel label="Products" title="Product form">
+            <form className="space-y-5" onSubmit={handleFinishedProductSubmit}>
+              <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+                <div className="space-y-3">
+                  <span className="text-sm font-medium text-slate-700">
+                    Product image
+                  </span>
+                  <div className="h-full min-h-[260px] rounded-3xl border border-slate-200/80 bg-slate-50/70 p-5">
+                    <ProductImagePreview
+                      image={finishedProductForm.image}
+                      alt={finishedProductForm.name || "Product image"}
+                      className="h-full min-h-[218px] w-full border border-dashed border-slate-200 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <span className="text-sm font-medium text-slate-700">
+                    Current stock
+                  </span>
+                  <div className="flex h-full min-h-[260px] flex-col rounded-3xl border border-slate-200/80 bg-slate-50/70 p-5">
+                    <div className="space-y-3">
+                      <div className={`${fieldClassName} min-h-[56px] flex items-center`}>
+                        {editingFinishedProductRecord
+                          ? formatQuantity(
+                              editingFinishedProductRecord.current_stock,
+                              editingFinishedProductRecord.unit_name,
+                            )
+                          : "0.00"}
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
+                      <label className="flex w-full cursor-pointer items-center justify-start rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
+                        <span>Choose image</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(event) => {
+                            const nextFile = event.target.files?.[0] ?? null;
+                            if (!nextFile) {
+                              return;
+                            }
+
+                            void normalizeProductImage(nextFile)
+                              .then((normalizedFile) => {
+                                setFinishedProductForm((current) => ({
+                                  ...current,
+                                  image: normalizedFile,
+                                  clear_image: false,
+                                }));
+                                setIsRemoveImageConfirming(false);
+                              })
+                              .catch(() => {
+                                setFinishedProductForm((current) => ({
+                                  ...current,
+                                  image: nextFile,
+                                  clear_image: false,
+                                }));
+                                setIsRemoveImageConfirming(false);
+                              });
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="mt-auto border-t border-slate-200 pt-6">
+                      {isRemoveImageConfirming ? (
+                        <div className="space-y-3">
+                          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            Remove this product image?
+                          </div>
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFinishedProductForm((current) => ({
+                                  ...current,
+                                  image: null,
+                                  clear_image: true,
+                                }));
+                                setIsRemoveImageConfirming(false);
+                              }}
+                              className={`${dangerButtonClassName} w-full justify-center`}
+                              aria-label="Confirm remove image"
+                              title="Confirm remove image"
+                            >
+                              <Check className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setIsRemoveImageConfirming(false)}
+                              className={`${secondaryButtonClassName} w-full justify-center`}
+                              aria-label="Cancel remove image"
+                              title="Cancel remove image"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsRemoveImageConfirming(true)}
+                          disabled={!finishedProductForm.image}
+                          className={`${secondaryButtonClassName} w-full justify-start`}
+                        >
+                          Remove image
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Name */}
                 <label className="block space-y-2">
@@ -2783,6 +3569,56 @@ export function InventoryPage() {
                   />
                 </label>
 
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Category
+                  </span>
+                  <PickerField
+                    value={
+                      finishedProductForm.category
+                        ? String(finishedProductForm.category)
+                        : ""
+                    }
+                    options={[
+                      { label: "No category", value: "" },
+                      ...buildCategoryOptions(),
+                    ]}
+                    searchable
+                    searchPlaceholder="Search categories"
+                    onChange={(value) =>
+                      setFinishedProductForm((current) => ({
+                        ...current,
+                        category: value ? Number(value) : null,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Supplier
+                  </span>
+                  <PickerField
+                    value={
+                      finishedProductForm.supplier
+                        ? String(finishedProductForm.supplier)
+                        : ""
+                    }
+                    options={[
+                      { label: "No supplier", value: "" },
+                      ...buildSupplierOptions(),
+                    ]}
+                    searchable
+                    searchPlaceholder="Search suppliers"
+                    onChange={(value) =>
+                      setFinishedProductForm((current) => ({
+                        ...current,
+                        supplier: value ? Number(value) : null,
+                      }))
+                    }
+                  />
+                </label>
+
                 {/* Reorder level */}
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
@@ -2824,6 +3660,71 @@ export function InventoryPage() {
                   />
                 </label>
 
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Cost price
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={fieldClassName}
+                    value={finishedProductForm.cost_price}
+                    onChange={(event) =>
+                      setFinishedProductForm((current) => ({
+                        ...current,
+                        cost_price: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Reorder quantity
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={fieldClassName}
+                    value={finishedProductForm.reorder_quantity}
+                    onChange={(event) =>
+                      setFinishedProductForm((current) => ({
+                        ...current,
+                        reorder_quantity: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Default warehouse
+                  </span>
+                  <PickerField
+                    value={
+                      finishedProductForm.location
+                        ? String(finishedProductForm.location)
+                        : ""
+                    }
+                    options={[
+                      { label: "No default warehouse", value: "" },
+                      ...buildLocationOptions(),
+                    ]}
+                    searchable
+                    searchPlaceholder="Search warehouses"
+                    onChange={(value) =>
+                      setFinishedProductForm((current) => ({
+                        ...current,
+                        location: value ? Number(value) : null,
+                      }))
+                    }
+                  />
+                </label>
+
                 {/* Active */}
                 <label className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
                   <input
@@ -2836,7 +3737,7 @@ export function InventoryPage() {
                       }))
                     }
                   />
-                  Active finished product
+                  Active product
                 </label>
               </div>
 
@@ -2857,22 +3758,49 @@ export function InventoryPage() {
                 />
               </label>
 
-              {/* Notes */}
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">
-                  Notes
-                </span>
-                <textarea
-                  className={textAreaClassName}
-                  value={finishedProductForm.notes}
-                  onChange={(event) =>
-                    setFinishedProductForm((current) => ({
-                      ...current,
-                      notes: event.target.value,
-                    }))
-                  }
-                />
-              </label>
+              {editingFinishedProductRecord ? (
+                <div className="space-y-4 rounded-3xl border border-slate-200/80 bg-slate-50/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">
+                        Barcode
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Open to view or scan the product code.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsQrExpanded((current) => !current)}
+                      className={secondaryButtonClassName}
+                    >
+                      {isQrExpanded ? "Hide barcode" : "Show barcode"}
+                    </button>
+                  </div>
+
+                  <div
+                    className={[
+                      "overflow-hidden transition-all duration-300 ease-out",
+                      isQrExpanded
+                        ? "max-h-[420px] opacity-100 translate-y-0"
+                        : "max-h-0 opacity-0 -translate-y-2",
+                    ].join(" ")}
+                  >
+                    <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
+                      <div className="flex flex-col items-center gap-4">
+                        <ProductQrPreview
+                          value={resolveProductQrValue(editingFinishedProductRecord)}
+                          size={280}
+                          className="h-[280px] w-[280px]"
+                        />
+                        <p className="text-sm font-medium text-slate-700">
+                          {editingFinishedProductRecord.barcode}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
 
               <FieldMessage message={finishedProductError} tone="error" />
 
@@ -2909,7 +3837,7 @@ export function InventoryPage() {
                       Saving
                     </>
                   ) : (
-                    "Save finished product"
+                      "Save product"
                   )}
                 </button>
               </div>
@@ -2920,189 +3848,196 @@ export function InventoryPage() {
 
       {activeModal === "stockItem" ? (
         <ModalShell
-          title={selectedStockItemId ? "Edit stock item" : "Add stock item"}
+          title={
+            selectedStockItemId ? "Edit warehouse stock" : "Add warehouse stock"
+          }
           onClose={closeModal}
           panelClassName="min-h-[760px]"
         >
           <div className="pt-14">
-            <FormPanel label="Stock Items" title="Stock item form">
+            <FormPanel label="Warehouse Stock" title="Warehouse stock form">
               <form className="space-y-4 py-4" onSubmit={handleStockItemSubmit}>
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Item type */}
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Item type
-                  </span>
-                  <PickerField
-                    value={stockItemForm.item_kind}
-                    options={[
-                      { label: "Raw material", value: "raw_material" },
-                      { label: "Finished product", value: "finished_product" },
-                    ]}
-                    onChange={(value) =>
-                      setStockItemForm((current) => ({
-                        ...current,
-                        item_kind: value as "raw_material" | "finished_product",
-                        raw_material: "",
-                        finished_product: "",
-                      }))
-                    }
-                  />
-                </label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Item type */}
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Item type
+                    </span>
+                    <PickerField
+                      value={stockItemForm.item_kind}
+                      options={[
+                        { label: "Raw material", value: "raw_material" },
+                        {
+                          label: "Product",
+                          value: "finished_product",
+                        },
+                      ]}
+                      onChange={(value) =>
+                        setStockItemForm((current) => ({
+                          ...current,
+                          item_kind: value as
+                            | "raw_material"
+                            | "finished_product",
+                          raw_material: "",
+                          finished_product: "",
+                        }))
+                      }
+                    />
+                  </label>
 
-                {/* Location */}
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Storage location
-                  </span>
-                  <PickerField
-                    value={
-                      stockItemForm.location
-                        ? String(stockItemForm.location)
-                        : ""
-                    }
-                    options={[
-                      { label: "Select location", value: "" },
-                      ...buildLocationOptions(),
-                    ]}
-                    searchable
-                    searchPlaceholder="Search locations"
-                    onChange={(value) =>
-                      setStockItemForm((current) => ({
-                        ...current,
-                        location: value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
+                  {/* Location */}
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Warehouse
+                    </span>
+                    <PickerField
+                      value={
+                        stockItemForm.location
+                          ? String(stockItemForm.location)
+                          : ""
+                      }
+                      options={[
+                        { label: "Select warehouse", value: "" },
+                        ...buildLocationOptions(),
+                      ]}
+                      searchable
+                      searchPlaceholder="Search warehouses"
+                      onChange={(value) =>
+                        setStockItemForm((current) => ({
+                          ...current,
+                          location: value,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
 
-              {/* Raw material OR Finished product */}
-              {stockItemForm.item_kind === "raw_material" ? (
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Raw material
-                  </span>
-                  <PickerField
-                    value={stockItemForm.raw_material ?? ""}
-                    options={[
-                      { label: "Select raw material", value: "" },
-                      ...buildRawMaterialOptions(),
-                    ]}
-                    searchable
-                    searchPlaceholder="Search raw materials"
-                    onChange={(value) =>
-                      setStockItemForm((current) => ({
-                        ...current,
-                        raw_material: value,
-                        finished_product: "",
-                      }))
-                    }
-                  />
-                </label>
-              ) : (
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Finished product
-                  </span>
-                  <PickerField
-                    value={stockItemForm.finished_product ?? ""}
-                    options={[
-                      { label: "Select finished product", value: "" },
-                      ...buildFinishedProductOptions(),
-                    ]}
-                    searchable
-                    searchPlaceholder="Search finished products"
-                    onChange={(value) =>
-                      setStockItemForm((current) => ({
-                        ...current,
-                        finished_product: value,
-                        raw_material: "",
-                      }))
-                    }
-                  />
-                </label>
-              )}
+                {/* Raw material OR Product */}
+                {stockItemForm.item_kind === "raw_material" ? (
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Raw material
+                    </span>
+                    <PickerField
+                      value={stockItemForm.raw_material ?? ""}
+                      options={[
+                        { label: "Select raw material", value: "" },
+                        ...buildRawMaterialOptions(),
+                      ]}
+                      searchable
+                      searchPlaceholder="Search raw materials"
+                      onChange={(value) =>
+                        setStockItemForm((current) => ({
+                          ...current,
+                          raw_material: value,
+                          finished_product: "",
+                        }))
+                      }
+                    />
+                  </label>
+                ) : (
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Product
+                    </span>
+                    <PickerField
+                      value={stockItemForm.finished_product ?? ""}
+                      options={[
+                        { label: "Select product", value: "" },
+                        ...buildFinishedProductOptions(),
+                      ]}
+                      searchable
+                      searchPlaceholder="Search products"
+                      onChange={(value) =>
+                        setStockItemForm((current) => ({
+                          ...current,
+                          finished_product: value,
+                          raw_material: "",
+                        }))
+                      }
+                    />
+                  </label>
+                )}
 
-              {/* Opening stock */}
-              {!selectedStockItemId ? (
+                {/* Opening stock */}
+                {!selectedStockItemId ? (
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Opening stock
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className={fieldClassName}
+                      value={stockItemForm.opening_stock}
+                      onChange={(event) =>
+                        setStockItemForm((current) => ({
+                          ...current,
+                          opening_stock: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                ) : null}
+
+                {/* Bin location */}
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
-                    Opening stock
+                    Bin location
                   </span>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
                     className={fieldClassName}
-                    value={stockItemForm.opening_stock}
+                    value={stockItemForm.bin_location}
                     onChange={(event) =>
                       setStockItemForm((current) => ({
                         ...current,
-                        opening_stock: event.target.value,
+                        bin_location: event.target.value,
                       }))
                     }
                   />
                 </label>
-              ) : null}
 
-              {/* Notes */}
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">
-                  Notes
-                </span>
-                <textarea
-                  className={textAreaClassName}
-                  value={stockItemForm.notes}
-                  onChange={(event) =>
-                    setStockItemForm((current) => ({
-                      ...current,
-                      notes: event.target.value,
-                    }))
-                  }
-                />
-              </label>
+                {/* Info */}
+                <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                  Use stock movements to adjust quantities after the warehouse
+                  stock record is created.
+                </div>
 
-              {/* Info */}
-              <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-                Use stock movements to adjust quantities after the stock item is
-                created.
-              </div>
+                <FieldMessage message={stockItemError} tone="error" />
 
-              <FieldMessage message={stockItemError} tone="error" />
+                {/* Buttons */}
+                <div className="flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className={secondaryButtonClassName}
+                  >
+                    Cancel
+                  </button>
 
-              {/* Buttons */}
-              <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className={secondaryButtonClassName}
-                >
-                  Cancel
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleStockItemDelete()}
+                    disabled={!selectedStockItemId || isStockItemPending}
+                    className={dangerButtonClassName}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => void handleStockItemDelete()}
-                  disabled={!selectedStockItemId || isStockItemPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isStockItemPending}
-                  className={primaryButtonClassName}
-                >
-                  {isStockItemPending ? (
-                    <>
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save stock item"
+                  <button
+                    type="submit"
+                    disabled={isStockItemPending}
+                    className={primaryButtonClassName}
+                  >
+                    {isStockItemPending ? (
+                      <>
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                        Saving
+                      </>
+                    ) : (
+                      "Save warehouse stock"
                   )}
                 </button>
               </div>
@@ -3123,152 +4058,153 @@ export function InventoryPage() {
           <div className="pt-14">
             <FormPanel label="Stock Movements" title="Stock movement form">
               <form className="space-y-4 py-4" onSubmit={handleMovementSubmit}>
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Stock item */}
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Stock item
-                  </span>
-                  <PickerField
-                    value={movementForm.stock_item ?? ""}
-                    options={[
-                      { label: "Select stock item", value: "" },
-                      ...buildStockItemOptions(),
-                    ]}
-                    searchable
-                    searchPlaceholder="Search stock items"
-                    onChange={(value) =>
-                      setMovementForm((current) => ({
-                        ...current,
-                        stock_item: value,
-                      }))
-                    }
-                  />
-                </label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Warehouse stock */}
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Warehouse stock
+                    </span>
+                    <PickerField
+                      value={movementForm.stock_item ?? ""}
+                      options={[
+                        { label: "Select warehouse stock", value: "" },
+                        ...buildStockItemOptions(),
+                      ]}
+                      searchable
+                      searchPlaceholder="Search warehouse stock"
+                      onChange={(value) =>
+                        setMovementForm((current) => ({
+                          ...current,
+                          stock_item: value,
+                        }))
+                      }
+                    />
+                  </label>
 
-                {/* Movement type */}
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Movement type
-                  </span>
-                  <PickerField
-                    value={movementForm.movement_type}
-                    options={[
-                      { label: "Stock in", value: "stock_in" },
-                      { label: "Stock out", value: "stock_out" },
-                      {
-                        label: "Positive adjustment",
-                        value: "adjustment_positive",
-                      },
-                      {
-                        label: "Negative adjustment",
-                        value: "adjustment_negative",
-                      },
-                    ]}
-                    onChange={(value) =>
-                      setMovementForm((current) => ({
-                        ...current,
-                        movement_type: value as StockMovementType,
-                      }))
-                    }
-                  />
-                </label>
+                  {/* Movement type */}
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Movement type
+                    </span>
+                    <PickerField
+                      value={movementForm.movement_type}
+                      options={[
+                        { label: "Stock in", value: "stock_in" },
+                        { label: "Stock out", value: "stock_out" },
+                        {
+                          label: "Positive adjustment",
+                          value: "adjustment_positive",
+                        },
+                        {
+                          label: "Negative adjustment",
+                          value: "adjustment_negative",
+                        },
+                        { label: "Return", value: "return" },
+                      ]}
+                      onChange={(value) =>
+                        setMovementForm((current) => ({
+                          ...current,
+                          movement_type: value as StockMovementType,
+                        }))
+                      }
+                    />
+                  </label>
 
-                {/* Quantity */}
+                  {/* Quantity */}
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Quantity
+                    </span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      className={fieldClassName}
+                      value={movementForm.quantity}
+                      onChange={(event) =>
+                        setMovementForm((current) => ({
+                          ...current,
+                          quantity: event.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </label>
+
+                  {/* Movement date */}
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Movement date
+                    </span>
+                    <input
+                      type="datetime-local"
+                      className={fieldClassName}
+                      value={movementForm.movement_date}
+                      onChange={(event) =>
+                        setMovementForm((current) => ({
+                          ...current,
+                          movement_date: event.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </label>
+                </div>
+
+                {/* Notes */}
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
-                    Quantity
+                    Notes
                   </span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    className={fieldClassName}
-                    value={movementForm.quantity}
+                  <textarea
+                    className={textAreaClassName}
+                    value={movementForm.notes}
                     onChange={(event) =>
                       setMovementForm((current) => ({
                         ...current,
-                        quantity: event.target.value,
+                        notes: event.target.value,
                       }))
                     }
-                    required
                   />
                 </label>
 
-                {/* Movement date */}
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Movement date
-                  </span>
-                  <input
-                    type="datetime-local"
-                    className={fieldClassName}
-                    value={movementForm.movement_date}
-                    onChange={(event) =>
-                      setMovementForm((current) => ({
-                        ...current,
-                        movement_date: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-              </div>
+                <FieldMessage message={movementError} tone="error" />
 
-              {/* Reference note */}
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">
-                  Reference note
-                </span>
-                <textarea
-                  className={textAreaClassName}
-                  value={movementForm.reference_note}
-                  onChange={(event) =>
-                    setMovementForm((current) => ({
-                      ...current,
-                      reference_note: event.target.value,
-                    }))
-                  }
-                />
-              </label>
+                {/* Buttons */}
+                <div className="flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className={secondaryButtonClassName}
+                  >
+                    Cancel
+                  </button>
 
-              <FieldMessage message={movementError} tone="error" />
+                  <button
+                    type="button"
+                    onClick={() => void handleMovementDelete()}
+                    disabled={!selectedMovementId || isMovementPending}
+                    className={dangerButtonClassName}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
 
-              {/* Buttons */}
-              <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className={secondaryButtonClassName}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void handleMovementDelete()}
-                  disabled={!selectedMovementId || isMovementPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isMovementPending}
-                  className={primaryButtonClassName}
-                >
-                  {isMovementPending ? (
-                    <>
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save movement"
-                  )}
-                </button>
-              </div>
+                  <button
+                    type="submit"
+                    disabled={isMovementPending}
+                    className={primaryButtonClassName}
+                  >
+                    {isMovementPending ? (
+                      <>
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                        Saving
+                      </>
+                    ) : (
+                      "Save movement"
+                    )}
+                  </button>
+                </div>
               </form>
             </FormPanel>
           </div>

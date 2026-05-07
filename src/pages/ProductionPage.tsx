@@ -439,25 +439,29 @@ function PickerField({
           <div
             className={`scrollbar-hidden mt-2 space-y-1 overflow-y-auto pr-1 ${menuClassName}`.trim()}
           >
-            {filteredOptions.length ? filteredOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={[
-                  "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                  value === option.value
-                    ? "bg-sky-50 text-sky-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                ].join(" ")}
-              >
-                <span>{option.label}</span>
-                {value === option.value ? <Check className="h-4 w-4" /> : null}
-              </button>
-            )) : (
+            {filteredOptions.length ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={[
+                    "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                    value === option.value
+                      ? "bg-sky-50 text-sky-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                  ].join(" ")}
+                >
+                  <span>{option.label}</span>
+                  {value === option.value ? (
+                    <Check className="h-4 w-4" />
+                  ) : null}
+                </button>
+              ))
+            ) : (
               <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
                 No matches found.
               </div>
@@ -558,15 +562,15 @@ function ModalShell({
             type="button"
             onClick={onClose}
             className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-            >
-              Close
-            </button>
-          </div>
-          <div className="mt-8 flex-1">{children}</div>
+          >
+            Close
+          </button>
         </div>
+        <div className="mt-8 flex-1">{children}</div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -1083,13 +1087,13 @@ export function ProductionPage() {
     event.preventDefault();
     setMachineError("");
     setIsMachinePending(true);
-      try {
-        const payload = {
-          ...machineForm,
-          name: machineForm.name.trim(),
-          machine_type: machineForm.machine_type.trim(),
-          manufacturer: machineForm.manufacturer.trim(),
-          model_number: machineForm.model_number.trim(),
+    try {
+      const payload = {
+        ...machineForm,
+        name: machineForm.name.trim(),
+        machine_type: machineForm.machine_type.trim(),
+        manufacturer: machineForm.manufacturer.trim(),
+        model_number: machineForm.model_number.trim(),
         serial_number: machineForm.serial_number?.trim() || null,
         location_name: machineForm.location_name.trim(),
         notes: machineForm.notes.trim(),
@@ -1184,12 +1188,12 @@ export function ProductionPage() {
     setScheduleError("");
     setIsSchedulePending(true);
     try {
-        const payload = {
-          ...scheduleForm,
-          title: scheduleForm.title.trim(),
-          interval_days:
-            scheduleForm.frequency === "custom"
-              ? scheduleForm.interval_days
+      const payload = {
+        ...scheduleForm,
+        title: scheduleForm.title.trim(),
+        interval_days:
+          scheduleForm.frequency === "custom"
+            ? scheduleForm.interval_days
             : null,
         notes: scheduleForm.notes.trim(),
       };
@@ -1237,12 +1241,12 @@ export function ProductionPage() {
     setMaintenanceLogError("");
     setIsMaintenanceLogPending(true);
     try {
-        const payload = {
-          ...maintenanceLogForm,
-          schedule: maintenanceLogForm.schedule || null,
-          performed_by_name: maintenanceLogForm.performed_by_name.trim(),
-          notes: maintenanceLogForm.notes.trim(),
-        };
+      const payload = {
+        ...maintenanceLogForm,
+        schedule: maintenanceLogForm.schedule || null,
+        performed_by_name: maintenanceLogForm.performed_by_name.trim(),
+        notes: maintenanceLogForm.notes.trim(),
+      };
       if (selectedMaintenanceLogId) {
         await updateMaintenanceLog(selectedMaintenanceLogId, payload);
       } else {
@@ -2662,254 +2666,254 @@ export function ProductionPage() {
                 className="space-y-4 py-4"
                 onSubmit={handleMaintenanceLogSubmit}
               >
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Machine
-                  </span>
-                  <PickerField
-                    value={
-                      maintenanceLogForm.machine
-                        ? String(maintenanceLogForm.machine)
-                        : ""
-                    }
-                    options={[
-                      { label: "Select machine", value: "" },
-                      ...buildMachineOptions(),
-                    ]}
-                    searchable
-                    searchPlaceholder="Search machines"
-                    onChange={(value) =>
-                      setMaintenanceLogForm((current) => ({
-                        ...current,
-                        machine: value ? Number(value) : 0,
-                        schedule: null,
-                        maintenance_type: "preventive",
-                      }))
-                    }
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Schedule
-                  </span>
-                  <PickerField
-                    value={
-                      maintenanceLogForm.schedule
-                        ? String(maintenanceLogForm.schedule)
-                        : ""
-                    }
-                    options={[
-                      { label: "No linked schedule", value: "" },
-                      ...buildMaintenanceScheduleOptions(
-                        maintenanceLogForm.machine,
-                        maintenanceLogForm.schedule,
-                      ),
-                    ]}
-                    searchable
-                    searchPlaceholder="Search schedules"
-                    onChange={(value) =>
-                      setMaintenanceLogForm((current) => {
-                        const selectedSchedule = maintenanceSchedules.find(
-                          (record) => record.id === Number(value),
-                        );
-                        return {
-                          ...current,
-                          schedule: value ? Number(value) : null,
-                          maintenance_type:
-                            selectedSchedule?.maintenance_type ??
-                            current.maintenance_type,
-                        };
-                      })
-                    }
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Maintenance date
-                  </span>
-                  <input
-                    type="date"
-                    className={fieldClassName}
-                    value={maintenanceLogForm.maintenance_date}
-                    onChange={(event) =>
-                      setMaintenanceLogForm((current) => ({
-                        ...current,
-                        maintenance_date: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Maintenance type
-                  </span>
-                  {maintenanceLogForm.schedule ? (
-                    <div className="space-y-2">
-                      <div className={fieldClassName}>
-                        {titleCase(maintenanceLogForm.maintenance_type)}
-                      </div>
-                      <p className="text-xs text-slate-500">
-                        This follows the linked maintenance schedule.
-                      </p>
-                    </div>
-                  ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Machine
+                    </span>
                     <PickerField
-                      value={maintenanceLogForm.maintenance_type}
-                      options={maintenanceTypes.map((value) => ({
+                      value={
+                        maintenanceLogForm.machine
+                          ? String(maintenanceLogForm.machine)
+                          : ""
+                      }
+                      options={[
+                        { label: "Select machine", value: "" },
+                        ...buildMachineOptions(),
+                      ]}
+                      searchable
+                      searchPlaceholder="Search machines"
+                      onChange={(value) =>
+                        setMaintenanceLogForm((current) => ({
+                          ...current,
+                          machine: value ? Number(value) : 0,
+                          schedule: null,
+                          maintenance_type: "preventive",
+                        }))
+                      }
+                    />
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Schedule
+                    </span>
+                    <PickerField
+                      value={
+                        maintenanceLogForm.schedule
+                          ? String(maintenanceLogForm.schedule)
+                          : ""
+                      }
+                      options={[
+                        { label: "No linked schedule", value: "" },
+                        ...buildMaintenanceScheduleOptions(
+                          maintenanceLogForm.machine,
+                          maintenanceLogForm.schedule,
+                        ),
+                      ]}
+                      searchable
+                      searchPlaceholder="Search schedules"
+                      onChange={(value) =>
+                        setMaintenanceLogForm((current) => {
+                          const selectedSchedule = maintenanceSchedules.find(
+                            (record) => record.id === Number(value),
+                          );
+                          return {
+                            ...current,
+                            schedule: value ? Number(value) : null,
+                            maintenance_type:
+                              selectedSchedule?.maintenance_type ??
+                              current.maintenance_type,
+                          };
+                        })
+                      }
+                    />
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Maintenance date
+                    </span>
+                    <input
+                      type="date"
+                      className={fieldClassName}
+                      value={maintenanceLogForm.maintenance_date}
+                      onChange={(event) =>
+                        setMaintenanceLogForm((current) => ({
+                          ...current,
+                          maintenance_date: event.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Maintenance type
+                    </span>
+                    {maintenanceLogForm.schedule ? (
+                      <div className="space-y-2">
+                        <div className={fieldClassName}>
+                          {titleCase(maintenanceLogForm.maintenance_type)}
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          This follows the linked maintenance schedule.
+                        </p>
+                      </div>
+                    ) : (
+                      <PickerField
+                        value={maintenanceLogForm.maintenance_type}
+                        options={maintenanceTypes.map((value) => ({
+                          label: titleCase(value),
+                          value,
+                        }))}
+                        onChange={(value) =>
+                          setMaintenanceLogForm((current) => ({
+                            ...current,
+                            maintenance_type: value as MaintenanceType,
+                          }))
+                        }
+                      />
+                    )}
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Status
+                    </span>
+                    <PickerField
+                      value={maintenanceLogForm.status}
+                      options={maintenanceLogStatuses.map((value) => ({
                         label: titleCase(value),
                         value,
                       }))}
                       onChange={(value) =>
                         setMaintenanceLogForm((current) => ({
                           ...current,
-                          maintenance_type: value as MaintenanceType,
+                          status: value as MaintenanceLogStatus,
                         }))
                       }
                     />
-                  )}
-                </label>
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Performed by
+                    </span>
+                    <PickerField
+                      value={maintenanceLogForm.performed_by_name}
+                      options={[
+                        { label: "Select member", value: "" },
+                        ...buildInternalMemberOptions(
+                          maintenanceLogForm.performed_by_name,
+                        ),
+                      ]}
+                      searchable
+                      searchPlaceholder="Search members"
+                      menuClassName="max-h-[180px]"
+                      onChange={(value) =>
+                        setMaintenanceLogForm((current) => ({
+                          ...current,
+                          performed_by_name: value,
+                        }))
+                      }
+                    />
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Cost
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className={fieldClassName}
+                      value={maintenanceLogForm.cost}
+                      onChange={(event) =>
+                        setMaintenanceLogForm((current) => ({
+                          ...current,
+                          cost: event.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">
+                      Downtime hours
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className={fieldClassName}
+                      value={maintenanceLogForm.downtime_hours}
+                      onChange={(event) =>
+                        setMaintenanceLogForm((current) => ({
+                          ...current,
+                          downtime_hours: event.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </label>
+                </div>
 
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
-                    Status
+                    Notes
                   </span>
-                  <PickerField
-                    value={maintenanceLogForm.status}
-                    options={maintenanceLogStatuses.map((value) => ({
-                      label: titleCase(value),
-                      value,
-                    }))}
-                    onChange={(value) =>
-                      setMaintenanceLogForm((current) => ({
-                        ...current,
-                        status: value as MaintenanceLogStatus,
-                      }))
-                    }
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Performed by
-                  </span>
-                  <PickerField
-                    value={maintenanceLogForm.performed_by_name}
-                    options={[
-                      { label: "Select member", value: "" },
-                      ...buildInternalMemberOptions(
-                        maintenanceLogForm.performed_by_name,
-                      ),
-                    ]}
-                    searchable
-                    searchPlaceholder="Search members"
-                    menuClassName="max-h-[180px]"
-                    onChange={(value) =>
-                      setMaintenanceLogForm((current) => ({
-                        ...current,
-                        performed_by_name: value,
-                      }))
-                    }
-                  />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Cost
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className={fieldClassName}
-                    value={maintenanceLogForm.cost}
+                  <textarea
+                    className={textAreaClassName}
+                    value={maintenanceLogForm.notes}
                     onChange={(event) =>
                       setMaintenanceLogForm((current) => ({
                         ...current,
-                        cost: event.target.value,
+                        notes: event.target.value,
                       }))
                     }
-                    required
                   />
                 </label>
 
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Downtime hours
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className={fieldClassName}
-                    value={maintenanceLogForm.downtime_hours}
-                    onChange={(event) =>
-                      setMaintenanceLogForm((current) => ({
-                        ...current,
-                        downtime_hours: event.target.value,
-                      }))
+                <FieldMessage message={maintenanceLogError} />
+
+                <div className="flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className={secondaryButtonClassName}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleMaintenanceLogDelete()}
+                    disabled={
+                      !selectedMaintenanceLogId || isMaintenanceLogPending
                     }
-                    required
-                  />
-                </label>
-              </div>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">
-                  Notes
-                </span>
-                <textarea
-                  className={textAreaClassName}
-                  value={maintenanceLogForm.notes}
-                  onChange={(event) =>
-                    setMaintenanceLogForm((current) => ({
-                      ...current,
-                      notes: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-
-              <FieldMessage message={maintenanceLogError} />
-
-              <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className={secondaryButtonClassName}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleMaintenanceLogDelete()}
-                  disabled={
-                    !selectedMaintenanceLogId || isMaintenanceLogPending
-                  }
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isMaintenanceLogPending}
-                  className={primaryButtonClassName}
-                >
-                  {isMaintenanceLogPending ? (
-                    <>
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save maintenance log"
-                  )}
-                </button>
-              </div>
+                    className={dangerButtonClassName}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isMaintenanceLogPending}
+                    className={primaryButtonClassName}
+                  >
+                    {isMaintenanceLogPending ? (
+                      <>
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                        Saving
+                      </>
+                    ) : (
+                      "Save maintenance log"
+                    )}
+                  </button>
+                </div>
               </form>
             </FormPanel>
           </div>

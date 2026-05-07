@@ -129,13 +129,7 @@ function titleCase(value: string) {
     .join(" ");
 }
 
-function StatusBadge({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: SalesLogTone;
-}) {
+function StatusBadge({ label, tone }: { label: string; tone: SalesLogTone }) {
   const badgeClassName =
     tone === "success"
       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -187,7 +181,9 @@ export function SalesLogPage() {
   const [pageSize, setPageSize] = useState<PageSizeOption>(10);
   const [totalEntries, setTotalEntries] = useState(0);
   const [selectedSaleId, setSelectedSaleId] = useState<number | null>(null);
-  const [selectedDetail, setSelectedDetail] = useState<SalesLogDetail | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<SalesLogDetail | null>(
+    null,
+  );
   const [detailLoading, setDetailLoading] = useState(false);
   const [activePicker, setActivePicker] = useState<"date" | null>(null);
   const deferredSearch = useDeferredValue(searchValue);
@@ -369,7 +365,9 @@ export function SalesLogPage() {
       ]),
     ]
       .map((row) =>
-        row.map((value) => `"${String(value).split('"').join('""')}"`).join(","),
+        row
+          .map((value) => `"${String(value).split('"').join('""')}"`)
+          .join(","),
       )
       .join("\n");
 
@@ -402,7 +400,9 @@ export function SalesLogPage() {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Total sales today</p>
-              <p className="hero-metric-value">{summaryCards.totalSalesToday}</p>
+              <p className="hero-metric-value">
+                {summaryCards.totalSalesToday}
+              </p>
               <p className="mt-2 text-sm text-slate-500">
                 {formatCurrencyMetric(summaryCards.totalSalesAmount)} collected
               </p>
@@ -412,18 +412,20 @@ export function SalesLogPage() {
               <p className="mt-2 text-base font-medium leading-6 text-slate-900">
                 {renderTopSellers(summaryCards.topSellerNames)}
               </p>
-                <p className="mt-2 text-sm text-slate-500">
-                  {summaryCards.topSellerSalesCount
-                    ? `${summaryCards.topSellerSalesCount} transaction${summaryCards.topSellerSalesCount === 1 ? "" : "s"}${summaryCards.topSellerNames.length > 1 ? " each" : ""}`
-                    : "No completed sales today"}
-                </p>
+              <p className="mt-2 text-sm text-slate-500">
+                {summaryCards.topSellerSalesCount
+                  ? `${summaryCards.topSellerSalesCount} transaction${summaryCards.topSellerSalesCount === 1 ? "" : "s"}${summaryCards.topSellerNames.length > 1 ? " each" : ""}`
+                  : "No completed sales today"}
+              </p>
             </div>
             <div className="hero-metric-card">
               <p className="hero-metric-label">Avg. sale value</p>
               <p className="hero-metric-value">
                 {formatCurrencyMetric(summaryCards.averageSaleValue)}
               </p>
-              <p className="mt-2 text-sm text-slate-500">Across today's active sales</p>
+              <p className="mt-2 text-sm text-slate-500">
+                Across today's active sales
+              </p>
             </div>
             <div className="hero-metric-card">
               <p className="hero-metric-label">Top client today</p>
@@ -675,7 +677,8 @@ export function SalesLogPage() {
                               {entry.product_summary}
                             </p>
                             <p className="mt-1 text-sm text-slate-500">
-                              {entry.item_count} item{entry.item_count === 1 ? "" : "s"}
+                              {entry.item_count} item
+                              {entry.item_count === 1 ? "" : "s"}
                             </p>
                           </div>
                         </td>
@@ -783,7 +786,8 @@ export function SalesLogPage() {
                   {selectedDetail?.entry.sale_id ?? "Loading sale"}
                 </h2>
                 <p className="text-sm text-slate-500">
-                  {selectedDetail?.entry.customer_name ?? "Loading customer"} purchased{" "}
+                  {selectedDetail?.entry.customer_name ?? "Loading customer"}{" "}
+                  purchased{" "}
                   <span className="font-semibold text-slate-900">
                     {formatCurrency(selectedDetail?.entry.amount ?? 0)}
                   </span>
@@ -807,132 +811,140 @@ export function SalesLogPage() {
                 </div>
               </div>
             ) : (
-            <div className="mt-6 min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Seller
-                  </p>
-                  <p className="mt-2 font-semibold text-slate-900">
-                    {selectedDetail.entry.seller_name}
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    {selectedDetail.entry.seller_code || "No seller code"}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Payment
-                  </p>
-                  <div className="mt-2">
-                    <PaymentBadge label={selectedDetail.entry.payment_method_label} />
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Date & time
-                  </p>
-                  <p className="mt-2 font-semibold text-slate-900">
-                    {formatDate(selectedDetail.entry.business_date)}
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    {formatTime(selectedDetail.entry.logged_at)}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                    Status
-                  </p>
-                  <div className="mt-2">
-                    <StatusBadge
-                      label={selectedDetail.entry.status_label}
-                      tone={selectedDetail.entry.status_tone}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-slate-200 p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-lg font-semibold text-slate-950">
-                      Client purchase
+              <div className="mt-6 min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Seller
+                    </p>
+                    <p className="mt-2 font-semibold text-slate-900">
+                      {selectedDetail.entry.seller_name}
                     </p>
                     <p className="text-sm text-slate-500">
-                      What the client purchased in this sale.
+                      {selectedDetail.entry.seller_code || "No seller code"}
                     </p>
                   </div>
-                  <p className="text-lg font-semibold text-slate-950">
-                    {formatCurrency(selectedDetail.entry.amount)}
-                  </p>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Payment
+                    </p>
+                    <div className="mt-2">
+                      <PaymentBadge
+                        label={selectedDetail.entry.payment_method_label}
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Date & time
+                    </p>
+                    <p className="mt-2 font-semibold text-slate-900">
+                      {formatDate(selectedDetail.entry.business_date)}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {formatTime(selectedDetail.entry.logged_at)}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                      Status
+                    </p>
+                    <div className="mt-2">
+                      <StatusBadge
+                        label={selectedDetail.entry.status_label}
+                        tone={selectedDetail.entry.status_tone}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-4 space-y-3">
-                  {selectedDetail.items.map((item: OrderItemRecord) => (
-                    <div
-                      key={item.id}
-                      className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3"
-                    >
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {item.product_name || item.finished_product_name}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          Qty {formatQuantity(Number(item.quantity || 0))} ×{" "}
-                          {formatCurrency(Number(item.unit_price || 0))}
-                        </p>
-                      </div>
-                      <p className="font-semibold text-slate-900">
-                        {formatCurrency(Number(item.line_total || 0))}
+
+                <div className="rounded-3xl border border-slate-200 p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-lg font-semibold text-slate-950">
+                        Client purchase
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        What the client purchased in this sale.
                       </p>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-slate-200 p-5">
-                <p className="text-lg font-semibold text-slate-950">
-                  Delivery notes
-                </p>
-                <div className="mt-4 space-y-3">
-                  {selectedDetail.deliveries.length ? (
-                    selectedDetail.deliveries.map((delivery: DeliveryRecord) => (
+                    <p className="text-lg font-semibold text-slate-950">
+                      {formatCurrency(selectedDetail.entry.amount)}
+                    </p>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {selectedDetail.items.map((item: OrderItemRecord) => (
                       <div
-                        key={delivery.id}
-                        className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3"
+                        key={item.id}
+                        className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3"
                       >
-                        <div className="flex items-center justify-between gap-3">
+                        <div>
                           <p className="font-medium text-slate-900">
-                            {delivery.recipient_name || "Recipient not recorded"}
+                            {item.product_name || item.finished_product_name}
                           </p>
                           <p className="text-sm text-slate-500">
-                            {formatDate(delivery.delivery_date)}
+                            Qty {formatQuantity(Number(item.quantity || 0))} ×{" "}
+                            {formatCurrency(Number(item.unit_price || 0))}
                           </p>
                         </div>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {titleCase(delivery.delivery_status)}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {delivery.delivery_note || "No delivery note added."}
+                        <p className="font-semibold text-slate-900">
+                          {formatCurrency(Number(item.line_total || 0))}
                         </p>
                       </div>
-                    ))
-                  ) : (
-                    <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
-                      No delivery record has been linked to this sale yet.
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {selectedDetail.order.notes ? (
                 <div className="rounded-3xl border border-slate-200 p-5">
-                  <p className="text-lg font-semibold text-slate-950">Notes</p>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">
-                    {selectedDetail.order.notes}
+                  <p className="text-lg font-semibold text-slate-950">
+                    Delivery notes
                   </p>
+                  <div className="mt-4 space-y-3">
+                    {selectedDetail.deliveries.length ? (
+                      selectedDetail.deliveries.map(
+                        (delivery: DeliveryRecord) => (
+                          <div
+                            key={delivery.id}
+                            className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="font-medium text-slate-900">
+                                {delivery.recipient_name ||
+                                  "Recipient not recorded"}
+                              </p>
+                              <p className="text-sm text-slate-500">
+                                {formatDate(delivery.delivery_date)}
+                              </p>
+                            </div>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {titleCase(delivery.delivery_status)}
+                            </p>
+                            <p className="mt-2 text-sm text-slate-600">
+                              {delivery.delivery_note ||
+                                "No delivery note added."}
+                            </p>
+                          </div>
+                        ),
+                      )
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
+                        No delivery record has been linked to this sale yet.
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : null}
-            </div>
+
+                {selectedDetail.order.notes ? (
+                  <div className="rounded-3xl border border-slate-200 p-5">
+                    <p className="text-lg font-semibold text-slate-950">
+                      Notes
+                    </p>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">
+                      {selectedDetail.order.notes}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
             )}
           </div>
         </div>

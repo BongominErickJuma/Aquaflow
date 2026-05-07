@@ -275,7 +275,9 @@ function createEmptyDepartmentForm(): DepartmentPayload {
     is_active: true,
   };
 }
-function buildDepartmentForm(record: DepartmentRecord | null): DepartmentPayload {
+function buildDepartmentForm(
+  record: DepartmentRecord | null,
+): DepartmentPayload {
   if (!record) return createEmptyDepartmentForm();
   return {
     name: record.name,
@@ -523,25 +525,29 @@ function PickerField({
             </div>
           ) : null}
           <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
-            {filteredOptions.length ? filteredOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={[
-                  "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                  value === option.value
-                    ? "bg-sky-50 text-sky-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                ].join(" ")}
-              >
-                <span>{option.label}</span>
-                {value === option.value ? <Check className="h-4 w-4" /> : null}
-              </button>
-            )) : (
+            {filteredOptions.length ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={[
+                    "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                    value === option.value
+                      ? "bg-sky-50 text-sky-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                  ].join(" ")}
+                >
+                  <span>{option.label}</span>
+                  {value === option.value ? (
+                    <Check className="h-4 w-4" />
+                  ) : null}
+                </button>
+              ))
+            ) : (
               <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
                 No matches found.
               </div>
@@ -968,8 +974,9 @@ export function WorkforcePage() {
         if (isMounted) {
           setDepartmentForm(
             buildDepartmentForm(
-              departmentOptions.find((item) => item.id === selectedDepartmentId) ??
-                null,
+              departmentOptions.find(
+                (item) => item.id === selectedDepartmentId,
+              ) ?? null,
             ),
           );
         }
@@ -1253,7 +1260,8 @@ export function WorkforcePage() {
         name: departmentForm.name.trim(),
         notes: departmentForm.notes.trim(),
       };
-      if (selectedDepartmentId) await updateDepartment(selectedDepartmentId, payload);
+      if (selectedDepartmentId)
+        await updateDepartment(selectedDepartmentId, payload);
       else await createDepartment(payload);
       refreshWorkforceData();
       closeModal();
@@ -1518,7 +1526,7 @@ export function WorkforcePage() {
             </div>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
-                Staff and HR operations
+                HR operations
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-slate-600">
                 This module handles employee records, shifts, attendance,
@@ -1655,7 +1663,9 @@ export function WorkforcePage() {
                                 type="button"
                                 onClick={() => {
                                   setSelectedDepartmentId(record.id);
-                                  setDepartmentForm(buildDepartmentForm(record));
+                                  setDepartmentForm(
+                                    buildDepartmentForm(record),
+                                  );
                                   setActiveModal("department");
                                 }}
                                 className={tableActionButtonClassName}
@@ -1675,7 +1685,10 @@ export function WorkforcePage() {
                             ? "border-b border-slate-200/80"
                             : "border-b border-slate-200/60";
                           return (
-                            <tr key={`department-filler-${index}`} aria-hidden="true">
+                            <tr
+                              key={`department-filler-${index}`}
+                              aria-hidden="true"
+                            >
                               <td
                                 className={`${rowClass} border-l border-r border-slate-200/80 bg-white px-4 py-4`}
                               >
@@ -3101,17 +3114,21 @@ export function WorkforcePage() {
                     Department
                   </span>
                   <PickerField
-                    value={employeeForm.department ? String(employeeForm.department) : ""}
+                    value={
+                      employeeForm.department
+                        ? String(employeeForm.department)
+                        : ""
+                    }
                     options={[
                       { label: "No department", value: "" },
-                      ...buildAssignableDepartmentOptions(employeeForm.department).map(
-                        (record) => ({
-                          label: record.is_active
-                            ? record.name
-                            : `${record.name} (Inactive)`,
-                          value: String(record.id),
-                        }),
-                      ),
+                      ...buildAssignableDepartmentOptions(
+                        employeeForm.department,
+                      ).map((record) => ({
+                        label: record.is_active
+                          ? record.name
+                          : `${record.name} (Inactive)`,
+                        value: String(record.id),
+                      })),
                     ]}
                     onChange={(value) =>
                       setEmployeeForm((current) => ({
@@ -4041,7 +4058,9 @@ export function WorkforcePage() {
                     value={performanceForm.reviewer_name}
                     options={[
                       { label: "Select reviewer", value: "" },
-                      ...buildActiveReviewerOptions(performanceForm.reviewer_name),
+                      ...buildActiveReviewerOptions(
+                        performanceForm.reviewer_name,
+                      ),
                     ]}
                     searchable
                     searchPlaceholder="Search reviewers"

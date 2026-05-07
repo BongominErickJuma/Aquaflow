@@ -1,4 +1,11 @@
-import { Check, ChevronDown, LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  LoaderCircle,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import {
   useEffect,
   useRef,
@@ -10,7 +17,7 @@ import { useLocation } from "react-router-dom";
 import { ModuleTabs } from "../components/layout/ModuleTabs";
 import { useAuth } from "../features/auth/AuthProvider";
 import { ApiError } from "../lib/api/auth";
-import { fetchFinishedProducts } from "../lib/api/inventory";
+import { fetchProducts } from "../lib/api/inventory";
 import { fetchEmployees } from "../lib/api/workforce";
 import {
   createBrandingRecord,
@@ -338,25 +345,29 @@ function PickerField({
             </div>
           ) : null}
           <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
-            {filteredOptions.length ? filteredOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={[
-                  "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                  value === option.value
-                    ? "bg-sky-50 text-sky-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                ].join(" ")}
-              >
-                <span>{option.label}</span>
-                {value === option.value ? <Check className="h-4 w-4" /> : null}
-              </button>
-            )) : (
+            {filteredOptions.length ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={[
+                    "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                    value === option.value
+                      ? "bg-sky-50 text-sky-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                  ].join(" ")}
+                >
+                  <span>{option.label}</span>
+                  {value === option.value ? (
+                    <Check className="h-4 w-4" />
+                  ) : null}
+                </button>
+              ))
+            ) : (
               <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
                 No matches found.
               </div>
@@ -635,7 +646,7 @@ export function SalesPage() {
       value: String(product.id),
       searchText: [
         product.name,
-        product.sku,
+          product.barcode,
         product.description,
         product.unit_name,
         product.unit_price,
@@ -723,7 +734,7 @@ export function SalesPage() {
       fetchDeliverySchedules(),
       fetchDeliveryRecords(),
       fetchEmployees(),
-      fetchFinishedProducts(),
+        fetchProducts(),
     ]);
 
     setCategories(categoryList);
@@ -1179,7 +1190,9 @@ export function SalesPage() {
         orders.find((order) => order.id === Number(scheduleForm.order)) ?? null;
 
       if (!linkedOrder?.assigned_seller) {
-        setScheduleError("Choose an order that already has an assigned seller.");
+        setScheduleError(
+          "Choose an order that already has an assigned seller.",
+        );
         return;
       }
 
@@ -1544,7 +1557,9 @@ export function SalesPage() {
                           />
                           <DetailItem
                             label="Seller"
-                            value={record.assigned_seller_name || "Not assigned"}
+                            value={
+                              record.assigned_seller_name || "Not assigned"
+                            }
                           />
                           <DetailItem
                             label="Order date"
@@ -1552,7 +1567,10 @@ export function SalesPage() {
                           />
                           <DetailItem
                             label="Payment"
-                            value={(record.payment_method ?? "cash").replaceAll("_", " ")}
+                            value={(record.payment_method ?? "cash").replaceAll(
+                              "_",
+                              " ",
+                            )}
                           />
                           <DetailItem
                             label="Total"
@@ -2687,7 +2705,9 @@ export function SalesPage() {
                   <span>Seller code</span>
                   <input
                     className={fieldClassName}
-                    value={selectedScheduleSellerCode || "Will follow the order"}
+                    value={
+                      selectedScheduleSellerCode || "Will follow the order"
+                    }
                     disabled
                   />
                 </label>

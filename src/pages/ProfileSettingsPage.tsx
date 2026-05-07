@@ -199,27 +199,10 @@ export function ProfileSettingsPage() {
               Profile
             </div>
             <div className="flex items-start gap-4">
-              {profilePhotoUrl ? (
-                <img
-                  src={profilePhotoUrl}
-                  alt={
-                    `${profileForm.first_name} ${profileForm.last_name}`.trim() ||
-                    "Profile photo"
-                  }
-                  className="h-20 w-20 rounded-[1.5rem] border border-white/80 object-cover shadow-sm"
-                />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-sky-200 bg-white text-2xl font-semibold text-sky-700 shadow-sm">
-                  {initials || "IB"}
-                </div>
-              )}
               <div className="space-y-2">
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
                   Profile Settings
                 </h1>
-                <p className="text-sm text-slate-500">
-                  {user?.role.name ?? "Staff"}
-                </p>
                 <p className="max-w-2xl text-sm leading-7 text-slate-600">
                   Manage your profile details, profile photo, and account
                   security from one place.

@@ -16,6 +16,8 @@ import {
   UserCircle2,
   Users,
   UsersRound,
+  VibrateIcon,
+  Wallet2Icon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { startTransition, useEffect, useRef, useState } from "react";
@@ -61,13 +63,16 @@ const navigation: NavigationItem[] = [
     adminOnly: false,
     allowedRoles: ["admin", "superuser", "hr"],
   },
+  { label: "Orders", href: "/orders", icon: VibrateIcon, adminOnly: false },
   { label: "Sales", href: "/sales", icon: ShoppingCart, adminOnly: false },
   {
-      label: "Logs",
+    label: "Logs",
     href: "/sales-log",
     icon: NotebookText,
     adminOnly: false,
   },
+  { label: "POS", href: "/pos", icon: Wallet2Icon, adminOnly: false },
+
   { label: "Finance", href: "/finance", icon: Coins, adminOnly: false },
 ];
 
@@ -285,14 +290,14 @@ export function AppShell() {
                           <button
                             key={notification.id}
                             type="button"
-                              onClick={() =>
-                                void openNotificationModule(
-                                  notification.id,
-                                  notification.module,
-                                  notification.target_path,
-                                  notification.is_read,
-                                )
-                              }
+                            onClick={() =>
+                              void openNotificationModule(
+                                notification.id,
+                                notification.module,
+                                notification.target_path,
+                                notification.is_read,
+                              )
+                            }
                             className={[
                               "w-full rounded-[24px] border p-4 text-left transition",
                               notification.is_read

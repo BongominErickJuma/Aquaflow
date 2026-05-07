@@ -310,25 +310,29 @@ function PickerField({
             </div>
           ) : null}
           <div className="scrollbar-hidden mt-2 max-h-[280px] space-y-1 overflow-y-auto pr-1">
-            {filteredOptions.length ? filteredOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={[
-                  "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                  value === option.value
-                    ? "bg-sky-50 text-sky-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                ].join(" ")}
-              >
-                <span>{option.label}</span>
-                {value === option.value ? <Check className="h-4 w-4" /> : null}
-              </button>
-            )) : (
+            {filteredOptions.length ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={[
+                    "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                    value === option.value
+                      ? "bg-sky-50 text-sky-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                  ].join(" ")}
+                >
+                  <span>{option.label}</span>
+                  {value === option.value ? (
+                    <Check className="h-4 w-4" />
+                  ) : null}
+                </button>
+              ))
+            ) : (
               <div className="rounded-2xl px-3 py-4 text-sm text-slate-500">
                 No matches found.
               </div>
@@ -1951,22 +1955,22 @@ export function FinancePage() {
                     required
                   />
                 </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-700">
-                    <span>Vendor name</span>
-                    <input
-                      className={fieldClassName}
+                <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Vendor name</span>
+                  <input
+                    className={fieldClassName}
                     value={expenseForm.vendor_name}
                     onChange={(event) =>
                       setExpenseForm((current) => ({
                         ...current,
                         vendor_name: event.target.value,
                       }))
-                      }
-                    />
-                  </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                    <span>Notes</span>
-                    <textarea
+                    }
+                  />
+                </label>
+                <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                  <span>Notes</span>
+                  <textarea
                     className={textAreaClassName}
                     value={expenseForm.notes}
                     onChange={(event) =>
@@ -2091,10 +2095,10 @@ export function FinancePage() {
                     }
                   />
                 </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-700">
-                    <span>Invoice date</span>
-                    <input
-                      type="date"
+                <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Invoice date</span>
+                  <input
+                    type="date"
                     className={fieldClassName}
                     value={invoiceForm.invoice_date}
                     onChange={(event) =>
@@ -2249,10 +2253,10 @@ export function FinancePage() {
                     required
                   />
                 </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-700">
-                    <span>Receipt date</span>
-                    <input
-                      type="date"
+                <label className="space-y-2 text-sm font-medium text-slate-700">
+                  <span>Receipt date</span>
+                  <input
+                    type="date"
                     className={fieldClassName}
                     value={receiptForm.receipt_date}
                     onChange={(event) =>
@@ -2277,9 +2281,9 @@ export function FinancePage() {
                     }
                   />
                 </label>
-                  <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                    <span>Notes</span>
-                    <textarea
+                <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                  <span>Notes</span>
+                  <textarea
                     className={textAreaClassName}
                     value={receiptForm.notes}
                     onChange={(event) =>

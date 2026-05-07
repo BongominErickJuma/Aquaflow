@@ -12,6 +12,7 @@ import { MembersPage } from "../pages/MembersPage";
 import { NotificationsPage } from "../pages/NotificationsPage";
 import { ProductionPage } from "../pages/ProductionPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
+import { PlaceholderPage } from "../pages/PlaceholderPage";
 import { SalesPage } from "../pages/SalesPage";
 import { SalesLogPage } from "../pages/SalesLogPage";
 import { WorkforcePage } from "../pages/WorkforcePage";
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
             element: <InventoryPage />,
           },
           {
+            path: "inventory/products/:productId",
+            element: <InventoryPage />,
+          },
+          {
             path: "production",
             element: <ProductionPage />,
           },
@@ -60,6 +65,24 @@ export const router = createBrowserRouter([
           {
             path: "compliance",
             element: <CompliancePage />,
+          },
+          {
+            path: "orders",
+            element: (
+              <PlaceholderPage
+                title="Orders"
+                description="We have just added another module called Orders to ease on the sales module"
+              />
+            ),
+          },
+          {
+            path: "pos",
+            element: (
+              <PlaceholderPage
+                title="Point of Sale"
+                description="We have just added another module called Point of sale (POS). Barcode/QR scanning via hardware scanners and device cameras"
+              />
+            ),
           },
           {
             path: "sales",

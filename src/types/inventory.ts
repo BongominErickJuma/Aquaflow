@@ -12,13 +12,26 @@ export type UnitRecord = InventoryTimestampFields & {
 
 export type UnitPayload = Omit<UnitRecord, "id" | "created_at" | "updated_at">;
 
+export type CategoryRecord = InventoryTimestampFields & {
+  name: string;
+  parent: number | null;
+  parent_name: string;
+  description: string;
+};
+
+export type CategoryPayload = Omit<
+  CategoryRecord,
+  "id" | "created_at" | "updated_at" | "parent_name"
+>;
+
 export type SupplierRecord = InventoryTimestampFields & {
   name: string;
   contact_person: string;
   email: string;
-  phone_number: string;
+  phone: string;
   address: string;
-  notes: string;
+  payment_terms: string;
+  lead_days: number;
   is_active: boolean;
 };
 
@@ -29,13 +42,16 @@ export type SupplierPayload = Omit<
 
 export type StorageLocationRecord = InventoryTimestampFields & {
   name: string;
+  location: string;
+  manager: number | null;
+  manager_name: string;
   description: string;
   is_active: boolean;
 };
 
 export type StorageLocationPayload = Omit<
   StorageLocationRecord,
-  "id" | "created_at" | "updated_at"
+  "id" | "created_at" | "updated_at" | "manager_name"
 >;
 
 export type RawMaterialRecord = InventoryTimestampFields & {
@@ -56,28 +72,52 @@ export type RawMaterialPayload = Omit<
 >;
 
 export type FinishedProductRecord = InventoryTimestampFields & {
+  barcode: string;
+  detail_path: string;
+  detail_url: string;
+  qr_code_value: string;
   name: string;
-  sku: string;
   description: string;
+  category: number | null;
+  category_name: string;
+  supplier: number | null;
+  supplier_name: string;
   unit: number;
   unit_name: string;
   unit_price: string;
+  cost_price: string;
   reorder_level: string;
-  notes: string;
+  reorder_quantity: string;
+  current_stock: string;
+  location: number | null;
+  location_name: string;
+  image: string | null;
   is_active: boolean;
 };
 
-export type FinishedProductPayload = Omit<
-  FinishedProductRecord,
-  "id" | "created_at" | "updated_at" | "unit_name" | "sku"
->;
+export type FinishedProductPayload = {
+  name: string;
+  description: string;
+  category: number | null;
+  supplier: number | null;
+  unit: number;
+  unit_price: string;
+  cost_price: string;
+  reorder_level: string;
+  reorder_quantity: string;
+  location: number | null;
+  image: File | string | null;
+  clear_image?: boolean;
+  is_active: boolean;
+};
 
 export type StockItemRecord = InventoryTimestampFields & {
   raw_material: number | null;
   finished_product: number | null;
   location: number;
+  warehouse_name: string;
   quantity: string;
-  notes: string;
+  bin_location: string;
   item_type: "raw_material" | "finished_product";
   item_name: string;
   reorder_level: string;
@@ -90,14 +130,15 @@ export type StockItemPayload = {
   finished_product?: number | null;
   location: number;
   opening_stock?: string;
-  notes: string;
+  bin_location: string;
 };
 
 export type StockMovementType =
   | "stock_in"
   | "stock_out"
   | "adjustment_positive"
-  | "adjustment_negative";
+  | "adjustment_negative"
+  | "return";
 
 export type StockMovementRecord = InventoryTimestampFields & {
   stock_item: number;
@@ -105,7 +146,7 @@ export type StockMovementRecord = InventoryTimestampFields & {
   stock_item_type: "raw_material" | "finished_product";
   movement_type: StockMovementType;
   quantity: string;
-  reference_note: string;
+  notes: string;
   movement_date: string;
   performed_by: number | null;
 };
@@ -120,14 +161,20 @@ export type StockMovementPayload = Omit<
   | "stock_item_type"
 >;
 
-export type ReorderAlertRecord = {
-  id: number;
+export type StockAlertRecord = InventoryTimestampFields & {
+  stock_item: number;
+  product_id: number | null;
   item_type: "raw_material" | "finished_product";
   item_name: string;
-  location: number;
+  warehouse_id: number;
+  warehouse_name: string;
   quantity: string;
-  reorder_level: string;
-  shortage: string;
-  unit_name: string;
-  updated_at: string;
+  alert_type: "low" | "out_of_stock" | "expiry";
+  is_acknowledged: boolean;
+  acknowledged_by: number | null;
+  triggered_at: string;
 };
+
+export type StockAlertPayload = Pick<StockAlertRecord, "is_acknowledged">;
+
+export type ReorderAlertRecord = StockAlertRecord;

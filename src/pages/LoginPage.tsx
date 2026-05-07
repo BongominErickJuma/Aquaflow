@@ -68,7 +68,7 @@ export function LoginPage() {
         <div className="border-b border-slate-200/80 px-6 py-8 lg:border-b-0 lg:border-r lg:px-8 lg:py-10">
           <p className="section-label">Authentication</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-[0.03em] text-slate-900">
-            Secure staff access for IBMS
+            Staff access for Aquaflow
           </h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
             Sign in with your staff account to access the protected workspace.
