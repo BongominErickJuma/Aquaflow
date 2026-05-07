@@ -11,8 +11,8 @@ type ModuleTabsProps = {
 
 export function ModuleTabs({ tabs, activeTab, onChange }: ModuleTabsProps) {
   return (
-    <div className="hide-scrollbar shrink-0 overflow-x-auto">
-      <div className="inline-flex min-w-full gap-3 rounded-[28px] border border-slate-200/80 bg-white/90 p-3 shadow-[0_18px_50px_rgba(148,163,184,0.12)]">
+    <div className="scrollbar-hidden shrink-0 overflow-x-auto">
+      <div className="inline-flex min-w-full gap-2 border border-slate-200/80 bg-white/92 p-2 shadow-[0_14px_36px_rgba(148,163,184,0.12)]">
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab;
           return (
@@ -21,10 +21,10 @@ export function ModuleTabs({ tabs, activeTab, onChange }: ModuleTabsProps) {
               type="button"
               onClick={() => onChange(tab.id)}
               className={[
-                "whitespace-nowrap rounded-2xl px-4 py-3 text-sm font-semibold transition",
+                "whitespace-nowrap px-4 py-3 text-sm font-semibold transition",
                 isActive
-                  ? "bg-[linear-gradient(135deg,#1f87ad,#0f6d8d)] text-white shadow-[0_12px_30px_rgba(32,141,183,0.22)]"
-                  : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                  ? "border border-sky-200 bg-[linear-gradient(135deg,#1f87ad,#0f6d8d)] text-white shadow-[0_10px_22px_rgba(32,141,183,0.18)]"
+                  : "border border-transparent bg-slate-50 text-slate-600 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900",
               ].join(" ")}
             >
               {tab.label}

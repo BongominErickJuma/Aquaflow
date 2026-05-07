@@ -76,6 +76,42 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "crm",
+            element: (
+              <PlaceholderPage
+                title="CRM"
+                description="Customer relationship management workspace for leads, opportunities, and follow-up activity."
+              />
+            ),
+          },
+          {
+            path: "purchase",
+            element: (
+              <PlaceholderPage
+                title="Purchase"
+                description="Purchase management workspace for suppliers, requests, approvals, and incoming stock plans."
+              />
+            ),
+          },
+          {
+            path: "project",
+            element: (
+              <PlaceholderPage
+                title="Project"
+                description="Project delivery workspace for milestones, ownership, execution progress, and deadlines."
+              />
+            ),
+          },
+          {
+            path: "reporting",
+            element: (
+              <PlaceholderPage
+                title="Reporting"
+                description="Reporting workspace for dashboards, exports, executive summaries, and operational visibility."
+              />
+            ),
+          },
+          {
             path: "pos",
             element: (
               <PlaceholderPage
