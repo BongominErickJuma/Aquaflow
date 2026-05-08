@@ -85,29 +85,11 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "purchase",
+            path: "messages",
             element: (
               <PlaceholderPage
-                title="Purchase"
-                description="Purchase management workspace for suppliers, requests, approvals, and incoming stock plans."
-              />
-            ),
-          },
-          {
-            path: "project",
-            element: (
-              <PlaceholderPage
-                title="Project"
-                description="Project delivery workspace for milestones, ownership, execution progress, and deadlines."
-              />
-            ),
-          },
-          {
-            path: "reporting",
-            element: (
-              <PlaceholderPage
-                title="Reporting"
-                description="Reporting workspace for dashboards, exports, executive summaries, and operational visibility."
+                title="Messages"
+                description="Messages workspace for communications, notifications, and discussions."
               />
             ),
           },

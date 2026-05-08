@@ -10,20 +10,23 @@ import {
   Factory,
   LayoutDashboard,
   LoaderCircle,
-  LogOut,
   MessagesSquare,
   NotebookText,
   Search,
   ShieldCheck,
   ShoppingCart,
-  UserCircle2,
   Users,
   UsersRound,
   VibrateIcon,
   Wallet2Icon,
+  LogOut,
+  UserCircle2,
+  Mail,
+  Reply,
+  Star,
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { useNotifications } from "../../features/notifications/NotificationsProvider";
@@ -42,8 +45,58 @@ type NavigationItem = {
   allowedRoles?: string[];
 };
 
+// Mock message type
+type Message = {
+  id: number;
+  sender: string;
+  senderAvatar?: string;
+  subject: string;
+  preview: string;
+  timestamp: string;
+  isRead: boolean;
+  isStarred?: boolean;
+};
+
+// Mock messages data
+const mockMessages: Message[] = [
+  {
+    id: 1,
+    sender: "John Mukiibi",
+    subject: "Production Schedule Update",
+    preview: "The new production schedule for next week has been published...",
+    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
+    isRead: false,
+    isStarred: true,
+  },
+  {
+    id: 2,
+    sender: "Sarah Nakato",
+    subject: "Inventory Alert: Chlorine Levels",
+    preview:
+      "Chlorine supplies are running low. Please review current stock...",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+    isRead: false,
+  },
+  {
+    id: 3,
+    sender: "David Ochieng",
+    subject: "Compliance Report Q4",
+    preview: "The quarterly compliance report is ready for your review...",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+    isRead: true,
+  },
+  {
+    id: 4,
+    sender: "Ministry of Water",
+    subject: "Regulatory Update",
+    preview: "New water quality standards will take effect next month...",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
+    isRead: true,
+  },
+];
+
 const navigation: NavigationItem[] = [
-  { label: "Overview", href: "/", icon: LayoutDashboard, adminOnly: false },
+  { label: "Dashboard", href: "/", icon: LayoutDashboard, adminOnly: false },
   {
     label: "Business",
     href: "/business",
@@ -77,6 +130,13 @@ const navigation: NavigationItem[] = [
   },
   { label: "POS", href: "/pos", icon: Wallet2Icon, adminOnly: false },
   { label: "Finance", href: "/finance", icon: Coins, adminOnly: false },
+  {
+    label: "Members",
+    href: "/members",
+    icon: Users,
+    adminOnly: false,
+    allowedRoles: ["admin", "superuser"],
+  },
 ];
 
 function formatNotificationTime(value: string) {
@@ -91,6 +151,25 @@ function formatNotificationTime(value: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(parsed);
+}
+
+function formatMessageTime(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Unknown";
+  }
+
+  const now = new Date();
+  const diffMs = now.getTime() - parsed.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return "Yesterday";
+  return `${diffDays}d ago`;
 }
 
 function formatWorkspaceDate() {
@@ -121,11 +200,20 @@ export function AppShell() {
   const { latest, unread, isLoading, refreshSummary } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const notificationDropdownRef = useRef<HTMLDivElement | null>(null);
+  const messagesDropdownRef = useRef<HTMLDivElement | null>(null);
+  const profileDropdownRef = useRef<HTMLDivElement | null>(null);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [actionId, setActionId] = useState<number | string | "all" | null>(
     null,
   );
+  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [messageActionId, setMessageActionId] = useState<
+    number | string | "all" | null
+  >(null);
+
   const fullName =
     [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
     user?.email ||
@@ -139,6 +227,10 @@ export function AppShell() {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
+
+  const unreadMessagesCount = messages.filter((m) => !m.isRead).length;
+  const latestMessages = messages.slice(0, 3);
+
   const visibleNavigation = navigation.filter(
     (item) =>
       (!item.adminOnly || isAdmin) &&
@@ -153,23 +245,44 @@ export function AppShell() {
           : location.pathname.startsWith(item.href),
       )?.label ?? "Workspace";
 
+  // Close dropdowns when clicking outside
   useEffect(() => {
-    if (!isNotificationOpen) {
-      return;
-    }
-
+    if (!isNotificationOpen) return;
     const handlePointerDown = (event: MouseEvent) => {
-      if (!dropdownRef.current?.contains(event.target as Node)) {
+      if (!notificationDropdownRef.current?.contains(event.target as Node)) {
         setIsNotificationOpen(false);
       }
     };
-
     window.addEventListener("mousedown", handlePointerDown);
     return () => window.removeEventListener("mousedown", handlePointerDown);
   }, [isNotificationOpen]);
 
   useEffect(() => {
+    if (!isMessagesOpen) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!messagesDropdownRef.current?.contains(event.target as Node)) {
+        setIsMessagesOpen(false);
+      }
+    };
+    window.addEventListener("mousedown", handlePointerDown);
+    return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isMessagesOpen]);
+
+  useEffect(() => {
+    if (!isProfileOpen) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!profileDropdownRef.current?.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+    window.addEventListener("mousedown", handlePointerDown);
+    return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isProfileOpen]);
+
+  useEffect(() => {
     setIsNotificationOpen(false);
+    setIsMessagesOpen(false);
+    setIsProfileOpen(false);
   }, [location.pathname]);
 
   const openNotificationModule = async (
@@ -179,7 +292,6 @@ export function AppShell() {
     isRead: boolean,
   ) => {
     setActionId(notificationId);
-
     try {
       if (!isRead) {
         await markNotificationRead(notificationId);
@@ -196,7 +308,6 @@ export function AppShell() {
 
   const handleQuickMarkRead = async (notificationId: number) => {
     setActionId(`read-${notificationId}`);
-
     try {
       await markNotificationRead(notificationId);
       await refreshSummary();
@@ -209,7 +320,6 @@ export function AppShell() {
 
   const handleMarkAllRead = async () => {
     setActionId("all");
-
     try {
       await markAllNotificationsRead();
       await refreshSummary();
@@ -218,6 +328,45 @@ export function AppShell() {
     } finally {
       setActionId(null);
     }
+  };
+
+  const handleMarkMessageRead = (messageId: number) => {
+    setMessageActionId(`read-${messageId}`);
+    setTimeout(() => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, isRead: true } : msg,
+        ),
+      );
+      setMessageActionId(null);
+    }, 300);
+  };
+
+  const handleMarkAllMessagesRead = () => {
+    setMessageActionId("all");
+    setTimeout(() => {
+      setMessages((prev) => prev.map((msg) => ({ ...msg, isRead: true })));
+      setMessageActionId(null);
+    }, 300);
+  };
+
+  const handleToggleStar = (messageId: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId ? { ...msg, isStarred: !msg.isStarred } : msg,
+      ),
+    );
+  };
+
+  const openMessage = (messageId: number) => {
+    handleMarkMessageRead(messageId);
+    setIsMessagesOpen(false);
+    navigate(`/messages/${messageId}`);
+  };
+
+  const handleLogout = () => {
+    void logout();
   };
 
   return (
@@ -241,9 +390,6 @@ export function AppShell() {
           </div>
 
           <div className="scrollbar-hidden flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-5">
-            <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/48">
-              Navigation
-            </p>
             <nav className="mt-4 space-y-1.5">
               {visibleNavigation.map(({ label, href, icon: Icon }) => (
                 <NavLink
@@ -264,37 +410,6 @@ export function AppShell() {
                 </NavLink>
               ))}
             </nav>
-
-            <div className="mt-auto space-y-3 pt-6">
-              {isAdmin ? (
-                <NavLink
-                  to="/members"
-                  className="flex items-center gap-3 border border-white/14 bg-white/10 px-4 py-3 text-sm text-white/82 transition hover:bg-white/14 hover:text-white"
-                >
-                  <Users className="h-4 w-4" />
-                  <span>Members</span>
-                </NavLink>
-              ) : null}
-              <NavLink
-                to="/settings/profile"
-                className="flex items-center gap-3 border border-white/14 bg-white/10 px-4 py-3 text-sm text-white/82 transition hover:bg-white/14 hover:text-white"
-              >
-                <UserCircle2 className="h-4 w-4" />
-                <span>Profile Settings</span>
-              </NavLink>
-              <button
-                type="button"
-                onClick={() => {
-                  startTransition(() => {
-                    void logout();
-                  });
-                }}
-                className="flex w-full items-center gap-3 border border-white/14 bg-white/10 px-4 py-3 text-left text-sm text-white/82 transition hover:bg-white/14 hover:text-white"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
-              </button>
-            </div>
           </div>
         </aside>
 
@@ -336,13 +451,181 @@ export function AppShell() {
               </label>
 
               <div className="flex items-center gap-3 self-start xl:self-auto">
-                <div ref={dropdownRef} className="relative">
+                {/* Messages Dropdown */}
+                <div ref={messagesDropdownRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextOpenState = !isMessagesOpen;
+                      setIsMessagesOpen(nextOpenState);
+                      if (nextOpenState) {
+                        setIsNotificationOpen(false);
+                        setIsProfileOpen(false);
+                      }
+                    }}
+                    className="relative flex h-12 w-12 items-center justify-center border border-white/14 bg-white/12 text-white transition hover:bg-white/16"
+                    aria-label="Messages"
+                    aria-expanded={isMessagesOpen}
+                  >
+                    <Mail className="h-4 w-4" />
+                    {unreadMessagesCount > 0 ? (
+                      <span className="absolute -right-1 -top-1 min-w-5 bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow-[0_8px_18px_rgba(245,158,11,0.35)]">
+                        {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
+                      </span>
+                    ) : null}
+                  </button>
+
+                  <AnimatePresence>
+                    {isMessagesOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="absolute right-0 top-[calc(100%+12px)] z-30 w-[min(92vw,25rem)] border border-slate-200/90 bg-white/97 p-4 shadow-[0_28px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">
+                              Messages
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleMarkAllMessagesRead()}
+                            disabled={
+                              messageActionId === "all" ||
+                              unreadMessagesCount === 0
+                            }
+                            aria-label="Mark all messages as read"
+                            title="Mark all read"
+                            className="inline-flex h-9 w-9 items-center justify-center border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-70"
+                          >
+                            {messageActionId === "all" ? (
+                              <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <CheckCheck className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+
+                        <div className="mt-4 space-y-2">
+                          {latestMessages.length === 0 ? (
+                            <div className="border border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center">
+                              <p className="text-sm font-medium text-slate-700">
+                                No messages
+                              </p>
+                              <p className="mt-2 text-xs leading-6 text-slate-500">
+                                Your messages will appear here.
+                              </p>
+                            </div>
+                          ) : (
+                            latestMessages.map((message) => (
+                              <motion.button
+                                key={message.id}
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                                type="button"
+                                onClick={() => openMessage(message.id)}
+                                className={[
+                                  "w-full border p-3 text-left transition-all duration-200",
+                                  message.isRead
+                                    ? "border-slate-200/80 bg-white hover:bg-slate-50"
+                                    : "border-amber-200 bg-amber-50/70 hover:bg-amber-50",
+                                ].join(" ")}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700">
+                                    <span className="text-sm font-semibold">
+                                      {message.sender.charAt(0)}
+                                    </span>
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p className="text-sm font-semibold text-slate-900">
+                                        {message.sender}
+                                      </p>
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={(e) =>
+                                            handleToggleStar(message.id, e)
+                                          }
+                                          className="text-slate-400 transition hover:text-amber-500"
+                                        >
+                                          <Star
+                                            className={`h-3 w-3 ${
+                                              message.isStarred
+                                                ? "fill-amber-500 text-amber-500"
+                                                : ""
+                                            }`}
+                                          />
+                                        </button>
+                                        {!message.isRead && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleMarkMessageRead(message.id);
+                                            }}
+                                            disabled={
+                                              messageActionId ===
+                                              `read-${message.id}`
+                                            }
+                                            className="inline-flex h-5 w-5 items-center justify-center border border-amber-200 bg-amber-100 text-amber-700 transition hover:bg-amber-200/70 disabled:opacity-70"
+                                          >
+                                            {messageActionId ===
+                                            `read-${message.id}` ? (
+                                              <LoaderCircle className="h-2.5 w-2.5 animate-spin" />
+                                            ) : (
+                                              <Check className="h-2.5 w-2.5" />
+                                            )}
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <p className="mt-1 text-xs font-medium text-slate-800">
+                                      {message.subject}
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">
+                                      {message.preview}
+                                    </p>
+                                    <p className="mt-1.5 text-[10px] uppercase tracking-[0.18em] text-slate-400">
+                                      {formatMessageTime(message.timestamp)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.button>
+                            ))
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMessagesOpen(false);
+                            navigate("/messages");
+                          }}
+                          className="mt-4 inline-flex w-full items-center justify-center gap-2 border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                        >
+                          View all messages
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Notifications Dropdown */}
+                <div ref={notificationDropdownRef} className="relative">
                   <button
                     type="button"
                     onClick={() => {
                       const nextOpenState = !isNotificationOpen;
                       setIsNotificationOpen(nextOpenState);
                       if (nextOpenState) {
+                        setIsMessagesOpen(false);
+                        setIsProfileOpen(false);
                         void refreshSummary();
                       }
                     }}
@@ -358,155 +641,216 @@ export function AppShell() {
                     ) : null}
                   </button>
 
-                  {isNotificationOpen ? (
-                    <div className="absolute right-0 top-[calc(100%+12px)] z-30 w-[min(92vw,25rem)] border border-slate-200/90 bg-white/97 p-4 shadow-[0_28px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
-                            Notifications
-                          </p>
+                  <AnimatePresence>
+                    {isNotificationOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="absolute right-0 top-[calc(100%+12px)] z-30 w-[min(92vw,25rem)] border border-slate-200/90 bg-white/97 p-4 shadow-[0_28px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
+                              Notifications
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleMarkAllRead()}
+                            disabled={actionId === "all" || unread === 0}
+                            aria-label="Mark all notifications as read"
+                            title="Mark all read"
+                            className="inline-flex h-9 w-9 items-center justify-center border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-70"
+                          >
+                            {actionId === "all" ? (
+                              <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <CheckCheck className="h-3.5 w-3.5" />
+                            )}
+                          </button>
                         </div>
+
+                        <div className="mt-4 space-y-3">
+                          {isLoading ? (
+                            <div className="flex min-h-28 items-center justify-center border border-dashed border-slate-200 bg-slate-50/70 text-sm text-slate-500">
+                              <div className="flex items-center gap-2">
+                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                                Loading...
+                              </div>
+                            </div>
+                          ) : latest.length === 0 ? (
+                            <div className="border border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center">
+                              <p className="text-sm font-medium text-slate-700">
+                                No notifications yet
+                              </p>
+                              <p className="mt-2 text-xs leading-6 text-slate-500">
+                                New alerts from inventory, production, sales,
+                                and finance will appear here.
+                              </p>
+                            </div>
+                          ) : (
+                            latest.slice(0, 3).map((notification) => (
+                              <motion.button
+                                key={notification.id}
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                                type="button"
+                                onClick={() =>
+                                  void openNotificationModule(
+                                    notification.id,
+                                    notification.module,
+                                    notification.target_path,
+                                    notification.is_read,
+                                  )
+                                }
+                                className={[
+                                  "w-full border p-4 text-left transition-all duration-200",
+                                  notification.is_read
+                                    ? "border-slate-200/80 bg-slate-50/55 hover:bg-white"
+                                    : "border-sky-200 bg-sky-50/70 hover:bg-sky-50",
+                                ].join(" ")}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                                        {formatModuleLabel(notification.module)}
+                                      </span>
+                                      {!notification.is_read ? (
+                                        <button
+                                          type="button"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            void handleQuickMarkRead(
+                                              notification.id,
+                                            );
+                                          }}
+                                          disabled={
+                                            actionId ===
+                                            `read-${notification.id}`
+                                          }
+                                          aria-label={`Mark ${notification.title} as read`}
+                                          title="Mark read"
+                                          className="inline-flex h-6 w-6 items-center justify-center border border-sky-200 bg-sky-100 text-sky-700 transition hover:bg-sky-200/70 disabled:opacity-70"
+                                        >
+                                          {actionId ===
+                                          `read-${notification.id}` ? (
+                                            <LoaderCircle className="h-3 w-3 animate-spin" />
+                                          ) : (
+                                            <Check className="h-3 w-3" />
+                                          )}
+                                        </button>
+                                      ) : null}
+                                    </div>
+                                    <p className="mt-3 text-sm font-semibold text-slate-900">
+                                      {notification.title}
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                                      {notification.message}
+                                    </p>
+                                  </div>
+                                  {actionId === notification.id ? (
+                                    <LoaderCircle className="mt-1 h-4 w-4 shrink-0 animate-spin text-slate-400" />
+                                  ) : (
+                                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
+                                  )}
+                                </div>
+                                <p className="mt-3 text-[11px] uppercase tracking-[0.22em] text-slate-400">
+                                  {formatNotificationTime(
+                                    notification.created_at,
+                                  )}
+                                </p>
+                              </motion.button>
+                            ))
+                          )}
+                        </div>
+
                         <button
                           type="button"
-                          onClick={() => void handleMarkAllRead()}
-                          disabled={actionId === "all" || unread === 0}
-                          aria-label="Mark all notifications as read"
-                          title="Mark all read"
-                          className="inline-flex h-9 w-9 items-center justify-center border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-70"
+                          onClick={() => {
+                            setIsNotificationOpen(false);
+                            navigate("/notifications");
+                          }}
+                          className="mt-4 inline-flex w-full items-center justify-center gap-2 border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                         >
-                          {actionId === "all" ? (
-                            <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <CheckCheck className="h-3.5 w-3.5" />
-                          )}
+                          View more
+                          <ArrowRight className="h-4 w-4" />
                         </button>
-                      </div>
-
-                      <div className="mt-4 space-y-3">
-                        {isLoading ? (
-                          <div className="flex min-h-28 items-center justify-center border border-dashed border-slate-200 bg-slate-50/70 text-sm text-slate-500">
-                            <div className="flex items-center gap-2">
-                              <LoaderCircle className="h-4 w-4 animate-spin" />
-                              Loading...
-                            </div>
-                          </div>
-                        ) : latest.length === 0 ? (
-                          <div className="border border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center">
-                            <p className="text-sm font-medium text-slate-700">
-                              No notifications yet
-                            </p>
-                            <p className="mt-2 text-xs leading-6 text-slate-500">
-                              New alerts from inventory, production, sales, and
-                              finance will appear here.
-                            </p>
-                          </div>
-                        ) : (
-                          latest.slice(0, 3).map((notification) => (
-                            <button
-                              key={notification.id}
-                              type="button"
-                              onClick={() =>
-                                void openNotificationModule(
-                                  notification.id,
-                                  notification.module,
-                                  notification.target_path,
-                                  notification.is_read,
-                                )
-                              }
-                              className={[
-                                "w-full border p-4 text-left transition",
-                                notification.is_read
-                                  ? "border-slate-200/80 bg-slate-50/55 hover:bg-white"
-                                  : "border-sky-200 bg-sky-50/70 hover:bg-sky-50",
-                              ].join(" ")}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <span className="border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                                      {formatModuleLabel(notification.module)}
-                                    </span>
-                                    {!notification.is_read ? (
-                                      <button
-                                        type="button"
-                                        onClick={(event) => {
-                                          event.stopPropagation();
-                                          void handleQuickMarkRead(
-                                            notification.id,
-                                          );
-                                        }}
-                                        disabled={
-                                          actionId === `read-${notification.id}`
-                                        }
-                                        aria-label={`Mark ${notification.title} as read`}
-                                        title="Mark read"
-                                        className="inline-flex h-6 w-6 items-center justify-center border border-sky-200 bg-sky-100 text-sky-700 transition hover:bg-sky-200/70 disabled:opacity-70"
-                                      >
-                                        {actionId ===
-                                        `read-${notification.id}` ? (
-                                          <LoaderCircle className="h-3 w-3 animate-spin" />
-                                        ) : (
-                                          <Check className="h-3 w-3" />
-                                        )}
-                                      </button>
-                                    ) : null}
-                                  </div>
-                                  <p className="mt-3 text-sm font-semibold text-slate-900">
-                                    {notification.title}
-                                  </p>
-                                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                                    {notification.message}
-                                  </p>
-                                </div>
-                                {actionId === notification.id ? (
-                                  <LoaderCircle className="mt-1 h-4 w-4 shrink-0 animate-spin text-slate-400" />
-                                ) : (
-                                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
-                                )}
-                              </div>
-                              <p className="mt-3 text-[11px] uppercase tracking-[0.22em] text-slate-400">
-                                {formatNotificationTime(notification.created_at)}
-                              </p>
-                            </button>
-                          ))
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsNotificationOpen(false);
-                          navigate("/notifications");
-                        }}
-                        className="mt-4 inline-flex w-full items-center justify-center gap-2 border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                      >
-                        View more
-                        <ArrowRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : null}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
-                <div className="flex items-center gap-3 border border-white/14 bg-white/12 px-3 py-2 text-white backdrop-blur-md">
-                  {profilePhotoUrl ? (
-                    <img
-                      src={profilePhotoUrl}
-                      alt={fullName}
-                      className="h-11 w-11 object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-11 w-11 items-center justify-center bg-white/18 text-sm font-semibold text-white">
-                      {initials || "IB"}
+                {/* Profile Dropdown */}
+                <div ref={profileDropdownRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileOpen(!isProfileOpen);
+                      setIsMessagesOpen(false);
+                      setIsNotificationOpen(false);
+                    }}
+                    className="flex items-center gap-3 border border-white/14 bg-white/12 px-3 py-2 text-white backdrop-blur-md transition hover:bg-white/16"
+                    aria-label="Profile menu"
+                    aria-expanded={isProfileOpen}
+                  >
+                    {profilePhotoUrl ? (
+                      <img
+                        src={profilePhotoUrl}
+                        alt={fullName}
+                        className="h-11 w-11 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-11 w-11 items-center justify-center bg-white/18 text-sm font-semibold text-white">
+                        {initials || "IB"}
+                      </div>
+                    )}
+                    <div className="hidden text-left sm:block">
+                      <p className="text-sm font-semibold text-white">
+                        {fullName}
+                      </p>
+                      <p className="text-xs uppercase tracking-[0.24em] text-white/58">
+                        {user?.role.name ?? "Staff"}
+                      </p>
                     </div>
-                  )}
-                  <div className="hidden text-left sm:block">
-                    <p className="text-sm font-semibold text-white">
-                      {fullName}
-                    </p>
-                    <p className="text-xs uppercase tracking-[0.24em] text-white/58">
-                      {user?.role.name ?? "Staff"}
-                    </p>
-                  </div>
+                  </button>
+
+                  <AnimatePresence>
+                    {isProfileOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="absolute right-0 top-[calc(100%+12px)] z-30 w-56 border border-slate-200/90 bg-white/97 py-2 shadow-[0_28px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            navigate("/settings/profile");
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
+                        >
+                          <UserCircle2 className="h-4 w-4" />
+                          <span>Profile</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            handleLogout();
+                          }}
+                          className="flex w-full items-center gap-3 border-t border-slate-200 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Sign Out</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </div>
