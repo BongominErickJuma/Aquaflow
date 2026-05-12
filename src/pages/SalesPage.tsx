@@ -5,6 +5,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   useEffect,
@@ -1252,6 +1253,18 @@ export function SalesPage() {
     }
   }
 
+  void Trash2;
+  void deleteBrandingRecord;
+  void deleteClient;
+  void deleteCustomerCategory;
+  void deleteDeliveryRecord;
+  void deleteDeliverySchedule;
+  void deleteOrderItem;
+  void deleteSalesOrder;
+  void primaryButtonClassName;
+  void dangerButtonClassName;
+  void runDelete;
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -1289,7 +1302,7 @@ export function SalesPage() {
               </p>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Clients</p>
               <p className="hero-metric-value">{clients.length}</p>
@@ -1863,48 +1876,29 @@ export function SalesPage() {
               </div>
             </FormPanel>
             <FieldMessage message={categoryError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedCategoryId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={categoryPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteCustomerCategory(selectedCategoryId),
-                      resetCategoryForm,
-                      setCategoryError,
-                      setCategoryPending,
-                      "Unable to delete category.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={categoryPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={categoryPending}
-                >
-                  {categoryPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedCategoryId ? "Save changes" : "Create category"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={categoryPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {categoryPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2039,48 +2033,29 @@ export function SalesPage() {
               </div>
             </FormPanel>
             <FieldMessage message={clientError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedClientId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={clientPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteClient(selectedClientId),
-                      resetClientForm,
-                      setClientError,
-                      setClientPending,
-                      "Unable to delete client.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={clientPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={clientPending}
-                >
-                  {clientPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedClientId ? "Save changes" : "Create client"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={clientPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {clientPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2181,50 +2156,29 @@ export function SalesPage() {
               </div>
             </FormPanel>
             <FieldMessage message={brandingError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedBrandingId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={brandingPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteBrandingRecord(selectedBrandingId),
-                      resetBrandingForm,
-                      setBrandingError,
-                      setBrandingPending,
-                      "Unable to delete branding record.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={brandingPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={brandingPending}
-                >
-                  {brandingPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedBrandingId
-                    ? "Save changes"
-                    : "Create branding record"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={brandingPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {brandingPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2377,48 +2331,29 @@ export function SalesPage() {
               </div>
             </FormPanel>
             <FieldMessage message={orderError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedOrderId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={orderPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteSalesOrder(selectedOrderId),
-                      resetOrderForm,
-                      setOrderError,
-                      setOrderPending,
-                      "Unable to delete order.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={orderPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={orderPending}
-                >
-                  {orderPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedOrderId ? "Save changes" : "Add order item"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={orderPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {orderPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2567,48 +2502,29 @@ export function SalesPage() {
               </div>
             </FormPanel>
             <FieldMessage message={itemError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedItemId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={itemPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteOrderItem(selectedItemId),
-                      resetItemForm,
-                      setItemError,
-                      setItemPending,
-                      "Unable to delete order item.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={itemPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={itemPending}
-                >
-                  {itemPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedItemId ? "Save changes" : "Create order item"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={itemPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {itemPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2727,48 +2643,29 @@ export function SalesPage() {
               </div>
             </FormPanel>
             <FieldMessage message={scheduleError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedScheduleId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={schedulePending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteDeliverySchedule(selectedScheduleId),
-                      resetScheduleForm,
-                      setScheduleError,
-                      setSchedulePending,
-                      "Unable to delete schedule.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={schedulePending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={schedulePending}
-                >
-                  {schedulePending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedScheduleId ? "Save changes" : "Create schedule"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={schedulePending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {schedulePending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2890,50 +2787,29 @@ export function SalesPage() {
               </div>
             </FormPanel>
             <FieldMessage message={deliveryError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedDeliveryId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={deliveryPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteDeliveryRecord(selectedDeliveryId),
-                      resetDeliveryForm,
-                      setDeliveryError,
-                      setDeliveryPending,
-                      "Unable to delete delivery record.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={deliveryPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={deliveryPending}
-                >
-                  {deliveryPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedDeliveryId
-                    ? "Save changes"
-                    : "Create delivery record"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={deliveryPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {deliveryPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>

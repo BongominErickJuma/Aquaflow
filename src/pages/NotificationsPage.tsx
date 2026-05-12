@@ -368,7 +368,7 @@ export function NotificationsPage() {
               </p>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Total</p>
               <p className="hero-metric-value">{summary.total}</p>
@@ -388,89 +388,118 @@ export function NotificationsPage() {
       <div className="module-page-stage justify-start">
         <section className="panel p-6">
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                {isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={toggleSelectAllVisible}
-                    disabled={filteredNotifications.length === 0}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-70"
-                  >
-                    {allVisibleSelected ? "Clear shown" : "Select shown"}
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => setFilter("all")}
-                  className={[
-                    "rounded-2xl border px-4 py-2 text-sm font-semibold transition",
-                    filter === "all"
-                      ? "border-sky-200 bg-sky-100 text-sky-800"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900",
-                  ].join(" ")}
-                >
-                  All notifications
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter("unread")}
-                  className={[
-                    "rounded-2xl border px-4 py-2 text-sm font-semibold transition",
-                    filter === "unread"
-                      ? "border-sky-200 bg-sky-100 text-sky-800"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900",
-                  ].join(" ")}
-                >
-                  Unread only
-                </button>
-              </div>
+            <div className="scrollbar-hidden overflow-x-auto rounded-[28px] border border-slate-200/80 bg-slate-50/70 p-2">
+              <div className="flex min-w-max items-center gap-2">
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllVisible}
+                      disabled={filteredNotifications.length === 0}
+                      aria-label={
+                        allVisibleSelected
+                          ? "Clear shown notifications"
+                          : "Select shown notifications"
+                      }
+                      title={
+                        allVisibleSelected
+                          ? "Clear shown notifications"
+                          : "Select shown notifications"
+                      }
+                      className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-70"
+                    >
+                      {allVisibleSelected ? (
+                        <X className="h-4 w-4" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                      <span className="hidden sm:inline">
+                        {allVisibleSelected ? "Clear shown" : "Select shown"}
+                      </span>
+                    </button>
+                  ) : null}
 
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => void handleMarkAllRead()}
-                  disabled={isMarkingAll || summary.unread === 0}
-                  aria-label="Mark all notifications as read"
-                  title="Mark all read"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200 bg-[linear-gradient(135deg,#1f87ad,#0f6d8d)] text-white shadow-[0_12px_30px_rgba(32,141,183,0.22)] transition hover:brightness-110 disabled:opacity-70"
-                >
-                  {isMarkingAll ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCheck className="h-4 w-4" />
-                  )}
-                </button>
-                {isAdmin && selectedIds.length > 0 ? (
+                  <div className="inline-flex h-10 shrink-0 items-center rounded-2xl border border-slate-200 bg-white p-1">
+                    <button
+                      type="button"
+                      onClick={() => setFilter("all")}
+                      className={[
+                        "h-8 rounded-[0.9rem] px-3 text-sm font-semibold transition",
+                        filter === "all"
+                          ? "bg-sky-50 text-sky-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                          : "text-slate-500 hover:text-slate-900",
+                      ].join(" ")}
+                    >
+                      <span className="sm:hidden">All</span>
+                      <span className="hidden sm:inline">
+                        All notifications
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFilter("unread")}
+                      className={[
+                        "h-8 rounded-[0.9rem] px-3 text-sm font-semibold transition",
+                        filter === "unread"
+                          ? "bg-sky-50 text-sky-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                          : "text-slate-500 hover:text-slate-900",
+                      ].join(" ")}
+                    >
+                      <span className="sm:hidden">Unread</span>
+                      <span className="hidden sm:inline">Unread only</span>
+                    </button>
+                  </div>
+
+                  {isAdmin && selectedIds.length > 0 ? (
+                    <span className="inline-flex h-10 shrink-0 items-center rounded-2xl border border-sky-200 bg-sky-50 px-3 text-sm font-semibold text-sky-700">
+                      {selectedIds.length} selected
+                    </span>
+                  ) : null}
+                <div className="ml-auto flex shrink-0 items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => void beginBulkDelete()}
-                    disabled={actionId === "bulk" || selectedIds.length === 0}
-                    aria-label="Delete selected notifications"
-                    title="Delete selected"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 disabled:opacity-70"
+                    onClick={() => void handleMarkAllRead()}
+                    disabled={isMarkingAll || summary.unread === 0}
+                    aria-label="Mark all notifications as read"
+                    title="Mark all read"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200 bg-[linear-gradient(135deg,#1f87ad,#0f6d8d)] text-white shadow-[0_12px_30px_rgba(32,141,183,0.22)] transition hover:brightness-110 disabled:opacity-70"
                   >
-                    {actionId === "bulk" ? (
+                    {isMarkingAll ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Trash className="h-4 w-4" />
+                      <CheckCheck className="h-4 w-4" />
                     )}
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => void loadNotifications(true)}
-                  disabled={isRefreshing}
-                  aria-label="Refresh notifications"
-                  title="Refresh"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-70"
-                >
-                  {isRefreshing ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                </button>
+                  {isAdmin && selectedIds.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => void beginBulkDelete()}
+                      disabled={actionId === "bulk" || selectedIds.length === 0}
+                      aria-label="Delete selected notifications"
+                      title="Delete selected"
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 disabled:opacity-70"
+                    >
+                      {actionId === "bulk" ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash className="h-4 w-4" />
+                      )}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => void loadNotifications(true)}
+                    disabled={isRefreshing}
+                    aria-label="Refresh notifications"
+                    title="Refresh"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-70"
+                  >
+                    {isRefreshing ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -483,12 +512,6 @@ export function NotificationsPage() {
             {message ? (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                 {message}
-              </div>
-            ) : null}
-
-            {isAdmin && selectedIds.length > 0 ? (
-              <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
-                {selectedIds.length} notification(s) selected.
               </div>
             ) : null}
 

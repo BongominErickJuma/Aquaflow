@@ -1945,6 +1945,22 @@ export function InventoryPage() {
     }
   };
 
+  void primaryButtonClassName;
+  void secondaryButtonClassName;
+  void dangerButtonClassName;
+  void ProductQrPreview;
+  void resolveProductQrValue;
+  void editingFinishedProductRecord;
+  void isQrExpanded;
+  void isRemoveImageConfirming;
+  void handleUnitDelete;
+  void handleCategoryDelete;
+  void handleSupplierDelete;
+  void handleLocationDelete;
+  void handleRawMaterialDelete;
+  void handleStockItemDelete;
+  void handleMovementDelete;
+
   if (isLoading) {
     return (
       <section className="panel flex min-h-[320px] items-center justify-center p-8">
@@ -1989,7 +2005,7 @@ export function InventoryPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Products</p>
               <p className="hero-metric-value">{finishedProducts.length}</p>
@@ -2786,33 +2802,16 @@ export function InventoryPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save unit"
+                    title="Save unit"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleUnitDelete()}
-                  disabled={!selectedUnitId || isUnitPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUnitPending}
-                  className={primaryButtonClassName}
-                >
-                  {isUnitPending ? (
-                    <>
+                    {isUnitPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save unit"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -2887,33 +2886,16 @@ export function InventoryPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save category"
+                    title="Save category"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleCategoryDelete()}
-                  disabled={!selectedCategoryId || isCategoryPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCategoryPending}
-                  className={primaryButtonClassName}
-                >
-                  {isCategoryPending ? (
-                    <>
+                    {isCategoryPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save category"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3054,33 +3036,16 @@ export function InventoryPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save supplier"
+                    title="Save supplier"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleSupplierDelete()}
-                  disabled={!selectedSupplierId || isSupplierPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSupplierPending}
-                  className={primaryButtonClassName}
-                >
-                  {isSupplierPending ? (
-                    <>
+                    {isSupplierPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save supplier"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3178,33 +3143,16 @@ export function InventoryPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save warehouse"
+                    title="Save warehouse"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleLocationDelete()}
-                  disabled={!selectedLocationId || isLocationPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLocationPending}
-                  className={primaryButtonClassName}
-                >
-                  {isLocationPending ? (
-                    <>
+                    {isLocationPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save warehouse"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3367,35 +3315,16 @@ export function InventoryPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save raw material"
+                    title="Save raw material"
                 >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void handleRawMaterialDelete()}
-                  disabled={!selectedRawMaterialId || isRawMaterialPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isRawMaterialPending}
-                  className={primaryButtonClassName}
-                >
-                  {isRawMaterialPending ? (
-                    <>
+                    {isRawMaterialPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save raw material"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3409,125 +3338,10 @@ export function InventoryPage() {
         >
           <FormPanel label="Products" title="Product form">
             <form className="space-y-5" onSubmit={handleFinishedProductSubmit}>
-              <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-                <div className="space-y-3">
-                  <span className="text-sm font-medium text-slate-700">
-                    Product image
-                  </span>
-                  <div className="h-full min-h-[260px] rounded-3xl border border-slate-200/80 bg-slate-50/70 p-5">
-                    <ProductImagePreview
-                      image={finishedProductForm.image}
-                      alt={finishedProductForm.name || "Product image"}
-                      className="h-full min-h-[218px] w-full border border-dashed border-slate-200 bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <span className="text-sm font-medium text-slate-700">
-                    Current stock
-                  </span>
-                  <div className="flex h-full min-h-[260px] flex-col rounded-3xl border border-slate-200/80 bg-slate-50/70 p-5">
-                    <div className="space-y-3">
-                      <div className={`${fieldClassName} min-h-[56px] flex items-center`}>
-                        {editingFinishedProductRecord
-                          ? formatQuantity(
-                              editingFinishedProductRecord.current_stock,
-                              editingFinishedProductRecord.unit_name,
-                            )
-                          : "0.00"}
-                      </div>
-                    </div>
-
-                    <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
-                      <label className="flex w-full cursor-pointer items-center justify-start rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
-                        <span>Choose image</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(event) => {
-                            const nextFile = event.target.files?.[0] ?? null;
-                            if (!nextFile) {
-                              return;
-                            }
-
-                            void normalizeProductImage(nextFile)
-                              .then((normalizedFile) => {
-                                setFinishedProductForm((current) => ({
-                                  ...current,
-                                  image: normalizedFile,
-                                  clear_image: false,
-                                }));
-                                setIsRemoveImageConfirming(false);
-                              })
-                              .catch(() => {
-                                setFinishedProductForm((current) => ({
-                                  ...current,
-                                  image: nextFile,
-                                  clear_image: false,
-                                }));
-                                setIsRemoveImageConfirming(false);
-                              });
-                          }}
-                        />
-                      </label>
-                    </div>
-
-                    <div className="mt-auto border-t border-slate-200 pt-6">
-                      {isRemoveImageConfirming ? (
-                        <div className="space-y-3">
-                          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                            Remove this product image?
-                          </div>
-                          <div className="flex gap-3">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFinishedProductForm((current) => ({
-                                  ...current,
-                                  image: null,
-                                  clear_image: true,
-                                }));
-                                setIsRemoveImageConfirming(false);
-                              }}
-                              className={`${dangerButtonClassName} w-full justify-center`}
-                              aria-label="Confirm remove image"
-                              title="Confirm remove image"
-                            >
-                              <Check className="h-4 w-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setIsRemoveImageConfirming(false)}
-                              className={`${secondaryButtonClassName} w-full justify-center`}
-                              aria-label="Cancel remove image"
-                              title="Cancel remove image"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setIsRemoveImageConfirming(true)}
-                          disabled={!finishedProductForm.image}
-                          className={`${secondaryButtonClassName} w-full justify-start`}
-                        >
-                          Remove image
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <div className="grid gap-4 md:grid-cols-2">
-                {/* Name */}
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
-                    Name
+                    Product name
                   </span>
                   <input
                     className={fieldClassName}
@@ -3541,8 +3355,30 @@ export function InventoryPage() {
                     required
                   />
                 </label>
-
-                {/* Unit */}
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Category
+                  </span>
+                  <PickerField
+                    value={
+                      finishedProductForm.category
+                        ? String(finishedProductForm.category)
+                        : ""
+                    }
+                    options={[
+                      { label: "Select category", value: "" },
+                      ...buildCategoryOptions(),
+                    ]}
+                    searchable
+                    searchPlaceholder="Search categories"
+                    onChange={(value) =>
+                      setFinishedProductForm((current) => ({
+                        ...current,
+                        category: value ? Number(value) : 0,
+                      }))
+                    }
+                  />
+                </label>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
                     Unit
@@ -3568,32 +3404,6 @@ export function InventoryPage() {
                     }
                   />
                 </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Category
-                  </span>
-                  <PickerField
-                    value={
-                      finishedProductForm.category
-                        ? String(finishedProductForm.category)
-                        : ""
-                    }
-                    options={[
-                      { label: "No category", value: "" },
-                      ...buildCategoryOptions(),
-                    ]}
-                    searchable
-                    searchPlaceholder="Search categories"
-                    onChange={(value) =>
-                      setFinishedProductForm((current) => ({
-                        ...current,
-                        category: value ? Number(value) : null,
-                      }))
-                    }
-                  />
-                </label>
-
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
                     Supplier
@@ -3618,28 +3428,6 @@ export function InventoryPage() {
                     }
                   />
                 </label>
-
-                {/* Reorder level */}
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Reorder level
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className={fieldClassName}
-                    value={finishedProductForm.reorder_level}
-                    onChange={(event) =>
-                      setFinishedProductForm((current) => ({
-                        ...current,
-                        reorder_level: event.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </label>
-
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
                     Unit price
@@ -3656,10 +3444,8 @@ export function InventoryPage() {
                         unit_price: event.target.value,
                       }))
                     }
-                    required
                   />
                 </label>
-
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
                     Cost price
@@ -3676,10 +3462,26 @@ export function InventoryPage() {
                         cost_price: event.target.value,
                       }))
                     }
-                    required
                   />
                 </label>
-
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    Reorder level
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={fieldClassName}
+                    value={finishedProductForm.reorder_level}
+                    onChange={(event) =>
+                      setFinishedProductForm((current) => ({
+                        ...current,
+                        reorder_level: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-slate-700">
                     Reorder quantity
@@ -3696,52 +3498,33 @@ export function InventoryPage() {
                         reorder_quantity: event.target.value,
                       }))
                     }
-                    required
                   />
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-slate-700">
-                    Default warehouse
-                  </span>
-                  <PickerField
-                    value={
-                      finishedProductForm.location
-                        ? String(finishedProductForm.location)
-                        : ""
-                    }
-                    options={[
-                      { label: "No default warehouse", value: "" },
-                      ...buildLocationOptions(),
-                    ]}
-                    searchable
-                    searchPlaceholder="Search warehouses"
-                    onChange={(value) =>
-                      setFinishedProductForm((current) => ({
-                        ...current,
-                        location: value ? Number(value) : null,
-                      }))
-                    }
-                  />
-                </label>
-
-                {/* Active */}
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={finishedProductForm.is_active}
-                    onChange={(event) =>
-                      setFinishedProductForm((current) => ({
-                        ...current,
-                        is_active: event.target.checked,
-                      }))
-                    }
-                  />
-                  Active product
                 </label>
               </div>
-
-              {/* Description */}
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Location
+                </span>
+                <PickerField
+                  value={
+                    finishedProductForm.location
+                      ? String(finishedProductForm.location)
+                      : ""
+                  }
+                  options={[
+                    { label: "No warehouse", value: "" },
+                    ...buildLocationOptions(),
+                  ]}
+                  searchable
+                  searchPlaceholder="Search warehouses"
+                  onChange={(value) =>
+                    setFinishedProductForm((current) => ({
+                      ...current,
+                      location: value ? Number(value) : null,
+                    }))
+                  }
+                />
+              </label>
               <label className="block space-y-2">
                 <span className="text-sm font-medium text-slate-700">
                   Description
@@ -3757,87 +3540,93 @@ export function InventoryPage() {
                   }
                 />
               </label>
-
-              {editingFinishedProductRecord ? (
-                <div className="space-y-4 rounded-3xl border border-slate-200/80 bg-slate-50/70 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">
-                        Barcode
-                      </p>
-                      <p className="mt-1 text-sm text-slate-500">
-                        Open to view or scan the product code.
-                      </p>
-                    </div>
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+                <ProductImagePreview
+                  image={finishedProductForm.image}
+                  alt={finishedProductForm.name || "Product image"}
+                  className="min-h-[180px] border border-dashed border-slate-200 bg-white"
+                />
+                <div className="space-y-3">
+                  <label className="modal-icon-button modal-icon-button-secondary cursor-pointer">
+                    <Plus className="h-4 w-4" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => {
+                        const nextFile = event.target.files?.[0] ?? null;
+                        if (!nextFile) return;
+                        void normalizeProductImage(nextFile)
+                          .then((normalizedFile) => {
+                            setFinishedProductForm((current) => ({
+                              ...current,
+                              image: normalizedFile,
+                              clear_image: false,
+                            }));
+                            setIsRemoveImageConfirming(false);
+                          })
+                          .catch(() => {
+                            setFinishedProductForm((current) => ({
+                              ...current,
+                              image: nextFile,
+                              clear_image: false,
+                            }));
+                            setIsRemoveImageConfirming(false);
+                          });
+                      }}
+                    />
+                  </label>
+                  {finishedProductForm.image ? (
                     <button
                       type="button"
-                      onClick={() => setIsQrExpanded((current) => !current)}
-                      className={secondaryButtonClassName}
+                      onClick={() =>
+                        setFinishedProductForm((current) => ({
+                          ...current,
+                          image: null,
+                          clear_image: true,
+                        }))
+                      }
+                      className="modal-icon-button modal-icon-button-danger"
+                      aria-label="Remove image"
+                      title="Remove image"
                     >
-                      {isQrExpanded ? "Hide barcode" : "Show barcode"}
+                      <Trash2 className="h-4 w-4" />
                     </button>
-                  </div>
-
-                  <div
-                    className={[
-                      "overflow-hidden transition-all duration-300 ease-out",
-                      isQrExpanded
-                        ? "max-h-[420px] opacity-100 translate-y-0"
-                        : "max-h-0 opacity-0 -translate-y-2",
-                    ].join(" ")}
-                  >
-                    <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-                      <div className="flex flex-col items-center gap-4">
-                        <ProductQrPreview
-                          value={resolveProductQrValue(editingFinishedProductRecord)}
-                          size={280}
-                          className="h-[280px] w-[280px]"
-                        />
-                        <p className="text-sm font-medium text-slate-700">
-                          {editingFinishedProductRecord.barcode}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  ) : null}
                 </div>
-              ) : null}
-
+              </div>
               <FieldMessage message={finishedProductError} tone="error" />
-
-              {/* Buttons */}
               <div className="flex flex-wrap justify-end gap-3">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-secondary"
+                  aria-label="Cancel"
+                  title="Cancel"
                 >
-                  Cancel
+                  <X className="h-4 w-4" />
                 </button>
-
                 <button
                   type="button"
                   onClick={() => void handleFinishedProductDelete()}
-                  disabled={
-                    !selectedFinishedProductId || isFinishedProductPending
-                  }
-                  className={dangerButtonClassName}
+                  disabled={!selectedFinishedProductId || isFinishedProductPending}
+                  className="modal-icon-button modal-icon-button-danger"
+                  aria-label="Delete product"
+                  title="Delete product"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete
                 </button>
-
                 <button
                   type="submit"
                   disabled={isFinishedProductPending}
-                  className={primaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                  aria-label="Save product"
+                  title="Save product"
                 >
                   {isFinishedProductPending ? (
-                    <>
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
                   ) : (
-                      "Save product"
+                    <Check className="h-4 w-4" />
                   )}
                 </button>
               </div>
@@ -4011,35 +3800,16 @@ export function InventoryPage() {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className={secondaryButtonClassName}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => void handleStockItemDelete()}
-                    disabled={!selectedStockItemId || isStockItemPending}
-                    className={dangerButtonClassName}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={isStockItemPending}
-                    className={primaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save warehouse stock"
+                    title="Save warehouse stock"
                   >
                     {isStockItemPending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving
-                      </>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save warehouse stock"
-                  )}
-                </button>
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
               </form>
             </FormPanel>
@@ -4175,33 +3945,14 @@ export function InventoryPage() {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className={secondaryButtonClassName}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => void handleMovementDelete()}
-                    disabled={!selectedMovementId || isMovementPending}
-                    className={dangerButtonClassName}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={isMovementPending}
-                    className={primaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save movement"
+                    title="Save movement"
                   >
                     {isMovementPending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving
-                      </>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save movement"
+                      <Check className="h-4 w-4" />
                     )}
                   </button>
                 </div>

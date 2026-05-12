@@ -93,6 +93,22 @@ button:disabled {
     @apply mt-auto pt-3 text-3xl font-semibold text-slate-950;
   }
 
+  .modal-icon-button {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-sm transition disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .modal-icon-button-primary {
+    @apply border-sky-200 bg-[linear-gradient(135deg,#1f87ad,#0f6d8d)] text-white shadow-[0_12px_30px_rgba(32,141,183,0.22)] hover:brightness-110;
+  }
+
+  .modal-icon-button-secondary {
+    @apply border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50;
+  }
+
+  .modal-icon-button-danger {
+    @apply border-red-200 bg-red-50 text-red-700 hover:bg-red-100;
+  }
+
   .module-page {
     @apply flex h-full min-h-0 flex-col gap-6 overflow-hidden;
   }
@@ -142,6 +158,59 @@ button:disabled {
   div[class*=" rounded-2xl"],
   div[class^="rounded-2xl"] {
     border-radius: 0 !important;
+  }
+}
+
+.module-page-stage .panel {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (max-width: 1023.98px) {
+  .module-page {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .module-page-stage {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow: visible !important;
+  }
+
+  .module-tab-panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .module-page .min-h-0 {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 639.98px) {
+  .hero-metric-card {
+    @apply min-h-[88px] px-3 py-2;
+  }
+
+  .hero-metric-label {
+    @apply min-h-0 text-[10px] leading-4 tracking-[0.16em];
+  }
+
+  .hero-metric-value {
+    @apply pt-2 text-2xl;
+  }
+
+  .mobile-header-menu {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: 5.25rem;
+    width: auto;
   }
 }
 

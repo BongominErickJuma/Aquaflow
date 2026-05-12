@@ -1,12 +1,13 @@
 import {
+  Check,
+  ChevronDown,
   ImageUp,
   LoaderCircle,
   Pencil,
   Plus,
-  Check,
-  ChevronDown,
   ShieldAlert,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   useEffect,
@@ -1354,6 +1355,9 @@ export function BusinessPage() {
     }
   };
 
+  void secondaryButtonClassName;
+  void dangerButtonClassName;
+
   if (isLoading) {
     return (
       <section className="panel p-8">
@@ -1419,53 +1423,67 @@ export function BusinessPage() {
                 <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
                   Business
                 </div>
-                <div className="flex items-start gap-4">
-                  {company.company_logo ? (
-                    <img
-                      src={resolveApiAssetUrl(company.company_logo) ?? ""}
-                      alt={company.company_name}
-                      className="h-20 w-20 rounded-[1.5rem] border border-white/80 object-cover shadow-sm"
-                    />
-                  ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-sky-200 bg-white text-2xl font-semibold text-sky-700 shadow-sm">
-                      {(company.company_name[0] ?? "I").toUpperCase()}
+                <div className="space-y-3">
+                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.25rem] border border-white/80 bg-white p-2 shadow-[0_12px_30px_rgba(15,23,42,0.08)] sm:h-16 sm:w-16 lg:h-[4.5rem] lg:w-[4.5rem]">
+                      {company.company_logo ? (
+                        <img
+                          src={resolveApiAssetUrl(company.company_logo) ?? ""}
+                          alt={company.company_name}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      ) : (
+                        <span className="text-xl font-semibold text-sky-700 lg:text-2xl">
+                          {(company.company_name[0] ?? "I").toUpperCase()}
+                        </span>
+                      )}
                     </div>
-                  )}
-                  <div className="space-y-2">
-                    <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
-                      {company.company_name}
-                    </h1>
-                    <p className="text-sm text-slate-500">
-                      {company.trading_name || "No trading name set"}
-                    </p>
-                    <p className="max-w-2xl text-sm leading-7 text-slate-600">
-                      Keep the company identity, legal record, locations, KPIs,
-                      and strategic plans aligned under one business profile.
-                    </p>
+                    <div className="min-w-0 space-y-2">
+                      <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+                        {company.company_name}
+                      </h1>
+                      <p className="text-sm text-slate-500">
+                        {company.trading_name || "No trading name set"}
+                      </p>
+                    </div>
                   </div>
+                  <p className="max-w-2xl text-sm leading-7 text-slate-600">
+                    Keep the company identity, legal record, locations, KPIs,
+                    and strategic plans aligned under one business profile.
+                  </p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
                   <div className="hero-metric-card">
-                    <p className="hero-metric-label">Licenses</p>
+                    <p className="hero-metric-label">
+                      Licenses
+                    </p>
                     <p className="hero-metric-value">
                       {company.licenses.length}
                     </p>
                   </div>
                   <div className="hero-metric-card">
-                    <p className="hero-metric-label">Locations</p>
+                    <p className="hero-metric-label">
+                      Locations
+                    </p>
                     <p className="hero-metric-value">
                       {company.locations.length}
                     </p>
                   </div>
                   <div className="hero-metric-card">
-                    <p className="hero-metric-label">KPIs</p>
-                    <p className="hero-metric-value">{company.kpis.length}</p>
+                    <p className="hero-metric-label">
+                      KPIs
+                    </p>
+                    <p className="hero-metric-value">
+                      {company.kpis.length}
+                    </p>
                   </div>
                   <div className="hero-metric-card">
-                    <p className="hero-metric-label">Plans</p>
+                    <p className="hero-metric-label">
+                      Plans
+                    </p>
                     <p className="hero-metric-value">
                       {company.strategic_plans.length}
                     </p>
@@ -1820,25 +1838,28 @@ export function BusinessPage() {
                     ) : null}
                   </div>
 
-                  <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+                  <div className="mt-5 grid grid-cols-2 gap-3 md:flex md:overflow-x-auto md:pb-2">
                     {kpiOptions.length === 0 ? (
                       <EmptyState
                         title="No KPI records yet"
                         description="Store top-level business performance entries here."
-                        className={`${recordCardClassName} justify-center`}
+                        className={`${recordCardClassName} col-span-2 justify-center`}
                       />
                     ) : (
                       kpiOptions.map((record) => (
-                        <div key={record.id} className={recordCardClassName}>
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
-                              <p className="font-semibold text-slate-900">
+                        <div
+                          key={record.id}
+                          className={`${recordCardClassName} h-[150px] min-w-0 max-w-none p-3 md:h-[220px] md:min-w-[280px] md:max-w-[280px] md:p-4`}
+                        >
+                          <div className="flex items-start justify-between gap-3 md:gap-4">
+                            <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-0 md:pr-14">
+                              <p className="text-sm font-semibold leading-5 text-slate-900 md:text-base">
                                 {record.name}
                               </p>
-                              <p className="mt-1 text-sm text-slate-500">
+                              <p className="mt-1 text-xs text-slate-500 md:text-sm">
                                 {record.value} {record.unit || ""}
                               </p>
-                              <p className="mt-2 text-sm text-slate-600">
+                              <p className="mt-2 text-xs leading-5 text-slate-600 md:text-sm">
                                 Recorded {formatDate(record.record_date)}
                               </p>
                             </div>
@@ -2106,17 +2127,14 @@ export function BusinessPage() {
                   <button
                     type="submit"
                     disabled={isCompanyPending}
-                    className={primaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save company form"
+                    title="Save company form"
                   >
                     {isCompanyPending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving
-                      </>
-                    ) : company ? (
-                      "Save company form"
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Create company"
+                      <Check className="h-4 w-4" />
                     )}
                   </button>
                 </div>
@@ -2144,33 +2162,35 @@ export function BusinessPage() {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={!company}
-                    className={secondaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-secondary"
+                    aria-label="Choose file"
+                    title="Choose file"
                   >
-                    Choose file
+                    <ImageUp className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => void handleLogoUpload()}
-                    disabled={!company || isLogoPending || !selectedLogo}
-                    className={primaryButtonClassName}
+                    disabled={!company || !selectedLogo || isLogoPending}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Upload logo"
+                    title="Upload logo"
                   >
                     {isLogoPending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Uploading
-                      </>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Upload logo"
+                      <Check className="h-4 w-4" />
                     )}
                   </button>
                   <button
                     type="button"
                     onClick={() => void handleLogoRemove()}
                     disabled={!company?.company_logo || isLogoPending}
-                    className={dangerButtonClassName}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Remove logo"
+                    title="Remove logo"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Remove logo
                   </button>
                 </div>
                 <FieldMessage message={logoError} tone="error" />
@@ -2294,23 +2314,32 @@ export function BusinessPage() {
                     type="button"
                     onClick={() => void handleRegistrationDelete()}
                     disabled={!company?.registration || isRegistrationPending}
-                    className={dangerButtonClassName}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete registration"
+                    title="Delete registration"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete registration
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="modal-icon-button modal-icon-button-secondary"
+                    aria-label="Cancel"
+                    title="Cancel"
+                  >
+                    <X className="h-4 w-4" />
                   </button>
                   <button
                     type="submit"
                     disabled={!company || isRegistrationPending}
-                    className={primaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save registration"
+                    title="Save registration"
                   >
                     {isRegistrationPending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving
-                      </>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save registration"
+                      <Check className="h-4 w-4" />
                     )}
                   </button>
                 </div>
@@ -2488,38 +2517,34 @@ export function BusinessPage() {
                 <div className="flex flex-wrap justify-end gap-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedLicenseId(null);
-                      setLicenseForm(createEmptyLicenseForm());
-                    }}
-                    disabled={isLicensePending}
-                    className={secondaryButtonClassName}
+                    onClick={closeModal}
+                    className="modal-icon-button modal-icon-button-secondary"
+                    aria-label="Cancel"
+                    title="Cancel"
                   >
-                    Reset form
+                    <X className="h-4 w-4" />
                   </button>
-
                   <button
                     type="button"
                     onClick={() => void handleLicenseDelete()}
                     disabled={!selectedLicenseId || isLicensePending}
-                    className={dangerButtonClassName}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete license"
+                    title="Delete license"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete selected
                   </button>
-
                   <button
                     type="submit"
                     disabled={!company || isLicensePending}
-                    className={primaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save license"
+                    title="Save license"
                   >
                     {isLicensePending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving
-                      </>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save license"
+                      <Check className="h-4 w-4" />
                     )}
                   </button>
                 </div>
@@ -2728,38 +2753,34 @@ export function BusinessPage() {
                 <div className="flex flex-wrap justify-end gap-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedLocationId(null);
-                      setLocationForm(createEmptyLocationForm());
-                    }}
-                    disabled={isLocationPending}
-                    className={secondaryButtonClassName}
+                    onClick={closeModal}
+                    className="modal-icon-button modal-icon-button-secondary"
+                    aria-label="Cancel"
+                    title="Cancel"
                   >
-                    Reset form
+                    <X className="h-4 w-4" />
                   </button>
-
                   <button
                     type="button"
                     onClick={() => void handleLocationDelete()}
                     disabled={!selectedLocationId || isLocationPending}
-                    className={dangerButtonClassName}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete location"
+                    title="Delete location"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete selected
                   </button>
-
                   <button
                     type="submit"
                     disabled={!company || isLocationPending}
-                    className={primaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save location"
+                    title="Save location"
                   >
                     {isLocationPending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving
-                      </>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save location"
+                      <Check className="h-4 w-4" />
                     )}
                   </button>
                 </div>
@@ -2897,38 +2918,34 @@ export function BusinessPage() {
                 <div className="flex flex-wrap justify-end gap-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedKpiId(null);
-                      setKpiForm(createEmptyKpiForm());
-                    }}
-                    disabled={isKpiPending}
-                    className={secondaryButtonClassName}
+                    onClick={closeModal}
+                    className="modal-icon-button modal-icon-button-secondary"
+                    aria-label="Cancel"
+                    title="Cancel"
                   >
-                    Reset form
+                    <X className="h-4 w-4" />
                   </button>
-
                   <button
                     type="button"
                     onClick={() => void handleKpiDelete()}
                     disabled={!selectedKpiId || isKpiPending}
-                    className={dangerButtonClassName}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete KPI"
+                    title="Delete KPI"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete selected
                   </button>
-
                   <button
                     type="submit"
                     disabled={!company || isKpiPending}
-                    className={primaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save KPI"
+                    title="Save KPI"
                   >
                     {isKpiPending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving
-                      </>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save KPI"
+                      <Check className="h-4 w-4" />
                     )}
                   </button>
                 </div>
@@ -3107,38 +3124,34 @@ export function BusinessPage() {
                 <div className="flex flex-wrap justify-end gap-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedPlanId(null);
-                      setPlanForm(createEmptyPlanForm());
-                    }}
-                    disabled={isPlanPending}
-                    className={secondaryButtonClassName}
+                    onClick={closeModal}
+                    className="modal-icon-button modal-icon-button-secondary"
+                    aria-label="Cancel"
+                    title="Cancel"
                   >
-                    Reset form
+                    <X className="h-4 w-4" />
                   </button>
-
                   <button
                     type="button"
                     onClick={() => void handlePlanDelete()}
                     disabled={!selectedPlanId || isPlanPending}
-                    className={dangerButtonClassName}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete plan"
+                    title="Delete plan"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete selected
                   </button>
-
                   <button
                     type="submit"
                     disabled={!company || isPlanPending}
-                    className={primaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save plan"
+                    title="Save plan"
                   >
                     {isPlanPending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving
-                      </>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save plan"
+                      <Check className="h-4 w-4" />
                     )}
                   </button>
                 </div>

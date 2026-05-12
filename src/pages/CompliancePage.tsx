@@ -6,6 +6,7 @@ import {
   Plus,
   ShieldAlert,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   useEffect,
@@ -944,6 +945,16 @@ export function CompliancePage() {
     }
   }
 
+  void Trash2;
+  void deleteComplianceDocument;
+  void deleteHygieneCheck;
+  void deleteSafetyRecord;
+  void deleteTrainingRecord;
+  void deleteWaterQualityTest;
+  void primaryButtonClassName;
+  void dangerButtonClassName;
+  void runDelete;
+
   if (!canManageCompliance) {
     return (
       <section className="panel max-w-3xl p-8">
@@ -1003,7 +1014,7 @@ export function CompliancePage() {
               </p>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Hygiene</p>
               <p className="hero-metric-value">{hygieneChecks.length}</p>
@@ -1490,48 +1501,29 @@ export function CompliancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={hygieneError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedHygieneId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={hygienePending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteHygieneCheck(selectedHygieneId),
-                      resetHygieneForm,
-                      setHygieneError,
-                      setHygienePending,
-                      "Unable to delete hygiene check.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={hygienePending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={hygienePending}
-                >
-                  {hygienePending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedHygieneId ? "Save changes" : "Create hygiene check"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={hygienePending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {hygienePending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -1684,48 +1676,29 @@ export function CompliancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={waterError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedWaterId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={waterPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteWaterQualityTest(selectedWaterId),
-                      resetWaterForm,
-                      setWaterError,
-                      setWaterPending,
-                      "Unable to delete water quality test.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={waterPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={waterPending}
-                >
-                  {waterPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedWaterId ? "Save changes" : "Create water test"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={waterPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {waterPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -1860,48 +1833,29 @@ export function CompliancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={safetyError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedSafetyId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={safetyPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteSafetyRecord(selectedSafetyId),
-                      resetSafetyForm,
-                      setSafetyError,
-                      setSafetyPending,
-                      "Unable to delete safety record.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={safetyPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={safetyPending}
-                >
-                  {safetyPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedSafetyId ? "Save changes" : "Create safety record"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={safetyPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {safetyPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2013,50 +1967,29 @@ export function CompliancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={trainingError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedTrainingId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={trainingPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteTrainingRecord(selectedTrainingId),
-                      resetTrainingForm,
-                      setTrainingError,
-                      setTrainingPending,
-                      "Unable to delete training record.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={trainingPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={trainingPending}
-                >
-                  {trainingPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedTrainingId
-                    ? "Save changes"
-                    : "Create training record"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={trainingPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {trainingPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2186,48 +2119,29 @@ export function CompliancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={documentError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedDocumentId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={documentPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteComplianceDocument(selectedDocumentId),
-                      resetDocumentForm,
-                      setDocumentError,
-                      setDocumentPending,
-                      "Unable to delete compliance document.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={documentPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={documentPending}
-                >
-                  {documentPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedDocumentId ? "Save changes" : "Create document"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={documentPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {documentPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>

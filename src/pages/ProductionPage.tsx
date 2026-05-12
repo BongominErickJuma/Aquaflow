@@ -1,10 +1,11 @@
 import {
-  LoaderCircle,
   Check,
   ChevronDown,
+  LoaderCircle,
   Pencil,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   useEffect,
@@ -1393,6 +1394,18 @@ export function ProductionPage() {
     }
   };
 
+  void Trash2;
+  void X;
+  void primaryButtonClassName;
+  void secondaryButtonClassName;
+  void dangerButtonClassName;
+  void handleMachineDelete;
+  void handleUsageDelete;
+  void handleScheduleDelete;
+  void handleMaintenanceLogDelete;
+  void handleDowntimeDelete;
+  void handleUtilityDelete;
+
   if (isLoading) {
     return (
       <section className="panel flex min-h-[320px] items-center justify-center p-8">
@@ -1438,7 +1451,7 @@ export function ProductionPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Machines</p>
               <p className="hero-metric-value">{machines.length}</p>
@@ -2232,35 +2245,16 @@ export function ProductionPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save machine"
+                    title="Save machine"
                 >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void handleMachineDelete()}
-                  disabled={!selectedMachineId || isMachinePending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isMachinePending}
-                  className={primaryButtonClassName}
-                >
-                  {isMachinePending ? (
-                    <>
+                    {isMachinePending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save machine"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -2394,35 +2388,16 @@ export function ProductionPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save usage log"
+                    title="Save usage log"
                 >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void handleUsageDelete()}
-                  disabled={!selectedUsageId || isUsagePending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isUsagePending}
-                  className={primaryButtonClassName}
-                >
-                  {isUsagePending ? (
-                    <>
+                    {isUsagePending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save usage log"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -2617,33 +2592,16 @@ export function ProductionPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save schedule"
+                    title="Save schedule"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleScheduleDelete()}
-                  disabled={!selectedScheduleId || isSchedulePending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSchedulePending}
-                  className={primaryButtonClassName}
-                >
-                  {isSchedulePending ? (
-                    <>
+                    {isSchedulePending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save schedule"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -2884,33 +2842,14 @@ export function ProductionPage() {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className={secondaryButtonClassName}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleMaintenanceLogDelete()}
-                    disabled={
-                      !selectedMaintenanceLogId || isMaintenanceLogPending
-                    }
-                    className={dangerButtonClassName}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isMaintenanceLogPending}
-                    className={primaryButtonClassName}
+                    className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save maintenance log"
+                    title="Save maintenance log"
                   >
                     {isMaintenanceLogPending ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving
-                      </>
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Save maintenance log"
+                      <Check className="h-4 w-4" />
                     )}
                   </button>
                 </div>
@@ -3086,35 +3025,16 @@ export function ProductionPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save downtime record"
+                    title="Save downtime record"
                 >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void handleDowntimeDelete()}
-                  disabled={!selectedDowntimeId || isDowntimePending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isDowntimePending}
-                  className={primaryButtonClassName}
-                >
-                  {isDowntimePending ? (
-                    <>
+                    {isDowntimePending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save downtime record"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3269,35 +3189,16 @@ export function ProductionPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save utility log"
+                    title="Save utility log"
                 >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void handleUtilityDelete()}
-                  disabled={!selectedUtilityId || isUtilityPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isUtilityPending}
-                  className={primaryButtonClassName}
-                >
-                  {isUtilityPending ? (
-                    <>
+                    {isUtilityPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save utility log"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>

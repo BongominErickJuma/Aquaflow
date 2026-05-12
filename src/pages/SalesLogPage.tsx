@@ -10,7 +10,15 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import { createPortal } from "react-dom";
 import { ApiError } from "../lib/api/auth";
 import {
   fetchSalesLog,
@@ -27,6 +35,16 @@ import type {
 } from "../types/sales";
 type DatePreset = "today" | "7days" | "month";
 type PageSizeOption = 5 | 6 | 10;
+type FloatingPickerPosition = CSSProperties & {
+  left: number;
+  top: number;
+  width: number;
+};
+
+const tableToolbarClassName =
+  "relative z-30 flex flex-nowrap items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-2";
+const tableToolbarActionsClassName =
+  "ml-auto flex shrink-0 items-center gap-2";
 
 function parseDateOnly(value: string) {
   const [year, month, day] = value.split("-").map(Number);
@@ -186,8 +204,11 @@ export function SalesLogPage() {
   );
   const [detailLoading, setDetailLoading] = useState(false);
   const [activePicker, setActivePicker] = useState<"date" | null>(null);
+  const [pickerPosition, setPickerPosition] =
+    useState<FloatingPickerPosition | null>(null);
   const deferredSearch = useDeferredValue(searchValue);
   const pickerContainerRef = useRef<HTMLDivElement | null>(null);
+  const pickerDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -260,14 +281,50 @@ export function SalesLogPage() {
     if (!activePicker) return;
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!pickerContainerRef.current?.contains(event.target as Node)) {
-        setActivePicker(null);
+      const target = event.target as Node;
+      if (
+        pickerContainerRef.current?.contains(target) ||
+        pickerDropdownRef.current?.contains(target)
+      ) {
+        return;
       }
+
+      setActivePicker(null);
+      setPickerPosition(null);
+    };
+
+    const handleViewportChange = () => {
+      setActivePicker(null);
+      setPickerPosition(null);
     };
 
     window.addEventListener("mousedown", handlePointerDown);
-    return () => window.removeEventListener("mousedown", handlePointerDown);
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("scroll", handleViewportChange, true);
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("scroll", handleViewportChange, true);
+    };
   }, [activePicker]);
+
+  const toggleDatePicker = (element: HTMLButtonElement) => {
+    if (activePicker === "date") {
+      setActivePicker(null);
+      setPickerPosition(null);
+      return;
+    }
+
+    const rect = element.getBoundingClientRect();
+    const width = Math.max(rect.width, 180);
+    const left = Math.min(Math.max(rect.left, 16), window.innerWidth - width - 16);
+    setPickerPosition({
+      left,
+      top: rect.bottom + 8,
+      width,
+    });
+    setActivePicker("date");
+  };
 
   useEffect(() => {
     if (!selectedSaleId) {
@@ -397,7 +454,7 @@ export function SalesLogPage() {
               </p>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Total sales today</p>
               <p className="hero-metric-value">
@@ -445,12 +502,17 @@ export function SalesLogPage() {
       <div className="module-page-stage justify-start">
         <section className="panel p-6">
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div
+              className={[
+                tableToolbarClassName,
+                "scrollbar-hidden overflow-x-auto",
+              ].join(" ")}
+            >
               <div
                 ref={pickerContainerRef}
-                className="flex flex-col gap-3 lg:flex-row lg:items-center"
+                className="flex min-w-max items-center gap-2"
               >
-                <label className="flex min-w-[260px] items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5 text-sm text-slate-600">
+                <label className="flex h-11 min-w-[240px] items-center gap-2 rounded-2xl border border-slate-200/80 bg-white px-3 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                   <Search className="h-4 w-4 text-slate-400" />
                   <input
                     className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
@@ -463,12 +525,8 @@ export function SalesLogPage() {
                 <div className="relative min-w-[180px]">
                   <button
                     type="button"
-                    onClick={() =>
-                      setActivePicker((current) =>
-                        current === "date" ? null : "date",
-                      )
-                    }
-                    className="inline-flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                    onClick={(event) => toggleDatePicker(event.currentTarget)}
+                    className="inline-flex h-11 w-full items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white px-3 text-sm font-medium text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.04)] transition hover:border-slate-300"
                     aria-haspopup="listbox"
                     aria-expanded={activePicker === "date"}
                   >
@@ -484,41 +542,52 @@ export function SalesLogPage() {
                     />
                   </button>
 
-                  {activePicker === "date" ? (
-                    <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-                      <div className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                        Date range
-                      </div>
-                      {[
-                        { label: "Today", value: "today" as const },
-                        { label: "7 days", value: "7days" as const },
-                        { label: "This month", value: "month" as const },
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => {
-                            setDatePreset(option.value);
-                            setActivePicker(null);
-                          }}
-                          className={[
-                            "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
-                            datePreset === option.value
-                              ? "bg-sky-50 text-sky-700"
-                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                          ].join(" ")}
+                  {activePicker === "date" && pickerPosition
+                    ? createPortal(
+                        <div
+                          ref={pickerDropdownRef}
+                          className="fixed z-50 rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.14)]"
+                          style={pickerPosition}
                         >
-                          <span>{option.label}</span>
-                          {datePreset === option.value ? (
-                            <Check className="h-4 w-4" />
-                          ) : null}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
+                          <div className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                            Date range
+                          </div>
+                          {[
+                            { label: "Today", value: "today" as const },
+                            { label: "7 days", value: "7days" as const },
+                            { label: "This month", value: "month" as const },
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                setDatePreset(option.value);
+                                setActivePicker(null);
+                                setPickerPosition(null);
+                              }}
+                              className={[
+                                "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition",
+                                datePreset === option.value
+                                  ? "bg-sky-50 text-sky-700"
+                                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                              ].join(" ")}
+                            >
+                              <span>{option.label}</span>
+                              {datePreset === option.value ? (
+                                <Check className="h-4 w-4" />
+                              ) : null}
+                            </button>
+                          ))}
+                        </div>,
+                        document.body,
+                      )
+                    : null}
                 </div>
 
-                <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-1">
+                <div className="inline-flex h-11 items-center gap-1 rounded-2xl border border-slate-200/80 bg-white p-1 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                  <span className="hidden px-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400 sm:inline">
+                    Rows
+                  </span>
                   {([10, 6, 5] as const).map((option) => (
                     <button
                       key={option}
@@ -527,7 +596,7 @@ export function SalesLogPage() {
                       className={[
                         "rounded-[1rem] px-3 py-1.5 text-sm font-medium transition",
                         pageSize === option
-                          ? "bg-white text-sky-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                          ? "bg-sky-50 text-sky-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
                           : "text-slate-500 hover:text-slate-800",
                       ].join(" ")}
                       aria-pressed={pageSize === option}
@@ -538,8 +607,8 @@ export function SalesLogPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 xl:justify-end">
-                <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-1">
+              <div className={tableToolbarActionsClassName}>
+                <div className="inline-flex h-11 items-center gap-1 rounded-2xl border border-slate-200/80 bg-white p-1 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                   <button
                     type="button"
                     onClick={() =>

@@ -6,8 +6,10 @@ import {
   LoaderCircle,
   Pencil,
   Plus,
+  Search,
   ShieldAlert,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   useEffect,
@@ -97,6 +99,10 @@ const iconButtonClassName =
   "inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70";
 const tableActionButtonClassName =
   "inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50";
+const tableToolbarClassName =
+  "scrollbar-hidden flex items-center gap-2 overflow-x-auto rounded-2xl border border-slate-200/80 bg-slate-50/70 p-2";
+const tableToolbarActionsClassName =
+  "ml-auto flex shrink-0 items-center gap-2";
 
 type ActiveModal =
   | "department"
@@ -187,8 +193,11 @@ function TablePaginationControls({
   onNext: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-1">
+    <div className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-slate-200/80 bg-white p-1 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+      <div className="hidden px-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400 sm:block">
+        Rows
+      </div>
+      <div className="inline-flex items-center gap-1">
         {pageSizeOptions.map((option) => (
           <button
             key={option}
@@ -197,7 +206,7 @@ function TablePaginationControls({
             className={[
               "rounded-[1rem] px-3 py-1.5 text-sm font-medium transition",
               pageSize === option
-                ? "bg-white text-sky-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                ? "bg-sky-50 text-sky-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
                 : "text-slate-500 hover:text-slate-800",
             ].join(" ")}
             aria-pressed={pageSize === option}
@@ -207,7 +216,9 @@ function TablePaginationControls({
         ))}
       </div>
 
-      <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-1">
+      <div className="h-7 w-px bg-slate-200" />
+
+      <div className="inline-flex items-center gap-1">
         <button
           type="button"
           onClick={onPrevious}
@@ -435,13 +446,16 @@ function TableSearchField({
   placeholder: string;
 }) {
   return (
-    <input
-      type="search"
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      placeholder={placeholder}
-      className={`${fieldClassName} max-w-sm`}
-    />
+    <label className="flex h-11 w-full min-w-[220px] max-w-sm items-center gap-2 rounded-2xl border border-slate-200/80 bg-white px-3 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+      <Search className="h-4 w-4 shrink-0 text-slate-400" />
+      <input
+        type="search"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+      />
+    </label>
   );
 }
 
@@ -1469,6 +1483,20 @@ export function WorkforcePage() {
     }
   };
 
+  void Trash2;
+  void X;
+  void deleteAttendanceRecord;
+  void deleteDepartment;
+  void deleteEmployee;
+  void deletePayrollRecord;
+  void deletePerformanceRecord;
+  void deleteShift;
+  void deleteTask;
+  void primaryButtonClassName;
+  void secondaryButtonClassName;
+  void dangerButtonClassName;
+  void handleDelete;
+
   if (!canManageWorkforce) {
     return (
       <section className="panel max-w-3xl p-8">
@@ -1536,7 +1564,7 @@ export function WorkforcePage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Employees</p>
               <p className="hero-metric-value">{totalEmployees}</p>
@@ -1572,14 +1600,14 @@ export function WorkforcePage() {
         <div className="space-y-6">
           {activeTab === "departments" ? (
             <section className="panel p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="section-label">Departments</p>
                   <h2 className="mt-1 text-2xl font-semibold text-slate-900">
                     Department setup
                   </h2>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className={tableToolbarClassName}>
                   <TablePaginationControls
                     pageSize={pageSize}
                     currentPage={departmentPage}
@@ -1718,15 +1746,15 @@ export function WorkforcePage() {
           {activeTab === "employees" ? (
             <section className="panel p-6">
               <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="flex-1 min-w-[240px]">
+                <div className={tableToolbarClassName}>
+                  <div className="min-w-[220px] flex-1">
                     <TableSearchField
                       value={employeeSearch}
                       onChange={setEmployeeSearch}
                       placeholder="Search employees"
                     />
                   </div>
-                  <div className="flex flex-wrap items-center gap-3">
+                  <div className={tableToolbarActionsClassName}>
                     <TablePaginationControls
                       pageSize={pageSize}
                       currentPage={employeePage}
@@ -1938,14 +1966,14 @@ export function WorkforcePage() {
 
           {activeTab === "shifts" ? (
             <section className="panel p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="section-label">Shifts</p>
                   <h2 className="mt-1 text-2xl font-semibold text-slate-900">
                     Shift setup
                   </h2>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className={tableToolbarClassName}>
                   <TablePaginationControls
                     pageSize={pageSize}
                     currentPage={shiftPage}
@@ -2108,15 +2136,15 @@ export function WorkforcePage() {
         <div className="space-y-6">
           {activeTab === "attendance" ? (
             <section className="panel p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex-1 min-w-[240px]">
+              <div className={tableToolbarClassName}>
+                <div className="min-w-[220px] flex-1">
                   <TableSearchField
                     value={attendanceSearch}
                     onChange={setAttendanceSearch}
                     placeholder="Search attendance"
                   />
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className={tableToolbarActionsClassName}>
                   <TablePaginationControls
                     pageSize={pageSize}
                     currentPage={attendancePage}
@@ -2301,15 +2329,15 @@ export function WorkforcePage() {
 
           {activeTab === "payroll" ? (
             <section className="panel p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex-1 min-w-[240px]">
+              <div className={tableToolbarClassName}>
+                <div className="min-w-[220px] flex-1">
                   <TableSearchField
                     value={payrollSearch}
                     onChange={setPayrollSearch}
                     placeholder="Search payroll"
                   />
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className={tableToolbarActionsClassName}>
                   <TablePaginationControls
                     pageSize={pageSize}
                     currentPage={payrollPage}
@@ -2492,15 +2520,15 @@ export function WorkforcePage() {
         <div className="space-y-6">
           {activeTab === "tasks" ? (
             <section className="panel p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex-1 min-w-[240px]">
+              <div className={tableToolbarClassName}>
+                <div className="min-w-[220px] flex-1">
                   <TableSearchField
                     value={taskSearch}
                     onChange={setTaskSearch}
                     placeholder="Search tasks"
                   />
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className={tableToolbarActionsClassName}>
                   <TablePaginationControls
                     pageSize={pageSize}
                     currentPage={taskPage}
@@ -2691,15 +2719,15 @@ export function WorkforcePage() {
 
           {activeTab === "performance" ? (
             <section className="panel p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex-1 min-w-[240px]">
+              <div className={tableToolbarClassName}>
+                <div className="min-w-[220px] flex-1">
                   <TableSearchField
                     value={performanceSearch}
                     onChange={setPerformanceSearch}
                     placeholder="Search reviews"
                   />
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className={tableToolbarActionsClassName}>
                   <TablePaginationControls
                     pageSize={pageSize}
                     currentPage={performancePage}
@@ -2941,41 +2969,16 @@ export function WorkforcePage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save department"
+                    title="Save department"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleDelete(
-                      "department",
-                      selectedDepartmentId,
-                      setDepartmentError,
-                      setIsDepartmentPending,
-                      deleteDepartment,
-                    )
-                  }
-                  disabled={!selectedDepartmentId || isDepartmentPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isDepartmentPending}
-                  className={primaryButtonClassName}
-                >
-                  {isDepartmentPending ? (
-                    <>
+                    {isDepartmentPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save department"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3215,41 +3218,16 @@ export function WorkforcePage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save employee"
+                    title="Save employee"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleDelete(
-                      "employee",
-                      selectedEmployeeId,
-                      setEmployeeError,
-                      setIsEmployeePending,
-                      deleteEmployee,
-                    )
-                  }
-                  disabled={!selectedEmployeeId || isEmployeePending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isEmployeePending}
-                  className={primaryButtonClassName}
-                >
-                  {isEmployeePending ? (
-                    <>
+                    {isEmployeePending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save employee"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3361,41 +3339,16 @@ export function WorkforcePage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save shift"
+                    title="Save shift"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleDelete(
-                      "shift",
-                      selectedShiftId,
-                      setShiftError,
-                      setIsShiftPending,
-                      deleteShift,
-                    )
-                  }
-                  disabled={!selectedShiftId || isShiftPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isShiftPending}
-                  className={primaryButtonClassName}
-                >
-                  {isShiftPending ? (
-                    <>
+                    {isShiftPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save shift"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3549,41 +3502,16 @@ export function WorkforcePage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save attendance"
+                    title="Save attendance"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleDelete(
-                      "attendance",
-                      selectedAttendanceId,
-                      setAttendanceError,
-                      setIsAttendancePending,
-                      deleteAttendanceRecord,
-                    )
-                  }
-                  disabled={!selectedAttendanceId || isAttendancePending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isAttendancePending}
-                  className={primaryButtonClassName}
-                >
-                  {isAttendancePending ? (
-                    <>
+                    {isAttendancePending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save attendance"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3766,41 +3694,16 @@ export function WorkforcePage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save payroll"
+                    title="Save payroll"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleDelete(
-                      "payroll",
-                      selectedPayrollId,
-                      setPayrollError,
-                      setIsPayrollPending,
-                      deletePayrollRecord,
-                    )
-                  }
-                  disabled={!selectedPayrollId || isPayrollPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPayrollPending}
-                  className={primaryButtonClassName}
-                >
-                  {isPayrollPending ? (
-                    <>
+                    {isPayrollPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save payroll"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -3956,41 +3859,16 @@ export function WorkforcePage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save task"
+                    title="Save task"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleDelete(
-                      "task",
-                      selectedTaskId,
-                      setTaskError,
-                      setIsTaskPending,
-                      deleteTask,
-                    )
-                  }
-                  disabled={!selectedTaskId || isTaskPending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isTaskPending}
-                  className={primaryButtonClassName}
-                >
-                  {isTaskPending ? (
-                    <>
+                    {isTaskPending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save task"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>
@@ -4143,41 +4021,16 @@ export function WorkforcePage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className={secondaryButtonClassName}
+                  className="modal-icon-button modal-icon-button-primary"
+                    aria-label="Save performance"
+                    title="Save performance"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleDelete(
-                      "performance",
-                      selectedPerformanceId,
-                      setPerformanceError,
-                      setIsPerformancePending,
-                      deletePerformanceRecord,
-                    )
-                  }
-                  disabled={!selectedPerformanceId || isPerformancePending}
-                  className={dangerButtonClassName}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPerformancePending}
-                  className={primaryButtonClassName}
-                >
-                  {isPerformancePending ? (
-                    <>
+                    {isPerformancePending ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save performance"
-                  )}
-                </button>
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
               </div>
             </form>
           </FormPanel>

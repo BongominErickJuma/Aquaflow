@@ -5,6 +5,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   useEffect,
@@ -1028,6 +1029,18 @@ export function FinancePage() {
     }
   }
 
+  void Trash2;
+  void deleteCapitalRecord;
+  void deleteExpense;
+  void deleteInsuranceRecord;
+  void deleteInvoice;
+  void deleteOperatingCost;
+  void deleteProfitabilitySnapshot;
+  void deleteReceipt;
+  void primaryButtonClassName;
+  void dangerButtonClassName;
+  void runDelete;
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -1065,7 +1078,7 @@ export function FinancePage() {
               </p>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Invoices</p>
               <p className="hero-metric-value">{invoices.length}</p>
@@ -1690,48 +1703,29 @@ export function FinancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={capitalError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedCapitalId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={capitalPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteCapitalRecord(selectedCapitalId),
-                      resetCapitalForm,
-                      setCapitalError,
-                      setCapitalPending,
-                      "Unable to delete capital record.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={capitalPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={capitalPending}
-                >
-                  {capitalPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedCapitalId ? "Save changes" : "Create capital record"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={capitalPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {capitalPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -1837,50 +1831,29 @@ export function FinancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={operatingError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedOperatingId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={operatingPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteOperatingCost(selectedOperatingId),
-                      resetOperatingForm,
-                      setOperatingError,
-                      setOperatingPending,
-                      "Unable to delete operating cost.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={operatingPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={operatingPending}
-                >
-                  {operatingPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedOperatingId
-                    ? "Save changes"
-                    : "Create operating cost"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={operatingPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {operatingPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -1984,48 +1957,29 @@ export function FinancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={expenseError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedExpenseId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={expensePending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteExpense(selectedExpenseId),
-                      resetExpenseForm,
-                      setExpenseError,
-                      setExpensePending,
-                      "Unable to delete expense.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={expensePending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={expensePending}
-                >
-                  {expensePending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedExpenseId ? "Save changes" : "Create expense"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={expensePending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {expensePending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2141,48 +2095,29 @@ export function FinancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={invoiceError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedInvoiceId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={invoicePending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteInvoice(selectedInvoiceId),
-                      resetInvoiceForm,
-                      setInvoiceError,
-                      setInvoicePending,
-                      "Unable to delete invoice.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={invoicePending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={invoicePending}
-                >
-                  {invoicePending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedInvoiceId ? "Save changes" : "Create invoice"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={invoicePending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {invoicePending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2297,48 +2232,29 @@ export function FinancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={receiptError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedReceiptId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={receiptPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteReceipt(selectedReceiptId),
-                      resetReceiptForm,
-                      setReceiptError,
-                      setReceiptPending,
-                      "Unable to delete receipt.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={receiptPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={receiptPending}
-                >
-                  {receiptPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedReceiptId ? "Save changes" : "Create receipt"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={receiptPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {receiptPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2506,50 +2422,29 @@ export function FinancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={insuranceError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedInsuranceId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={insurancePending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteInsuranceRecord(selectedInsuranceId),
-                      resetInsuranceForm,
-                      setInsuranceError,
-                      setInsurancePending,
-                      "Unable to delete insurance record.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={insurancePending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={insurancePending}
-                >
-                  {insurancePending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedInsuranceId
-                    ? "Save changes"
-                    : "Create insurance record"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={insurancePending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {insurancePending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>
@@ -2634,48 +2529,29 @@ export function FinancePage() {
               </div>
             </FormPanel>
             <FieldMessage message={snapshotError} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {selectedSnapshotId ? (
-                <button
-                  type="button"
-                  className={dangerButtonClassName}
-                  disabled={snapshotPending}
-                  onClick={() =>
-                    void runDelete(
-                      () => deleteProfitabilitySnapshot(selectedSnapshotId),
-                      resetSnapshotForm,
-                      setSnapshotError,
-                      setSnapshotPending,
-                      "Unable to delete profitability snapshot.",
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              ) : (
-                <span />
-              )}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={secondaryButtonClassName}
-                  disabled={snapshotPending}
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={primaryButtonClassName}
-                  disabled={snapshotPending}
-                >
-                  {snapshotPending ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : null}
-                  {selectedSnapshotId ? "Save changes" : "Create snapshot"}
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <button
+                type="submit"
+                disabled={snapshotPending}
+                className="modal-icon-button modal-icon-button-primary"
+                aria-label="Save changes"
+                title="Save changes"
+              >
+                {snapshotPending ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+              </button>
             </div>
           </form>
         </ModalShell>

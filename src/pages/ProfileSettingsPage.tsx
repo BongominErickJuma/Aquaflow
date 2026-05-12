@@ -210,7 +210,7 @@ export function ProfileSettingsPage() {
               </div>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
             <div className="hero-metric-card">
               <p className="hero-metric-label">Role</p>
               <p className="hero-metric-value text-xl">
