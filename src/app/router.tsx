@@ -15,7 +15,6 @@ import { NotificationsPage } from "../pages/NotificationsPage";
 import { OrdersPage } from "../pages/OrdersPage";
 import { ProductionPage } from "../pages/ProductionPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
-import { PlaceholderPage } from "../pages/PlaceholderPage";
 import { SalesPage } from "../pages/SalesPage";
 import { SalesLogPage } from "../pages/SalesLogPage";
 import { WorkforcePage } from "../pages/WorkforcePage";
@@ -80,15 +79,6 @@ export const router = createBrowserRouter([
           {
             path: "messages",
             element: <MessagesPage />,
-          },
-          {
-            path: "pos",
-            element: (
-              <PlaceholderPage
-                title="Point of Sale"
-                description="We have just added another module called Point of sale (POS). Barcode/QR scanning via hardware scanners and device cameras"
-              />
-            ),
           },
           {
             path: "sales",

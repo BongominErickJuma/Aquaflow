@@ -14,7 +14,6 @@ import {
   TrendingUp,
   UsersRound,
   VibrateIcon,
-  Wallet2Icon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -564,13 +563,6 @@ export function DashboardPage() {
       tone: "bg-[linear-gradient(135deg,#d17763,#c55a4b)]",
     },
     {
-      label: "POS",
-      route: "/pos",
-      note: "2 active tills",
-      icon: Wallet2Icon,
-      tone: "bg-[linear-gradient(135deg,#6a88cf,#4970c7)]",
-    },
-    {
       label: "Finance",
       route: "/finance",
       note: `${paidInvoices}/${totalInvoices} paid`,
@@ -635,7 +627,7 @@ export function DashboardPage() {
   ];
 
   return (
-    <div className="scrollbar-hidden flex min-h-full flex-col gap-4 overflow-y-auto pb-6">
+    <div className="scrollbar-hidden flex h-full min-h-0 flex-col gap-4 overflow-y-auto pb-6">
       <motion.section
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}

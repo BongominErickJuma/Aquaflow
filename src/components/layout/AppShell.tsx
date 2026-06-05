@@ -19,7 +19,6 @@ import {
   Users,
   UsersRound,
   VibrateIcon,
-  Wallet2Icon,
   LogOut,
   UserCircle2,
   Mail,
@@ -81,7 +80,6 @@ const navigation: NavigationItem[] = [
     icon: NotebookText,
     adminOnly: false,
   },
-  { label: "POS", href: "/pos", icon: Wallet2Icon, adminOnly: false },
   { label: "Finance", href: "/finance", icon: Coins, adminOnly: false },
   {
     label: "Members",

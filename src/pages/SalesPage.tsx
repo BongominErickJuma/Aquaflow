@@ -39,7 +39,7 @@ import type {
 } from "../types/sales";
 import type { EmployeeRecord } from "../types/workforce";
 
-type SalesTab = "sales" | "items" | "payments" | "clients";
+type SalesTab = "sales" | "items" | "payments" | "clients" | "categories";
 type ActiveModal = "sale" | "item" | "payment" | "client" | "category" | null;
 
 const tabs: { id: SalesTab; label: string }[] = [
@@ -47,10 +47,17 @@ const tabs: { id: SalesTab; label: string }[] = [
   { id: "items", label: "Items" },
   { id: "payments", label: "Payments" },
   { id: "clients", label: "Clients" },
+  { id: "categories", label: "Client Categories" },
 ];
 
 const salesMilestoneFlow: Array<{ id: SalesTab; label: string; detail: string }> =
   [
+    {
+      id: "categories",
+      label: "Client Categories",
+      detail:
+        "Create and manage customer categories here. Next, assign categories to client records.",
+    },
     {
       id: "clients",
       label: "Clients",
@@ -102,9 +109,21 @@ function today() {
 function formatMoney(value: string | number | null | undefined) {
   const amount =
     typeof value === "number" ? value : Number.parseFloat(value ?? "0");
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const absoluteAmount = Math.abs(safeAmount);
+
+  if (absoluteAmount >= 1_000_000) {
+    const millions = safeAmount / 1_000_000;
+    const truncatedMillions = Math.trunc(millions * 10) / 10;
+    const formattedMillions = Number.isInteger(truncatedMillions)
+      ? truncatedMillions.toFixed(0)
+      : truncatedMillions.toFixed(1);
+    return `UGX ${formattedMillions}m`;
+  }
+
   return `UGX ${new Intl.NumberFormat("en-UG", {
     maximumFractionDigits: 2,
-  }).format(Number.isFinite(amount) ? amount : 0)}`;
+  }).format(safeAmount)}`;
 }
 
 function titleCase(value: string) {
@@ -128,6 +147,17 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 function createEmptyCategoryForm(): CustomerCategoryPayload {
   return { name: "", description: "", is_active: true };
+}
+
+function buildCategoryForm(
+  record: CustomerCategoryRecord | null,
+): CustomerCategoryPayload {
+  if (!record) return createEmptyCategoryForm();
+  return {
+    name: record.name,
+    description: record.description,
+    is_active: record.is_active,
+  };
 }
 
 function createEmptyClientForm(): ClientPayload {
@@ -532,6 +562,12 @@ export function SalesPage() {
     setActiveModal("client");
   }
 
+  function openEditCategory(record: CustomerCategoryRecord) {
+    setSelectedCategoryId(record.id);
+    setCategoryForm(buildCategoryForm(record));
+    setActiveModal("category");
+  }
+
   function openEditSale(record: SaleRecord) {
     setSelectedSaleId(record.id);
     setSaleForm(buildSaleForm(record));
@@ -689,6 +725,64 @@ export function SalesPage() {
               <EmptyState
                 title="No payments yet"
                 description="Record a payment after the sale exists."
+                className={`${recordCardClassName} justify-center`}
+              />
+            )}
+          </div>
+        </section>
+      );
+    }
+
+    if (activeTab === "categories") {
+      return (
+        <section className="panel p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="section-label">Client Categories</p>
+              <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                Customer grouping
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal("category")}
+              className={iconButtonClassName}
+              aria-label="Add client category"
+              title="Add client category"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+            {categories.length ? (
+              categories.map((category) => (
+                <div key={category.id} className={recordCardClassName}>
+                  <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                    <p className="font-semibold text-slate-900">
+                      {category.name}
+                    </p>
+                    <p className="mt-3 text-sm text-slate-600">
+                      {category.description || "No description"}
+                    </p>
+                    <p className="mt-3 text-sm text-slate-500">
+                      {category.is_active ? "Active" : "Inactive"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openEditCategory(category)}
+                    className={recordEditButtonClassName}
+                    aria-label={`Edit ${category.name}`}
+                    title={`Edit ${category.name}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <EmptyState
+                title="No client categories yet"
+                description="Create categories before assigning them to clients."
                 className={`${recordCardClassName} justify-center`}
               />
             )}
@@ -1037,149 +1131,155 @@ export function SalesPage() {
 
     if (activeModal === "client") {
       return (
-        <div className="space-y-6">
-          <FormPanel label="Clients" title="Client form">
-            <form onSubmit={submitClient} className="grid gap-4">
+        <FormPanel label="Clients" title="Client form">
+          <form onSubmit={submitClient} className="grid gap-4">
+            <input
+              className={fieldClassName}
+              placeholder="Client name"
+              value={clientForm.name}
+              onChange={(event) =>
+                setClientForm((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+              required
+            />
+            <PickerField
+              value={clientForm.category ? String(clientForm.category) : ""}
+              options={[
+                { label: "No category", value: "" },
+                ...categories.map((category) => ({
+                  label: category.name,
+                  value: String(category.id),
+                  searchText: category.name,
+                })),
+              ]}
+              searchable
+              searchPlaceholder="Search categories"
+              onChange={(value) =>
+                setClientForm((current) => ({
+                  ...current,
+                  category: value ? Number(value) : null,
+                }))
+              }
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
               <input
                 className={fieldClassName}
-                placeholder="Client name"
-                value={clientForm.name}
+                placeholder="Contact person"
+                value={clientForm.contact_person}
                 onChange={(event) =>
                   setClientForm((current) => ({
                     ...current,
-                    name: event.target.value,
-                  }))
-                }
-                required
-              />
-              <PickerField
-                value={clientForm.category ? String(clientForm.category) : ""}
-                options={[
-                  { label: "No category", value: "" },
-                  ...categories.map((category) => ({
-                    label: category.name,
-                    value: String(category.id),
-                    searchText: category.name,
-                  })),
-                ]}
-                searchable
-                searchPlaceholder="Search categories"
-                onChange={(value) =>
-                  setClientForm((current) => ({
-                    ...current,
-                    category: value ? Number(value) : null,
-                  }))
-                }
-              />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <input
-                  className={fieldClassName}
-                  placeholder="Contact person"
-                  value={clientForm.contact_person}
-                  onChange={(event) =>
-                    setClientForm((current) => ({
-                      ...current,
-                      contact_person: event.target.value,
-                    }))
-                  }
-                />
-                <input
-                  className={fieldClassName}
-                  placeholder="Phone"
-                  value={clientForm.phone}
-                  onChange={(event) =>
-                    setClientForm((current) => ({
-                      ...current,
-                      phone: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <input
-                className={fieldClassName}
-                placeholder="Email"
-                type="email"
-                value={clientForm.email}
-                onChange={(event) =>
-                  setClientForm((current) => ({
-                    ...current,
-                    email: event.target.value,
+                    contact_person: event.target.value,
                   }))
                 }
               />
               <input
                 className={fieldClassName}
-                placeholder="Credit limit"
-                value={clientForm.credit_limit}
+                placeholder="Phone"
+                value={clientForm.phone}
                 onChange={(event) =>
                   setClientForm((current) => ({
                     ...current,
-                    credit_limit: event.target.value,
+                    phone: event.target.value,
                   }))
                 }
               />
-              <textarea
-                className={`${fieldClassName} min-h-24`}
-                placeholder="Address"
-                value={clientForm.address}
-                onChange={(event) =>
-                  setClientForm((current) => ({
-                    ...current,
-                    address: event.target.value,
-                  }))
-                }
-              />
-              <button
-                type="submit"
-                className={primaryButtonClassName}
-                disabled={pending === "client"}
-              >
-                {pending === "client" ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-                Create client
-              </button>
-            </form>
-          </FormPanel>
-
-          <FormPanel label="Categories" title="Category form">
-            <form onSubmit={submitCategory} className="grid gap-4">
-              <input
-                className={fieldClassName}
-                placeholder="Category name"
-                value={categoryForm.name}
-                onChange={(event) =>
-                  setCategoryForm((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                required
-              />
-              <input
-                className={fieldClassName}
-                placeholder="Description"
-                value={categoryForm.description}
-                onChange={(event) =>
-                  setCategoryForm((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-              />
-              <button
-                type="submit"
-                className={primaryButtonClassName}
-                disabled={pending === "category"}
-              >
+            </div>
+            <input
+              className={fieldClassName}
+              placeholder="Email"
+              type="email"
+              value={clientForm.email}
+              onChange={(event) =>
+                setClientForm((current) => ({
+                  ...current,
+                  email: event.target.value,
+                }))
+              }
+            />
+            <input
+              className={fieldClassName}
+              placeholder="Credit limit"
+              value={clientForm.credit_limit}
+              onChange={(event) =>
+                setClientForm((current) => ({
+                  ...current,
+                  credit_limit: event.target.value,
+                }))
+              }
+            />
+            <textarea
+              className={`${fieldClassName} min-h-24`}
+              placeholder="Address"
+              value={clientForm.address}
+              onChange={(event) =>
+                setClientForm((current) => ({
+                  ...current,
+                  address: event.target.value,
+                }))
+              }
+            />
+            <button
+              type="submit"
+              className={primaryButtonClassName}
+              disabled={pending === "client"}
+            >
+              {pending === "client" ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
                 <Plus className="h-4 w-4" />
-                Add category
-              </button>
-            </form>
-          </FormPanel>
-        </div>
+              )}
+              Create client
+            </button>
+          </form>
+        </FormPanel>
+      );
+    }
+
+    if (activeModal === "category") {
+      return (
+        <FormPanel label="Client Categories" title="Category form">
+          <form onSubmit={submitCategory} className="grid gap-4">
+            <input
+              className={fieldClassName}
+              placeholder="Category name"
+              value={categoryForm.name}
+              onChange={(event) =>
+                setCategoryForm((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
+              }
+              required
+            />
+            <input
+              className={fieldClassName}
+              placeholder="Description"
+              value={categoryForm.description}
+              onChange={(event) =>
+                setCategoryForm((current) => ({
+                  ...current,
+                  description: event.target.value,
+                }))
+              }
+            />
+            <button
+              type="submit"
+              className={primaryButtonClassName}
+              disabled={pending === "category"}
+            >
+              {pending === "category" ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              Add category
+            </button>
+          </form>
+        </FormPanel>
       );
     }
 
@@ -1360,7 +1460,9 @@ export function SalesPage() {
                     ? items.length
                     : activeTab === "payments"
                       ? payments.length
-                      : clients.length}{" "}
+                      : activeTab === "clients"
+                        ? clients.length
+                        : categories.length}{" "}
                 records
               </span>
               <button

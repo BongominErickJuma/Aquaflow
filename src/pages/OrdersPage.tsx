@@ -57,7 +57,13 @@ import type {
 import type { ClientRecord } from "../types/sales";
 import type { EmployeeRecord } from "../types/workforce";
 
-type OrdersTab = "orders" | "items" | "receiving" | "delivery";
+type OrdersTab =
+  | "orders"
+  | "items"
+  | "grn"
+  | "grnItems"
+  | "schedules"
+  | "deliveries";
 type ActiveModal =
   | "order"
   | "item"
@@ -70,8 +76,10 @@ type ActiveModal =
 const tabs: { id: OrdersTab; label: string }[] = [
   { id: "orders", label: "Orders" },
   { id: "items", label: "Items" },
-  { id: "receiving", label: "Receiving" },
-  { id: "delivery", label: "Delivery" },
+  { id: "grn", label: "GRN" },
+  { id: "grnItems", label: "GRN Items" },
+  { id: "schedules", label: "Delivery Schedules" },
+  { id: "deliveries", label: "Deliveries" },
 ];
 
 const ordersMilestoneFlow: Array<{
@@ -92,16 +100,28 @@ const ordersMilestoneFlow: Array<{
       "Attach products or direct item names to orders here. Before this, create the order. Next, receive goods.",
   },
   {
-    id: "receiving",
-    label: "Receiving",
+    id: "grn",
+    label: "GRN",
     detail:
-      "Create goods received notes and received item lines here. Before this, order items should exist. Next, manage delivery movement.",
+      "Create goods received note headers here. Before this, order headers should exist. Next, add GRN items.",
   },
   {
-    id: "delivery",
-    label: "Delivery",
+    id: "grnItems",
+    label: "GRN Items",
     detail:
-      "Schedule and record delivery movement here. Sales stays separate from this order movement workflow.",
+      "Add received product lines here. Before this, create the matching GRN header. Next, schedule delivery movement.",
+  },
+  {
+    id: "schedules",
+    label: "Delivery Schedules",
+    detail:
+      "Schedule delivery movement here. Before this, confirm the order and received goods are ready. Next, record actual delivery.",
+  },
+  {
+    id: "deliveries",
+    label: "Deliveries",
+    detail:
+      "Record completed delivery movement here. Sales stays separate from this order movement workflow.",
   },
 ];
 
@@ -788,41 +808,29 @@ export function OrdersPage() {
       );
     }
 
-    if (activeTab === "receiving") {
+    if (activeTab === "grn") {
       return (
         <section className="panel p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="section-label">Receiving</p>
+              <p className="section-label">GRN</p>
               <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                Goods received movement
+                Goods received notes
               </h2>
             </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => openCreateModal("grn")}
-                className={iconButtonClassName}
-                aria-label="Add goods received note"
-                title="Add goods received note"
-              >
-                <ClipboardCheck className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => openCreateModal("grnItem")}
-                className={iconButtonClassName}
-                aria-label="Add received line"
-                title="Add received line"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal("grn")}
+              className={iconButtonClassName}
+              aria-label="Add goods received note"
+              title="Add goods received note"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
           </div>
           <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-            {grns.length || grnItems.length ? (
-              <>
-                {grns.map((grn) => (
+            {grns.length ? (
+              grns.map((grn) => (
                 <div key={`grn-${grn.id}`} className={recordCardClassName}>
                   <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
                     <span className="inline-flex rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
@@ -854,12 +862,46 @@ export function OrdersPage() {
                     <Pencil className="h-4 w-4" />
                   </button>
                 </div>
-                ))}
-                {grnItems.map((item) => (
+              ))
+            ) : (
+              <EmptyState
+                title="No GRNs yet"
+                description="Create a goods received note header before adding received items."
+                className={`${recordCardClassName} justify-center`}
+              />
+            )}
+          </div>
+        </section>
+      );
+    }
+
+    if (activeTab === "grnItems") {
+      return (
+        <section className="panel p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="section-label">GRN Items</p>
+              <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                Received product lines
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal("grnItem")}
+              className={iconButtonClassName}
+              aria-label="Add GRN item"
+              title="Add GRN item"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+            {grnItems.length ? (
+              grnItems.map((item) => (
                 <div key={`grn-item-${item.id}`} className={recordCardClassName}>
                   <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
                     <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                      Received line
+                      GRN Item
                     </span>
                     <p className="mt-3 font-semibold text-slate-900">
                       {item.product_name || item.product_name_display}
@@ -884,12 +926,11 @@ export function OrdersPage() {
                     <Pencil className="h-4 w-4" />
                   </button>
                 </div>
-                ))}
-              </>
+              ))
             ) : (
               <EmptyState
-                title="No receiving records yet"
-                description="Create a GRN, then add received product lines."
+                title="No GRN items yet"
+                description="Add received product lines after creating a GRN."
                 className={`${recordCardClassName} justify-center`}
               />
             )}
@@ -898,41 +939,29 @@ export function OrdersPage() {
       );
     }
 
-    if (activeTab === "delivery") {
+    if (activeTab === "schedules") {
       return (
         <section className="panel p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="section-label">Delivery</p>
+              <p className="section-label">Delivery Schedules</p>
               <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                Scheduled and recorded movement
+                Planned movement
               </h2>
             </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => openCreateModal("schedule")}
-                className={iconButtonClassName}
-                aria-label="Add delivery schedule"
-                title="Add delivery schedule"
-              >
-                <Truck className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => openCreateModal("delivery")}
-                className={iconButtonClassName}
-                aria-label="Add delivery record"
-                title="Add delivery record"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal("schedule")}
+              className={iconButtonClassName}
+              aria-label="Add delivery schedule"
+              title="Add delivery schedule"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
           </div>
           <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
-            {schedules.length || deliveries.length ? (
-              <>
-                {schedules.map((schedule) => (
+            {schedules.length ? (
+              schedules.map((schedule) => (
                 <div key={`schedule-${schedule.id}`} className={recordCardClassName}>
                   <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
                     <span className="inline-flex rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
@@ -964,8 +993,42 @@ export function OrdersPage() {
                     <Pencil className="h-4 w-4" />
                   </button>
                 </div>
-                ))}
-                {deliveries.map((delivery) => (
+              ))
+            ) : (
+              <EmptyState
+                title="No delivery schedules yet"
+                description="Schedule delivery movement from an order."
+                className={`${recordCardClassName} justify-center`}
+              />
+            )}
+          </div>
+        </section>
+      );
+    }
+
+    if (activeTab === "deliveries") {
+      return (
+        <section className="panel p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="section-label">Deliveries</p>
+              <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                Completed movement records
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => openCreateModal("delivery")}
+              className={iconButtonClassName}
+              aria-label="Add delivery record"
+              title="Add delivery record"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
+            {deliveries.length ? (
+              deliveries.map((delivery) => (
                 <div key={`delivery-${delivery.id}`} className={recordCardClassName}>
                   <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
                     <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
@@ -997,12 +1060,11 @@ export function OrdersPage() {
                     <Pencil className="h-4 w-4" />
                   </button>
                 </div>
-                ))}
-              </>
+              ))
             ) : (
               <EmptyState
-                title="No delivery movement yet"
-                description="Schedule a delivery or record an actual delivery from an order."
+                title="No deliveries yet"
+                description="Record actual delivery movement from an order or schedule."
                 className={`${recordCardClassName} justify-center`}
               />
             )}
@@ -1329,10 +1391,9 @@ export function OrdersPage() {
     );
   }
 
-  function renderReceivingForms() {
+  function renderGrnForm() {
     return (
-      <div className="space-y-6">
-        <FormPanel label="Goods Received Notes" title="GRN form">
+      <FormPanel label="Goods Received Notes" title="GRN form">
           <form onSubmit={submitGrn} className="grid gap-4">
             <PickerField
               value={grnForm.order ? String(grnForm.order) : ""}
@@ -1410,9 +1471,13 @@ export function OrdersPage() {
               Create GRN
             </button>
           </form>
-        </FormPanel>
+      </FormPanel>
+    );
+  }
 
-        <FormPanel label="Receiving Lines" title="Receiving line form">
+  function renderGrnItemForm() {
+    return (
+        <FormPanel label="GRN Items" title="GRN item form">
           <form onSubmit={submitGrnItem} className="grid gap-4">
             <PickerField
               value={
@@ -1527,14 +1592,12 @@ export function OrdersPage() {
             </button>
           </form>
         </FormPanel>
-      </div>
     );
   }
 
-  function renderDeliveryForms() {
+  function renderScheduleForm() {
     return (
-      <div className="space-y-6">
-        <FormPanel label="Delivery Schedules" title="Schedule form">
+      <FormPanel label="Delivery Schedules" title="Schedule form">
           <form onSubmit={submitSchedule} className="grid gap-4">
             <PickerField
               value={scheduleForm.order ? String(scheduleForm.order) : ""}
@@ -1625,8 +1688,12 @@ export function OrdersPage() {
               Schedule delivery
             </button>
           </form>
-        </FormPanel>
+      </FormPanel>
+    );
+  }
 
+  function renderDeliveryForm() {
+    return (
         <FormPanel label="Delivery" title="Delivery form">
           <form onSubmit={submitDelivery} className="grid gap-4">
             <PickerField
@@ -1767,18 +1834,15 @@ export function OrdersPage() {
             </button>
           </form>
         </FormPanel>
-      </div>
     );
   }
 
   function renderActiveForm() {
     if (activeModal === "item") return renderItemForm();
-    if (activeModal === "grn" || activeModal === "grnItem") {
-      return renderReceivingForms();
-    }
-    if (activeModal === "schedule" || activeModal === "delivery") {
-      return renderDeliveryForms();
-    }
+    if (activeModal === "grn") return renderGrnForm();
+    if (activeModal === "grnItem") return renderGrnItemForm();
+    if (activeModal === "schedule") return renderScheduleForm();
+    if (activeModal === "delivery") return renderDeliveryForm();
     return renderOrderForm();
   }
 
@@ -1796,9 +1860,13 @@ export function OrdersPage() {
       ? orders.length
       : activeTab === "items"
         ? items.length
-        : activeTab === "receiving"
-          ? grns.length + grnItems.length
-          : schedules.length + deliveries.length;
+        : activeTab === "grn"
+          ? grns.length
+          : activeTab === "grnItems"
+            ? grnItems.length
+            : activeTab === "schedules"
+              ? schedules.length
+              : deliveries.length;
 
   return (
     <div className="module-page">
