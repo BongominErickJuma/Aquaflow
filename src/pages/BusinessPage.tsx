@@ -5,6 +5,7 @@ import {
   LoaderCircle,
   Pencil,
   Plus,
+  RefreshCw,
   ShieldAlert,
   Trash2,
   X,
@@ -513,9 +514,12 @@ function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            className="modal-close-button"
+            aria-label="Close"
+            title="Close"
           >
-            Close
+            <X className="h-4 w-4 sm:hidden" />
+            <span className="hidden sm:inline">Close</span>
           </button>
         </div>
         <div className="mt-6">{children}</div>
@@ -569,6 +573,7 @@ export function BusinessPage() {
 
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [pageError, setPageError] = useState("");
 
   const [companyForm, setCompanyForm] = useState<CompanyFormState>(
@@ -634,6 +639,30 @@ export function BusinessPage() {
     setPlanForm(createEmptyPlanForm());
   };
 
+  async function reloadBusinessData() {
+    const nextCompany = await fetchCompanyProfile();
+    setCompany(nextCompany);
+  }
+
+  async function handleRefreshBusinessData() {
+    setPageError("");
+    setIsRefreshing(true);
+
+    try {
+      await reloadBusinessData();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        setCompany(null);
+      } else if (error instanceof ApiError) {
+        setPageError(error.message);
+      } else {
+        setPageError("Unable to refresh the business module right now.");
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+
   useEffect(() => {
     let isMounted = true;
 
@@ -642,10 +671,7 @@ export function BusinessPage() {
       setPageError("");
 
       try {
-        const nextCompany = await fetchCompanyProfile();
-        if (isMounted) {
-          setCompany(nextCompany);
-        }
+        await reloadBusinessData();
       } catch (error) {
         if (!isMounted) {
           return;
@@ -1958,12 +1984,25 @@ export function BusinessPage() {
           </div>
           {activeTab !== "business" ? (
             <footer className="panel px-4 py-3">
-              <p className="text-sm leading-6 text-slate-600">
-                <span className="font-semibold text-sky-700">
-                  {activeBusinessStep.footerLabel}
-                </span>{" "}
-                {activeBusinessStep.detail}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+                <p className="leading-6">
+                  <span className="font-semibold text-sky-700">
+                    {activeBusinessStep.footerLabel}
+                  </span>{" "}
+                  {activeBusinessStep.detail}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleRefreshBusinessData()}
+                  disabled={isRefreshing}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                  />
+                  Refresh
+                </button>
+              </div>
             </footer>
           ) : null}
         </>

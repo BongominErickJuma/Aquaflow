@@ -4,12 +4,15 @@ import { PublicOnlyRoute } from "../components/auth/PublicOnlyRoute";
 import { AppShell } from "../components/layout/AppShell";
 import { BusinessPage } from "../pages/BusinessPage";
 import { CompliancePage } from "../pages/CompliancePage";
+import { CRMPage } from "../pages/CRMPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { FinancePage } from "../pages/FinancePage";
 import { InventoryPage } from "../pages/InventoryPage";
 import { LoginPage } from "../pages/LoginPage";
+import { MessagesPage } from "../pages/MessagesPage";
 import { MembersPage } from "../pages/MembersPage";
 import { NotificationsPage } from "../pages/NotificationsPage";
+import { OrdersPage } from "../pages/OrdersPage";
 import { ProductionPage } from "../pages/ProductionPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { PlaceholderPage } from "../pages/PlaceholderPage";
@@ -68,30 +71,15 @@ export const router = createBrowserRouter([
           },
           {
             path: "orders",
-            element: (
-              <PlaceholderPage
-                title="Orders"
-                description="We have just added another module called Orders to ease on the sales module"
-              />
-            ),
+            element: <OrdersPage />,
           },
           {
             path: "crm",
-            element: (
-              <PlaceholderPage
-                title="CRM"
-                description="Customer relationship management workspace for leads, opportunities, and follow-up activity."
-              />
-            ),
+            element: <CRMPage />,
           },
           {
             path: "messages",
-            element: (
-              <PlaceholderPage
-                title="Messages"
-                description="Messages workspace for communications, notifications, and discussions."
-              />
-            ),
+            element: <MessagesPage />,
           },
           {
             path: "pos",

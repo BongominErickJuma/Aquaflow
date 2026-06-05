@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   Pencil,
   Plus,
+  RefreshCw,
   Search,
   ShieldAlert,
   Trash2,
@@ -608,9 +609,12 @@ function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            className="modal-close-button"
+            aria-label="Close"
+            title="Close"
           >
-            Close
+            <X className="h-4 w-4 sm:hidden" />
+            <span className="hidden sm:inline">Close</span>
           </button>
         </div>
         <div className="mt-6">{children}</div>
@@ -649,6 +653,7 @@ export function WorkforcePage() {
     { id: "performance", label: "Performance" },
   ];
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [pageError, setPageError] = useState("");
 
   const [departments, setDepartments] = useState<DepartmentRecord[]>([]);
@@ -905,6 +910,24 @@ export function WorkforcePage() {
     setEmployeeOptions(nextEmployeeOptions);
     setShiftOptions(nextShiftOptions);
     setUsers(nextUsers);
+  }
+
+  async function handleRefreshWorkforceData() {
+    setPageError("");
+    setIsRefreshing(true);
+
+    try {
+      await reloadWorkforceData();
+      setHasLoadedOnce(true);
+    } catch (error) {
+      setPageError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to refresh workforce data right now.",
+      );
+    } finally {
+      setIsRefreshing(false);
+    }
   }
 
   useEffect(() => {
@@ -1595,6 +1618,12 @@ export function WorkforcePage() {
         </div>
       </section>
       <ModuleTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+      {pageError ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          {pageError}
+        </div>
+      ) : null}
 
       <div className="module-page-stage justify-start">
         <div className="space-y-6">
@@ -2899,6 +2928,28 @@ export function WorkforcePage() {
             </section>
           ) : null}
         </div>
+        <footer className="panel mt-auto px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+            <p className="leading-6">
+              <span className="font-semibold text-sky-700">
+                {tabs.find((tab) => tab.id === activeTab)?.label ?? "Workforce"}
+              </span>{" "}
+              Refresh keeps this workspace aligned with the current page, search,
+              and filter selections.
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleRefreshWorkforceData()}
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
+          </div>
+        </footer>
       </div>
 
       {activeModal === "department" ? (

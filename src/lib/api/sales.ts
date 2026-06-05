@@ -1,22 +1,19 @@
 import { apiRequest } from "./auth";
 import type {
-  BrandingPayload,
-  BrandingRecord,
   ClientPayload,
   ClientRecord,
   CustomerCategoryPayload,
   CustomerCategoryRecord,
-  DeliveryRecord,
-  DeliveryRecordPayload,
-  DeliverySchedulePayload,
-  DeliveryScheduleRecord,
-  OrderItemPayload,
-  OrderItemRecord,
   PaginatedSalesLogResponse,
-  SalesOrderPayload,
-  SalesOrderRecord,
+  PaymentPayload,
+  PaymentRecord,
+  SaleItemPayload,
+  SaleItemRecord,
+  SalePayload,
+  SaleRecord,
   SalesLogDetail,
   SalesLogSummary,
+  SalesOrderRecord,
 } from "../../types/sales";
 
 const SALES_BASE_PATH = "/api/sales";
@@ -59,18 +56,9 @@ const customerCategories = createCrud<
   CustomerCategoryPayload
 >("customer-categories");
 const clients = createCrud<ClientRecord, ClientPayload>("clients");
-const brandingRecords = createCrud<BrandingRecord, BrandingPayload>(
-  "branding-records",
-);
-const orders = createCrud<SalesOrderRecord, SalesOrderPayload>("orders");
-const orderItems = createCrud<OrderItemRecord, OrderItemPayload>("order-items");
-const deliverySchedules = createCrud<
-  DeliveryScheduleRecord,
-  DeliverySchedulePayload
->("delivery-schedules");
-const deliveryRecords = createCrud<DeliveryRecord, DeliveryRecordPayload>(
-  "delivery-records",
-);
+const sales = createCrud<SaleRecord, SalePayload>("sales");
+const saleItems = createCrud<SaleItemRecord, SaleItemPayload>("sale-items");
+const payments = createCrud<PaymentRecord, PaymentPayload>("payments");
 
 export const fetchCustomerCategories = customerCategories.list;
 export const fetchCustomerCategory = customerCategories.detail;
@@ -84,35 +72,52 @@ export const createClient = clients.create;
 export const updateClient = clients.update;
 export const deleteClient = clients.remove;
 
-export const fetchBrandingRecords = brandingRecords.list;
-export const fetchBrandingRecord = brandingRecords.detail;
-export const createBrandingRecord = brandingRecords.create;
-export const updateBrandingRecord = brandingRecords.update;
-export const deleteBrandingRecord = brandingRecords.remove;
+export const fetchSales = sales.list;
+export const fetchSale = sales.detail;
+export const createSale = sales.create;
+export const updateSale = sales.update;
+export const deleteSale = sales.remove;
 
-export const fetchSalesOrders = orders.list;
-export const fetchSalesOrder = orders.detail;
-export const createSalesOrder = orders.create;
-export const updateSalesOrder = orders.update;
-export const deleteSalesOrder = orders.remove;
+export const fetchSaleItems = saleItems.list;
+export const fetchSaleItem = saleItems.detail;
+export const createSaleItem = saleItems.create;
+export const updateSaleItem = saleItems.update;
+export const deleteSaleItem = saleItems.remove;
 
-export const fetchOrderItems = orderItems.list;
-export const fetchOrderItem = orderItems.detail;
-export const createOrderItem = orderItems.create;
-export const updateOrderItem = orderItems.update;
-export const deleteOrderItem = orderItems.remove;
+export const fetchPayments = payments.list;
+export const fetchPayment = payments.detail;
+export const createPayment = payments.create;
+export const updatePayment = payments.update;
+export const deletePayment = payments.remove;
 
-export const fetchDeliverySchedules = deliverySchedules.list;
-export const fetchDeliverySchedule = deliverySchedules.detail;
-export const createDeliverySchedule = deliverySchedules.create;
-export const updateDeliverySchedule = deliverySchedules.update;
-export const deleteDeliverySchedule = deliverySchedules.remove;
-
-export const fetchDeliveryRecords = deliveryRecords.list;
-export const fetchDeliveryRecord = deliveryRecords.detail;
-export const createDeliveryRecord = deliveryRecords.create;
-export const updateDeliveryRecord = deliveryRecords.update;
-export const deleteDeliveryRecord = deliveryRecords.remove;
+// Deprecated compatibility export for pages that have not yet been moved.
+export async function fetchSalesOrders() {
+  const records = await fetchSales();
+  return records.map(
+    (sale): SalesOrderRecord => ({
+      id: sale.id,
+      created_at: sale.created_at,
+      updated_at: sale.updated_at,
+      client: sale.client,
+      client_name: sale.client_name,
+      assigned_seller: sale.seller,
+      assigned_seller_name: sale.seller_name,
+      assigned_seller_code: sale.seller_code,
+      order_number: sale.sale_number,
+      order_date: sale.sale_date,
+      expected_delivery_date: null,
+      status:
+        sale.status === "completed"
+          ? "completed"
+          : sale.status === "cancelled"
+            ? "cancelled"
+            : "draft",
+      payment_method: sale.payment_method,
+      total_amount: sale.total_amount,
+      notes: "",
+    }),
+  );
+}
 
 type FetchSalesLogParams = {
   page?: number;

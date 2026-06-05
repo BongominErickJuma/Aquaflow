@@ -4,6 +4,7 @@ import {
   Check,
   Pencil,
   Plus,
+  RefreshCw,
   Trash2,
   X,
 } from "lucide-react";
@@ -709,9 +710,12 @@ function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            className="modal-close-button"
+            aria-label="Close"
+            title="Close"
           >
-            Close
+            <X className="h-4 w-4 sm:hidden" />
+            <span className="hidden sm:inline">Close</span>
           </button>
         </div>
         <div className="mt-8 flex-1">{children}</div>
@@ -881,6 +885,7 @@ export function InventoryPage() {
     inventoryMilestoneFlow.find((item) => item.id === activeTab) ??
     inventoryMilestoneFlow[0];
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [pageError, setPageError] = useState("");
 
   const [units, setUnits] = useState<UnitRecord[]>([]);
@@ -1082,6 +1087,23 @@ export function InventoryPage() {
     setStockItems(nextStockItems);
     setStockMovements(nextStockMovements);
     setStockAlerts(nextStockAlerts);
+  }
+
+  async function handleRefreshInventoryData() {
+    setPageError("");
+    setIsRefreshing(true);
+
+    try {
+      await reloadInventoryData();
+    } catch (error) {
+      setPageError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to refresh inventory data right now.",
+      );
+    } finally {
+      setIsRefreshing(false);
+    }
   }
 
   useEffect(() => {
@@ -2736,12 +2758,25 @@ export function InventoryPage() {
         </div>
 
         <footer className="panel mt-auto px-4 py-3">
-          <p className="text-sm leading-6 text-slate-600">
-            <span className="font-semibold text-sky-700">
-              {activeFlowItem.label}
-            </span>{" "}
-            {activeFlowItem.detail}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+            <p className="leading-6">
+              <span className="font-semibold text-sky-700">
+                {activeFlowItem.label}
+              </span>{" "}
+              {activeFlowItem.detail}
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleRefreshInventoryData()}
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
+          </div>
         </footer>
       </div>
 
@@ -3547,7 +3582,11 @@ export function InventoryPage() {
                   className="min-h-[180px] border border-dashed border-slate-200 bg-white"
                 />
                 <div className="space-y-3">
-                  <label className="modal-icon-button modal-icon-button-secondary cursor-pointer">
+                  <label
+                    className="modal-icon-button modal-icon-button-secondary cursor-pointer"
+                    aria-label="Choose image"
+                    title="Choose image"
+                  >
                     <Plus className="h-4 w-4" />
                     <input
                       type="file"

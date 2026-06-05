@@ -94,7 +94,11 @@ button:disabled {
   }
 
   .modal-icon-button {
-    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-sm transition disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .modal-close-button {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 sm:h-auto sm:w-auto sm:px-3 sm:py-2;
   }
 
   .modal-icon-button-primary {
@@ -107,6 +111,20 @@ button:disabled {
 
   .modal-icon-button-danger {
     @apply border-red-200 bg-red-50 text-red-700 hover:bg-red-100;
+  }
+
+  @media (min-width: 640px) {
+    .modal-icon-button {
+      @apply h-auto w-auto gap-2 px-4 py-3;
+    }
+
+    .modal-icon-button > svg {
+      display: none;
+    }
+
+    .modal-icon-button::after {
+      content: attr(aria-label);
+    }
   }
 
   .module-page {

@@ -26,8 +26,8 @@ import {
   fetchSalesLogSummary,
 } from "../lib/api/sales";
 import type {
-  DeliveryRecord,
-  OrderItemRecord,
+  PaymentRecord,
+  SaleItemRecord,
   SalesLogDetail,
   SalesLogRecord,
   SalesLogSummary,
@@ -865,10 +865,12 @@ export function SalesLogPage() {
               <button
                 type="button"
                 onClick={() => setSelectedSaleId(null)}
-                className="rounded-2xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-                aria-label="Close sale details"
+                className="modal-close-button"
+                aria-label="Close"
+                title="Close"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4 sm:hidden" />
+                <span className="hidden sm:inline">Close</span>
               </button>
             </div>
 
@@ -942,17 +944,17 @@ export function SalesLogPage() {
                     </p>
                   </div>
                   <div className="mt-4 space-y-3">
-                    {selectedDetail.items.map((item: OrderItemRecord) => (
+                    {selectedDetail.items.map((item: SaleItemRecord) => (
                       <div
                         key={item.id}
                         className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3"
                       >
                         <div>
                           <p className="font-medium text-slate-900">
-                            {item.product_name || item.finished_product_name}
+                            {item.product_name || item.product_name_display}
                           </p>
                           <p className="text-sm text-slate-500">
-                            Qty {formatQuantity(Number(item.quantity || 0))} ×{" "}
+                            Qty {formatQuantity(Number(item.quantity || 0))} x{" "}
                             {formatCurrency(Number(item.unit_price || 0))}
                           </p>
                         </div>
@@ -966,53 +968,42 @@ export function SalesLogPage() {
 
                 <div className="rounded-3xl border border-slate-200 p-5">
                   <p className="text-lg font-semibold text-slate-950">
-                    Delivery notes
+                    Payments
                   </p>
                   <div className="mt-4 space-y-3">
-                    {selectedDetail.deliveries.length ? (
-                      selectedDetail.deliveries.map(
-                        (delivery: DeliveryRecord) => (
-                          <div
-                            key={delivery.id}
-                            className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3"
-                          >
-                            <div className="flex items-center justify-between gap-3">
+                    {selectedDetail.payments.length ? (
+                      selectedDetail.payments.map((payment: PaymentRecord) => (
+                        <div
+                          key={payment.id}
+                          className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
                               <p className="font-medium text-slate-900">
-                                {delivery.recipient_name ||
-                                  "Recipient not recorded"}
+                                {formatCurrency(Number(payment.amount || 0))}
                               </p>
-                              <p className="text-sm text-slate-500">
-                                {formatDate(delivery.delivery_date)}
+                              <p className="mt-1 text-sm text-slate-500">
+                                {titleCase(payment.payment_method)} -{" "}
+                                {payment.reference || "No reference"}
                               </p>
                             </div>
-                            <p className="mt-1 text-sm text-slate-500">
-                              {titleCase(delivery.delivery_status)}
-                            </p>
-                            <p className="mt-2 text-sm text-slate-600">
-                              {delivery.delivery_note ||
-                                "No delivery note added."}
+                            <p className="text-sm text-slate-500">
+                              {formatDate(payment.payment_date)}
                             </p>
                           </div>
-                        ),
-                      )
+                          <p className="mt-2 text-sm text-slate-600">
+                            Received by{" "}
+                            {payment.received_by_name || "unassigned staff"}
+                          </p>
+                        </div>
+                      ))
                     ) : (
                       <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
-                        No delivery record has been linked to this sale yet.
+                        No payment has been linked to this sale yet.
                       </div>
                     )}
                   </div>
                 </div>
-
-                {selectedDetail.order.notes ? (
-                  <div className="rounded-3xl border border-slate-200 p-5">
-                    <p className="text-lg font-semibold text-slate-950">
-                      Notes
-                    </p>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">
-                      {selectedDetail.order.notes}
-                    </p>
-                  </div>
-                ) : null}
               </div>
             )}
           </div>

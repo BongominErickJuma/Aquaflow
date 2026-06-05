@@ -691,10 +691,12 @@ export function NotificationsPage() {
               <button
                 type="button"
                 onClick={() => setDeleteWarning(null)}
-                className="rounded-2xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-                aria-label="Close delete warning"
+                className="modal-close-button"
+                aria-label="Close"
+                title="Close"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4 sm:hidden" />
+                <span className="hidden sm:inline">Close</span>
               </button>
             </div>
 
@@ -724,9 +726,11 @@ export function NotificationsPage() {
               <button
                 type="button"
                 onClick={() => setDeleteWarning(null)}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                className="modal-icon-button modal-icon-button-secondary"
+                aria-label="Cancel"
+                title="Cancel"
               >
-                Cancel
+                <X className="h-4 w-4" />
               </button>
               <button
                 type="button"
@@ -735,7 +739,9 @@ export function NotificationsPage() {
                   actionId === "bulk" ||
                   deleteWarning.notificationIds.some((id) => actionId === id)
                 }
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-70"
+                className="modal-icon-button modal-icon-button-danger"
+                aria-label="Delete anyway"
+                title="Delete anyway"
               >
                 {actionId === "bulk" ||
                 deleteWarning.notificationIds.some((id) => actionId === id) ? (
@@ -743,7 +749,6 @@ export function NotificationsPage() {
                 ) : (
                   <Trash2 className="h-4 w-4" />
                 )}
-                Delete anyway
               </button>
             </div>
           </div>

@@ -651,8 +651,8 @@ export function DashboardPage() {
           </h1>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="border border-slate-200/80 bg-slate-50/70 px-4 py-3">
+        <div className="scrollbar-hidden flex max-w-full items-center gap-2 overflow-x-auto">
+          <div className="shrink-0 border border-slate-200/80 bg-slate-50/70 px-4 py-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
               Snapshot
             </p>
@@ -662,7 +662,7 @@ export function DashboardPage() {
           </div>
 
           {isAdmin ? (
-            <div className="flex items-center gap-2 border border-slate-200/80 bg-slate-50/70 px-3 py-3">
+            <div className="flex shrink-0 items-center gap-2 border border-slate-200/80 bg-slate-50/70 px-3 py-3">
               <input
                 type="date"
                 value={refreshDate}
@@ -700,7 +700,7 @@ export function DashboardPage() {
 
       <section className="grid gap-4 xl:grid-cols-[0.98fr_1.34fr_1.08fr]">
         <DashboardPanel title="Sales Overview" className="">
-          <div className="grid gap-3 p-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <SalesMetricCard
               label="Quotations"
               value={`${quotations}`}
@@ -733,7 +733,11 @@ export function DashboardPage() {
             {taskColumns.map((column, index) => (
               <div
                 key={column.label}
-                className={`p-3 ${index < taskColumns.length - 1 ? "md:border-r md:border-slate-200/80" : ""}`}
+                className={
+                  index < taskColumns.length - 1
+                    ? "md:border-r md:border-slate-200/80"
+                    : ""
+                }
               >
                 <div className="flex items-center justify-between border border-slate-200/80 bg-white/86 px-3 py-2">
                   <p className="text-sm font-semibold text-slate-700">
@@ -741,7 +745,7 @@ export function DashboardPage() {
                   </p>
                   <MoreHorizontal className="h-4 w-4 text-slate-400" />
                 </div>
-                <div className="mt-3 grid gap-3">
+                <div className="mt-2 grid gap-2">
                   {column.items.map((item) => (
                     <TaskCard key={item.title} item={item} />
                   ))}
@@ -753,7 +757,7 @@ export function DashboardPage() {
 
         <DashboardPanel title="Invoices" className="">
           <div className="grid">
-            <div className="grid gap-3 p-4 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
               <div className="border bg-[linear-gradient(180deg,#a24e73,#8b3b60)] px-4 py-4 text-white">
                 <p className="text-[1.72rem] font-semibold leading-none tracking-[-0.04em]">
                   {formatAmount(draftAmount)}

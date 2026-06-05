@@ -23,19 +23,21 @@ import {
   LogOut,
   UserCircle2,
   Mail,
-  Star,
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthProvider";
+import { useMessages } from "../../features/messages/MessagesProvider";
 import { useNotifications } from "../../features/notifications/NotificationsProvider";
+import { markAllMessagesRead, markMessageRead } from "../../lib/api/messages";
 import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "../../lib/api/notifications";
 import { resolveApiAssetUrl } from "../../lib/api/auth";
+import type { MessageItem } from "../../types/messages";
 import type { NotificationModule } from "../../types/notifications";
 
 type NavigationItem = {
@@ -45,56 +47,6 @@ type NavigationItem = {
   adminOnly: boolean;
   allowedRoles?: string[];
 };
-
-// Mock message type
-type Message = {
-  id: number;
-  sender: string;
-  senderAvatar?: string;
-  subject: string;
-  preview: string;
-  timestamp: string;
-  isRead: boolean;
-  isStarred?: boolean;
-};
-
-// Mock messages data
-const mockMessages: Message[] = [
-  {
-    id: 1,
-    sender: "John Mukiibi",
-    subject: "Production Schedule Update",
-    preview: "The new production schedule for next week has been published...",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
-    isRead: false,
-    isStarred: true,
-  },
-  {
-    id: 2,
-    sender: "Sarah Nakato",
-    subject: "Inventory Alert: Chlorine Levels",
-    preview:
-      "Chlorine supplies are running low. Please review current stock...",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-    isRead: false,
-  },
-  {
-    id: 3,
-    sender: "David Ochieng",
-    subject: "Compliance Report Q4",
-    preview: "The quarterly compliance report is ready for your review...",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-    isRead: true,
-  },
-  {
-    id: 4,
-    sender: "Ministry of Water",
-    subject: "Regulatory Update",
-    preview: "New water quality standards will take effect next month...",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-    isRead: true,
-  },
-];
 
 const navigation: NavigationItem[] = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard, adminOnly: false },
@@ -173,6 +125,11 @@ function formatMessageTime(value: string) {
   return `${diffDays}d ago`;
 }
 
+function getMessagePreview(message: MessageItem) {
+  const normalized = message.body.replace(/\s+/g, " ").trim();
+  return normalized.length > 96 ? `${normalized.slice(0, 96)}...` : normalized;
+}
+
 function formatWorkspaceDate() {
   return new Intl.DateTimeFormat("en-UG", {
     weekday: "short",
@@ -198,6 +155,12 @@ function getNotificationRoute(
 
 export function AppShell() {
   const { logout, user } = useAuth();
+  const {
+    latest: latestMessages,
+    unread: unreadMessages,
+    isLoading: isMessagesLoading,
+    refreshSummary: refreshMessageSummary,
+  } = useMessages();
   const { latest, unread, isLoading, refreshSummary } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
@@ -211,7 +174,6 @@ export function AppShell() {
   const [actionId, setActionId] = useState<number | string | "all" | null>(
     null,
   );
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [messageActionId, setMessageActionId] = useState<
     number | string | "all" | null
   >(null);
@@ -229,9 +191,6 @@ export function AppShell() {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
-
-  const unreadMessagesCount = messages.filter((m) => !m.isRead).length;
-  const latestMessages = messages.slice(0, 3);
 
   const visibleNavigation = navigation.filter(
     (item) =>
@@ -333,39 +292,36 @@ export function AppShell() {
     }
   };
 
-  const handleMarkMessageRead = (messageId: number) => {
+  const handleMarkMessageRead = async (messageId: number) => {
     setMessageActionId(`read-${messageId}`);
-    setTimeout(() => {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId ? { ...msg, isRead: true } : msg,
-        ),
-      );
+    try {
+      await markMessageRead(messageId);
+      await refreshMessageSummary();
+    } catch {
+      // Keep the dropdown usable even if a background action fails.
+    } finally {
       setMessageActionId(null);
-    }, 300);
+    }
   };
 
-  const handleMarkAllMessagesRead = () => {
+  const handleMarkAllMessagesRead = async () => {
     setMessageActionId("all");
-    setTimeout(() => {
-      setMessages((prev) => prev.map((msg) => ({ ...msg, isRead: true })));
+    try {
+      await markAllMessagesRead();
+      await refreshMessageSummary();
+    } catch {
+      // Keep the dropdown usable even if a background action fails.
+    } finally {
       setMessageActionId(null);
-    }, 300);
+    }
   };
 
-  const handleToggleStar = (messageId: number, event: React.MouseEvent) => {
-    event.stopPropagation();
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === messageId ? { ...msg, isStarred: !msg.isStarred } : msg,
-      ),
-    );
-  };
-
-  const openMessage = (messageId: number) => {
-    handleMarkMessageRead(messageId);
+  const openMessage = async (message: MessageItem) => {
+    if (!message.is_read) {
+      await handleMarkMessageRead(message.id);
+    }
     setIsMessagesOpen(false);
-    navigate(`/messages/${messageId}`);
+    navigate("/messages");
   };
 
   const handleLogout = () => {
@@ -449,9 +405,6 @@ export function AppShell() {
                       <Menu className="h-5 w-5" />
                     )}
                   </button>
-                  <div className="hidden h-12 w-12 shrink-0 items-center justify-center border border-white/16 bg-white/12 lg:flex">
-                    <Droplets className="h-6 w-6 text-white" />
-                  </div>
                   <div className="min-w-0">
                     <p className="hidden text-[10px] font-semibold uppercase tracking-[0.32em] text-white/58 sm:block">
                       Active Module
@@ -480,6 +433,7 @@ export function AppShell() {
                           setIsNotificationOpen(false);
                           setIsProfileOpen(false);
                           setIsMobileNavigationOpen(false);
+                          void refreshMessageSummary();
                         }
                       }}
                       className="relative flex h-11 w-11 items-center justify-center border border-white/14 bg-white/12 text-white transition hover:bg-white/16 sm:h-12 sm:w-12"
@@ -487,11 +441,9 @@ export function AppShell() {
                       aria-expanded={isMessagesOpen}
                     >
                       <Mail className="h-4 w-4" />
-                      {unreadMessagesCount > 0 ? (
+                      {unreadMessages > 0 ? (
                         <span className="absolute -right-1 -top-1 min-w-5 bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow-[0_8px_18px_rgba(245,158,11,0.35)]">
-                          {unreadMessagesCount > 99
-                            ? "99+"
-                            : unreadMessagesCount}
+                          {unreadMessages > 99 ? "99+" : unreadMessages}
                         </span>
                       ) : null}
                     </button>
@@ -516,7 +468,7 @@ export function AppShell() {
                               onClick={() => void handleMarkAllMessagesRead()}
                               disabled={
                                 messageActionId === "all" ||
-                                unreadMessagesCount === 0
+                                unreadMessages === 0
                               }
                               aria-label="Mark all messages as read"
                               title="Mark all read"
@@ -531,7 +483,14 @@ export function AppShell() {
                           </div>
 
                           <div className="mt-4 space-y-2">
-                            {latestMessages.length === 0 ? (
+                            {isMessagesLoading ? (
+                              <div className="flex min-h-28 items-center justify-center border border-dashed border-slate-200 bg-slate-50/70 text-sm text-slate-500">
+                                <div className="flex items-center gap-2">
+                                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                                  Loading...
+                                </div>
+                              </div>
+                            ) : latestMessages.length === 0 ? (
                               <div className="border border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center">
                                 <p className="text-sm font-medium text-slate-700">
                                   No messages
@@ -547,10 +506,10 @@ export function AppShell() {
                                   whileHover={{ scale: 1.01 }}
                                   whileTap={{ scale: 0.99 }}
                                   type="button"
-                                  onClick={() => openMessage(message.id)}
+                                  onClick={() => void openMessage(message)}
                                   className={[
                                     "w-full border p-3 text-left transition-all duration-200",
-                                    message.isRead
+                                    message.is_read
                                       ? "border-slate-200/80 bg-white hover:bg-slate-50"
                                       : "border-amber-200 bg-amber-50/70 hover:bg-amber-50",
                                   ].join(" ")}
@@ -558,36 +517,21 @@ export function AppShell() {
                                   <div className="flex items-start gap-3">
                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700">
                                       <span className="text-sm font-semibold">
-                                        {message.sender.charAt(0)}
+                                        {message.created_by_name.charAt(0)}
                                       </span>
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center justify-between gap-2">
                                         <p className="text-sm font-semibold text-slate-900">
-                                          {message.sender}
+                                          {message.created_by_name}
                                         </p>
                                         <div className="flex items-center gap-1">
-                                          <button
-                                            type="button"
-                                            onClick={(e) =>
-                                              handleToggleStar(message.id, e)
-                                            }
-                                            className="text-slate-400 transition hover:text-amber-500"
-                                          >
-                                            <Star
-                                              className={`h-3 w-3 ${
-                                                message.isStarred
-                                                  ? "fill-amber-500 text-amber-500"
-                                                  : ""
-                                              }`}
-                                            />
-                                          </button>
-                                          {!message.isRead && (
+                                          {!message.is_read && (
                                             <button
                                               type="button"
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleMarkMessageRead(
+                                                void handleMarkMessageRead(
                                                   message.id,
                                                 );
                                               }}
@@ -611,10 +555,10 @@ export function AppShell() {
                                         {message.subject}
                                       </p>
                                       <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">
-                                        {message.preview}
+                                        {getMessagePreview(message)}
                                       </p>
                                       <p className="mt-1.5 text-[10px] uppercase tracking-[0.18em] text-slate-400">
-                                        {formatMessageTime(message.timestamp)}
+                                        {formatMessageTime(message.created_at)}
                                       </p>
                                     </div>
                                   </div>

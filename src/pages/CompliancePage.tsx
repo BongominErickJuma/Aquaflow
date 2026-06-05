@@ -4,6 +4,7 @@ import {
   LoaderCircle,
   Pencil,
   Plus,
+  RefreshCw,
   ShieldAlert,
   Trash2,
   X,
@@ -69,8 +70,6 @@ const fieldClassName =
 const textAreaClassName = `${fieldClassName} min-h-[108px] resize-y`;
 const primaryButtonClassName =
   "inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-[linear-gradient(135deg,#1f87ad,#0f6d8d)] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(32,141,183,0.22)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70";
-const secondaryButtonClassName =
-  "inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70";
 const dangerButtonClassName =
   "inline-flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70";
 const iconButtonClassName =
@@ -403,10 +402,13 @@ function ModalShell({
           </div>
           <button
             type="button"
-            className={secondaryButtonClassName}
             onClick={onClose}
+            className="modal-close-button"
+            aria-label="Close"
+            title="Close"
           >
-            Close
+            <X className="h-4 w-4 sm:hidden" />
+            <span className="hidden sm:inline">Close</span>
           </button>
         </div>
         {children}
@@ -508,6 +510,7 @@ export function CompliancePage() {
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [hygieneError, setHygieneError] = useState<string | null>(null);
   const [waterError, setWaterError] = useState<string | null>(null);
   const [safetyError, setSafetyError] = useState<string | null>(null);
@@ -560,6 +563,23 @@ export function CompliancePage() {
     setTrainingRecords(training);
     setDocuments(docs);
     setEmployees(staff);
+  }
+
+  async function handleRefreshComplianceData() {
+    setPageError(null);
+    setIsRefreshing(true);
+
+    try {
+      await reloadComplianceData();
+    } catch (error) {
+      setPageError(
+        error instanceof ApiError
+          ? error.message
+          : "Unable to refresh compliance records right now.",
+      );
+    } finally {
+      setIsRefreshing(false);
+    }
   }
 
   useEffect(() => {
@@ -1392,12 +1412,25 @@ export function CompliancePage() {
           </div>
 
           <footer className="panel mt-auto px-4 py-3">
-            <p className="text-sm leading-6 text-slate-600">
-              <span className="font-semibold text-sky-700">
-                {activeFlowItem.label}
-              </span>{" "}
-              {activeFlowItem.detail}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+              <p className="leading-6">
+                <span className="font-semibold text-sky-700">
+                  {activeFlowItem.label}
+                </span>{" "}
+                {activeFlowItem.detail}
+              </p>
+              <button
+                type="button"
+                onClick={() => void handleRefreshComplianceData()}
+                disabled={isRefreshing}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
+            </div>
           </footer>
         </div>
       </div>

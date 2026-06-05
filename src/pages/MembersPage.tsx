@@ -238,9 +238,12 @@ function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            className="modal-close-button"
+            aria-label="Close"
+            title="Close"
           >
-            Close
+            <X className="h-4 w-4 sm:hidden" />
+            <span className="hidden sm:inline">Close</span>
           </button>
         </div>
         <div className="mt-6">{children}</div>
