@@ -642,8 +642,7 @@ function titleCase(value: string) {
 
 export function ProductionPage() {
   const { user } = useAuth();
-  const isAdmin =
-    user?.role.code === "admin" || user?.role.code === "superuser";
+  const isAdmin = Boolean(user);
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [activeTab, setActiveTab] = useState("machines");
@@ -2277,9 +2276,20 @@ export function ProductionPage() {
               <FieldMessage message={machineError} />
 
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedMachineId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleMachineDelete()}
+                    disabled={isMachinePending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete machine"
+                    title="Delete machine"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save machine"
                     title="Save machine"
@@ -2420,9 +2430,20 @@ export function ProductionPage() {
               <FieldMessage message={usageError} />
 
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedUsageId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleUsageDelete()}
+                    disabled={isUsagePending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete usage log"
+                    title="Delete usage log"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save usage log"
                     title="Save usage log"
@@ -2624,9 +2645,20 @@ export function ProductionPage() {
               <FieldMessage message={scheduleError} />
 
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedScheduleId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleScheduleDelete()}
+                    disabled={isSchedulePending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete schedule"
+                    title="Delete schedule"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save schedule"
                     title="Save schedule"
@@ -2874,9 +2906,20 @@ export function ProductionPage() {
                 <FieldMessage message={maintenanceLogError} />
 
                 <div className="flex flex-wrap justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={closeModal}
+                                    {selectedMaintenanceLogId ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleMaintenanceLogDelete()}
+                      disabled={isMaintenanceLogPending}
+                      className="modal-icon-button modal-icon-button-danger"
+                      aria-label="Delete maintenance log"
+                      title="Delete maintenance log"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
+<button
+                    type="submit"
                     className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save maintenance log"
                     title="Save maintenance log"
@@ -3057,9 +3100,20 @@ export function ProductionPage() {
               <FieldMessage message={downtimeError} />
 
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedDowntimeId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleDowntimeDelete()}
+                    disabled={isDowntimePending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete downtime record"
+                    title="Delete downtime record"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save downtime record"
                     title="Save downtime record"
@@ -3221,9 +3275,20 @@ export function ProductionPage() {
               <FieldMessage message={utilityError} />
 
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedUtilityId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleUtilityDelete()}
+                    disabled={isUtilityPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete utility log"
+                    title="Delete utility log"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save utility log"
                     title="Save utility log"

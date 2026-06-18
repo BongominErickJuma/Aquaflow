@@ -25,6 +25,7 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
+import { ModuleTabs } from "../components/layout/ModuleTabs";
 import { ApiError, fetchAllUsers } from "../lib/api/auth";
 import {
   activitiesApi,
@@ -85,6 +86,47 @@ const emptySummary: CRMSummary = {
   cases_open: 0,
   cases_urgent: 0,
 };
+
+const crmTabs: Array<{ id: CRMTab; label: string }> = [
+  { id: "leads", label: "Leads" },
+  { id: "opportunities", label: "Opportunities" },
+  { id: "activities", label: "Activities" },
+  { id: "contacts", label: "Contacts" },
+  { id: "cases", label: "Cases" },
+];
+
+const crmWorkflowFlow: Array<{ id: CRMTab; label: string; detail: string }> = [
+  {
+    id: "leads",
+    label: "Leads",
+    detail:
+      "Capture and qualify potential customers here. Before this, no customer relationship is required. Next, create opportunities from qualified prospects.",
+  },
+  {
+    id: "opportunities",
+    label: "Opportunities",
+    detail:
+      "Track pipeline value, stage, probability, and expected close dates here. Before this, leads or clients should be known. Next, schedule activities.",
+  },
+  {
+    id: "activities",
+    label: "Activities",
+    detail:
+      "Plan calls, meetings, follow-ups, and sales tasks here. Before this, link the work to a lead, client, or opportunity. Next, keep contacts current.",
+  },
+  {
+    id: "contacts",
+    label: "Contacts",
+    detail:
+      "Maintain customer and lead contact people here. Before this, make sure the related client or lead exists. Next, handle support cases.",
+  },
+  {
+    id: "cases",
+    label: "Cases",
+    detail:
+      "Track customer service issues and resolutions here. Before this, contacts and clients should be available. This closes the CRM follow-through loop.",
+  },
+];
 
 const emptyLead: LeadPayload = {
   company_name: "",
@@ -282,6 +324,8 @@ export function CRMPage() {
     contacts: contacts.length,
     cases: cases.length,
   };
+  const activeFlowItem =
+    crmWorkflowFlow.find((item) => item.id === activeTab) ?? crmWorkflowFlow[0];
 
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -598,10 +642,10 @@ export function CRMPage() {
 
   return (
     <div className="module-page">
-      <section className="rounded-[32px] border border-white/70 bg-[radial-gradient(circle_at_top_left,#ffffff,rgba(236,253,245,0.9)_46%,rgba(240,249,255,0.95))] py-6 pl-6 pr-0 shadow-[0_25px_80px_rgba(148,163,184,0.14)]">
+      <section className="rounded-[32px] border border-white/70 bg-[radial-gradient(circle_at_top_left,#ffffff,rgba(224,242,254,0.92)_52%,rgba(240,249,255,0.95))] py-6 pl-6 pr-0 shadow-[0_25px_80px_rgba(148,163,184,0.14)]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
               CRM
             </div>
             <div className="space-y-2">
@@ -622,74 +666,23 @@ export function CRMPage() {
           </div>
         </div>
       </section>
+      <ModuleTabs
+        tabs={crmTabs}
+        activeTab={activeTab}
+        onChange={(tab) => setActiveTab(tab as CRMTab)}
+      />
 
-      <div className="module-page-stage justify-start">
-        <section className="panel p-6">
-          <div className="grid gap-3 lg:grid-cols-5">
-            <MetricBand
-              icon={Handshake}
-              label="Total leads"
-              value={summary.leads_total}
-              tone="emerald"
-            />
-            <MetricBand
-              icon={CalendarClock}
-              label="Overdue follow-ups"
-              value={summary.leads_overdue_followups}
-              tone="amber"
-            />
-            <MetricBand
-              icon={CircleDollarSign}
-              label="Pipeline value"
-              value={formatCurrency(summary.pipeline_value)}
-              tone="sky"
-            />
-            <MetricBand
-              icon={CheckCircle2}
-              label="Won deals"
-              value={summary.opportunities_won}
-              tone="emerald"
-            />
-            <MetricBand
-              icon={ClipboardList}
-              label="Urgent cases"
-              value={summary.cases_urgent}
-              tone="red"
-            />
-          </div>
-
-          <div className="mt-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="scrollbar-hidden overflow-x-auto rounded-[28px] border border-slate-200/80 bg-slate-50/70 p-2">
-              <div className="flex min-w-max items-center gap-2">
-                {(
-                  [
-                    ["leads", "Leads"],
-                    ["opportunities", "Opportunities"],
-                    ["activities", "Activities"],
-                    ["contacts", "Contacts"],
-                    ["cases", "Cases"],
-                  ] as [CRMTab, string][]
-                ).map(([tab, label]) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={[
-                      "h-10 rounded-2xl px-4 text-sm font-semibold transition",
-                      activeTab === tab
-                        ? "bg-white text-slate-950 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
-                        : "text-slate-500 hover:text-slate-900",
-                    ].join(" ")}
-                  >
-                    {label}{" "}
-                    <span className="text-xs text-slate-400">
-                      {tabCounts[tab]}
-                    </span>
-                  </button>
-                ))}
-              </div>
+      <div className="module-page-stage !justify-start overflow-hidden">
+        <section className="panel flex min-h-0 flex-1 flex-col p-6">
+          <div className="flex shrink-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <p className="section-label">
+                {crmTabs.find((tab) => tab.id === activeTab)?.label}
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold text-slate-900">
+                {tabCounts[activeTab]} records
+              </h2>
             </div>
-
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <label className="flex h-11 min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 text-slate-500 sm:w-80">
                 <Search className="h-4 w-4 shrink-0" />
@@ -702,22 +695,8 @@ export function CRMPage() {
               </label>
               <button
                 type="button"
-                onClick={() => void loadCRM(true)}
-                disabled={isRefreshing}
-                aria-label="Refresh CRM"
-                title="Refresh"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-70"
-              >
-                {isRefreshing ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-              </button>
-              <button
-                type="button"
                 onClick={() => openEditor({ type: singularTab(activeTab) })}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 text-sm font-semibold text-sky-800 transition hover:bg-sky-100"
               >
                 <Plus className="h-4 w-4" />
                 New
@@ -737,7 +716,7 @@ export function CRMPage() {
             </div>
           ) : null}
 
-          <div className="mt-5">
+          <div className="module-tab-panel scrollbar-hidden mt-5 min-h-[360px] flex-1 pr-1">
             {isLoading ? (
               <div className="flex min-h-[280px] items-center justify-center rounded-[28px] border border-dashed border-slate-200 bg-slate-50/70 text-slate-500">
                 <div className="flex items-center gap-3 text-sm font-medium">
@@ -880,6 +859,28 @@ export function CRMPage() {
             )}
           </div>
         </section>
+
+        <footer className="panel mt-auto px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+            <p className="leading-6">
+              <span className="font-semibold text-sky-700">
+                {activeFlowItem.label}
+              </span>{" "}
+              {activeFlowItem.detail}
+            </p>
+            <button
+              type="button"
+              onClick={() => void loadCRM(true)}
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </button>
+          </div>
+        </footer>
       </div>
 
       {editor ? (
@@ -1124,41 +1125,6 @@ function Metric({ label, value }: { label: string; value: number }) {
   );
 }
 
-function MetricBand({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: typeof BriefcaseBusiness;
-  label: string;
-  value: number | string;
-  tone: "emerald" | "amber" | "sky" | "red";
-}) {
-  const classes = {
-    emerald: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    amber: "border-amber-200 bg-amber-50 text-amber-700",
-    sky: "border-sky-200 bg-sky-50 text-sky-700",
-    red: "border-red-200 bg-red-50 text-red-700",
-  };
-
-  return (
-    <div className="rounded-[24px] border border-slate-200 bg-white/90 p-4">
-      <div className="flex items-center gap-3">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${classes[tone]}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-            {label}
-          </p>
-          <p className="mt-1 text-lg font-semibold text-slate-950">{value}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function RecordGrid<T>({
   records,
   render,
@@ -1170,13 +1136,17 @@ function RecordGrid<T>({
 }) {
   if (records.length === 0) {
     return (
-      <div className="flex min-h-[260px] items-center justify-center rounded-[28px] border border-dashed border-slate-200 bg-slate-50/70 text-center text-sm font-medium text-slate-500">
+      <div className="flex h-[320px] min-w-[380px] max-w-[380px] flex-shrink-0 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-5 text-center text-sm font-medium text-slate-500 max-sm:min-w-[300px] max-sm:max-w-[300px]">
         {emptyLabel}
       </div>
     );
   }
 
-  return <div className="grid gap-4 xl:grid-cols-2">{records.map(render)}</div>;
+  return (
+    <div className="scrollbar-hidden flex gap-3 overflow-x-auto pb-2">
+      {records.map(render)}
+    </div>
+  );
 }
 
 function RecordCard({
@@ -1201,67 +1171,71 @@ function RecordCard({
   isDeleting: boolean;
 }) {
   return (
-    <article className="rounded-[28px] border border-slate-200/80 bg-white/90 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700">
-              <Icon className="h-4 w-4" />
-            </span>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-              {eyebrow}
-            </span>
-            {tags.filter(Boolean).map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-slate-950">{title}</h2>
-            <p className="mt-2 line-clamp-3 text-sm leading-7 text-slate-600">
-              {body}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-500">
-            {meta.filter(Boolean).map((item) => (
-              <span key={item}>{item}</span>
-            ))}
-          </div>
+    <article className="group relative flex h-[320px] min-w-[380px] max-w-[380px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 max-sm:min-w-[300px] max-sm:max-w-[300px]">
+      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700">
+            <Icon className="h-4 w-4" />
+          </span>
+          <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+            {eyebrow}
+          </span>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={onEdit}
-            aria-label={`Edit ${title}`}
-            title="Edit"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-          >
-            <Edit3 className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={isDeleting}
-            aria-label={`Delete ${title}`}
-            title="Delete"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 disabled:opacity-70"
-          >
-            {isDeleting ? (
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
-          </button>
+
+        <h2 className="mt-4 text-lg font-semibold leading-6 text-slate-950">
+          {title}
+        </h2>
+
+        <div className="mt-3 space-y-2 text-sm text-slate-600">
+          {meta.filter(Boolean).map((item) => (
+            <p key={item}>{item}</p>
+          ))}
         </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {tags.filter(Boolean).map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        <p className="mt-5 border-t border-slate-200/80 pt-4 text-sm leading-6 text-slate-600">
+          {body}
+        </p>
+      </div>
+
+      <div className="absolute right-4 top-4 flex flex-col gap-2 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={`Edit ${title}`}
+          title="Edit"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+        >
+          <Edit3 className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={isDeleting}
+          aria-label={`Delete ${title}`}
+          title="Delete"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 disabled:opacity-70"
+        >
+          {isDeleting ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+        </button>
       </div>
     </article>
   );
 }
-
 function TextField({
   label,
   value,

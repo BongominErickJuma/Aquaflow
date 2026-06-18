@@ -1864,7 +1864,7 @@ export function BusinessPage() {
                     ) : null}
                   </div>
 
-                  <div className="mt-5 grid grid-cols-2 gap-3 md:flex md:overflow-x-auto md:pb-2">
+                  <div className="scrollbar-hidden mt-5 flex gap-3 overflow-x-auto pb-2">
                     {kpiOptions.length === 0 ? (
                       <EmptyState
                         title="No KPI records yet"
@@ -1875,17 +1875,17 @@ export function BusinessPage() {
                       kpiOptions.map((record) => (
                         <div
                           key={record.id}
-                          className={`${recordCardClassName} h-[150px] min-w-0 max-w-none p-3 md:h-[220px] md:min-w-[280px] md:max-w-[280px] md:p-4`}
+                          className={recordCardClassName}
                         >
-                          <div className="flex items-start justify-between gap-3 md:gap-4">
-                            <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-0 md:pr-14">
-                              <p className="text-sm font-semibold leading-5 text-slate-900 md:text-base">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-14">
+                              <p className="font-semibold text-slate-900">
                                 {record.name}
                               </p>
-                              <p className="mt-1 text-xs text-slate-500 md:text-sm">
+                              <p className="mt-1 text-sm text-slate-500">
                                 {record.value} {record.unit || ""}
                               </p>
-                              <p className="mt-2 text-xs leading-5 text-slate-600 md:text-sm">
+                              <p className="mt-2 text-sm leading-6 text-slate-600">
                                 Recorded {formatDate(record.record_date)}
                               </p>
                             </div>

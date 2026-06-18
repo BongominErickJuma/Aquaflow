@@ -13,6 +13,45 @@ export type AnalyticsKpiItem = {
   record_date: string;
 };
 
+export type AnalyticsRoleBreakdown = {
+  role_code: string;
+  role_name: string;
+  user_count: number;
+};
+
+export type AnalyticsDepartmentBreakdown = {
+  department_name: string;
+  employee_count: number;
+};
+
+export type AnalyticsNotificationModuleBreakdown = {
+  module: string;
+  active_count: number;
+};
+
+export type AnalyticsTrendPoint = {
+  label: string;
+  value: string;
+};
+
+export type AnalyticsTaskItem = {
+  title: string;
+  priority: "low" | "medium" | "high";
+  status: string;
+};
+
+export type AnalyticsTaskColumn = {
+  label: string;
+  items: AnalyticsTaskItem[];
+};
+
+export type AnalyticsInvoiceRow = {
+  invoice: string;
+  customer: string;
+  due_date: string;
+  status: "Open" | "Draft" | "Paid";
+};
+
 export type InventoryLowStockItem = {
   item_name: string;
   item_type: string;
@@ -150,13 +189,58 @@ export type DailyAnalyticsDashboard = {
     sales?: {
       total_orders?: number;
       delivered_orders?: number;
+      workflow_orders?: number;
+      received_workflow_orders?: number;
+      quotations_count?: number;
+      to_invoice_count?: number;
+      to_bill_count?: number;
+      logs_recent_count?: number;
+      monthly_sales_amount?: string;
+      monthly_trend?: AnalyticsTrendPoint[];
       top_clients?: AnalyticsTopClient[];
       assumptions?: string[];
+      daily?: {
+        total_orders?: number;
+        delivered_orders?: number;
+        cancelled_orders?: number;
+        total_sales_amount?: string;
+        delivered_sales_amount?: string;
+        top_clients?: AnalyticsTopClient[];
+      };
     };
     finance?: {
       paid_invoices?: number;
+      total_invoices?: number;
       collection_rate_pct?: string;
       total_cost_amount?: string;
+      draft_invoice_amount?: string;
+      unpaid_invoice_amount?: string;
+      paid_invoice_amount?: string;
+      recent_invoices?: AnalyticsInvoiceRow[];
+    };
+    accounts?: {
+      active_users?: number;
+      users_with_employee_profiles?: number;
+      role_breakdown?: AnalyticsRoleBreakdown[];
+    };
+    workforce?: {
+      active_employees?: number;
+      present_or_late_today?: number;
+      attendance_rate_pct?: string;
+      open_task_count?: number;
+      high_priority_open_task_count?: number;
+      pending_payroll_count?: number;
+      task_columns?: AnalyticsTaskColumn[];
+      department_breakdown?: AnalyticsDepartmentBreakdown[];
+      daily?: {
+        attendance_records?: number;
+      };
+    };
+    orders?: {
+      open_orders?: number;
+      workflow_orders?: number;
+      received_workflow_orders?: number;
+      due_deliveries?: number;
     };
     inventory?: {
       raw_material_quantity_total?: string;
@@ -167,17 +251,31 @@ export type DailyAnalyticsDashboard = {
       low_stock_items?: InventoryLowStockItem[];
       assumptions?: string[];
     };
+    crm?: {
+      active_lead_count?: number;
+      converted_lead_count?: number;
+      open_opportunity_count?: number;
+      open_opportunity_value?: string;
+      open_case_count?: number;
+      urgent_case_count?: number;
+      due_activity_count?: number;
+    };
     business?: {
       active_license_count?: number;
       expiring_license_count?: number;
       expired_license_count?: number;
       latest_kpis?: AnalyticsKpiItem[];
     };
-    compliance?: {
-      failed_hygiene_checks?: number;
-      failed_water_tests?: number;
-      open_safety_records?: number;
-      documents_expiring_soon?: number;
+    notifications?: {
+      active_count?: number;
+      critical_active_count?: number;
+      unread_receipt_count?: number;
+      module_breakdown?: AnalyticsNotificationModuleBreakdown[];
+    };
+    messages?: {
+      active_count?: number;
+      urgent_count?: number;
+      unread_receipt_count?: number;
     };
   };
 };

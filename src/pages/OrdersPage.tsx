@@ -188,6 +188,33 @@ function formatMoney(value: string | number | null | undefined) {
   }).format(Number.isFinite(amount) ? amount : 0)}`;
 }
 
+function formatCompactValue(value: string | number | null | undefined) {
+  const amount =
+    typeof value === "number" ? value : Number.parseFloat(value ?? "0");
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const absoluteAmount = Math.abs(safeAmount);
+
+  const compact = (divisor: number, suffix: string) => {
+    const scaledValue = safeAmount / divisor;
+    const decimals = Math.abs(scaledValue) >= 10 ? 0 : 2;
+    return `${scaledValue
+      .toFixed(decimals)
+      .replace(/\.?0+$/, "")}${suffix}`;
+  };
+
+  if (absoluteAmount >= 1_000_000) {
+    return compact(1_000_000, "m");
+  }
+
+  if (absoluteAmount >= 1_000) {
+    return compact(1_000, "k");
+  }
+
+  return new Intl.NumberFormat("en-UG", {
+    maximumFractionDigits: 0,
+  }).format(safeAmount);
+}
+
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof ApiError ? error.message : fallback;
 }
@@ -1902,7 +1929,9 @@ export function OrdersPage() {
             </div>
             <div className="hero-metric-card">
               <p className="hero-metric-label">Value</p>
-              <p className="hero-metric-value">{formatMoney(totalOrderValue)}</p>
+              <p className="hero-metric-value">
+                {formatCompactValue(totalOrderValue)}
+              </p>
             </div>
           </div>
         </div>

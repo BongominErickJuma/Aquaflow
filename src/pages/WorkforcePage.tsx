@@ -636,10 +636,7 @@ function formatDate(value: string | null | undefined) {
 
 export function WorkforcePage() {
   const { user } = useAuth();
-  const canManageWorkforce =
-    user?.role.code === "admin" ||
-    user?.role.code === "superuser" ||
-    user?.role.code === "hr";
+  const canManageWorkforce = Boolean(user);
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [activeTab, setActiveTab] = useState("departments");
 
@@ -3017,9 +3014,28 @@ export function WorkforcePage() {
               </label>
               <FieldMessage message={departmentError} />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedDepartmentId ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDelete(
+                        "department",
+                        selectedDepartmentId,
+                        setDepartmentError,
+                        setIsDepartmentPending,
+                        deleteDepartment,
+                      )
+                    }
+                    disabled={isDepartmentPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete department"
+                    title="Delete department"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save department"
                     title="Save department"
@@ -3266,9 +3282,28 @@ export function WorkforcePage() {
               </label>
               <FieldMessage message={employeeError} />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedEmployeeId ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDelete(
+                        "employee",
+                        selectedEmployeeId,
+                        setEmployeeError,
+                        setIsEmployeePending,
+                        deleteEmployee,
+                      )
+                    }
+                    disabled={isEmployeePending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete employee"
+                    title="Delete employee"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save employee"
                     title="Save employee"
@@ -3387,9 +3422,28 @@ export function WorkforcePage() {
               </label>
               <FieldMessage message={shiftError} />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedShiftId ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDelete(
+                        "shift",
+                        selectedShiftId,
+                        setShiftError,
+                        setIsShiftPending,
+                        deleteShift,
+                      )
+                    }
+                    disabled={isShiftPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete shift"
+                    title="Delete shift"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save shift"
                     title="Save shift"
@@ -3550,9 +3604,28 @@ export function WorkforcePage() {
               </label>
               <FieldMessage message={attendanceError} />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedAttendanceId ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDelete(
+                        "attendance",
+                        selectedAttendanceId,
+                        setAttendanceError,
+                        setIsAttendancePending,
+                        deleteAttendanceRecord,
+                      )
+                    }
+                    disabled={isAttendancePending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete attendance"
+                    title="Delete attendance"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save attendance"
                     title="Save attendance"
@@ -3742,9 +3815,28 @@ export function WorkforcePage() {
               </label>
               <FieldMessage message={payrollError} />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedPayrollId ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDelete(
+                        "payroll",
+                        selectedPayrollId,
+                        setPayrollError,
+                        setIsPayrollPending,
+                        deletePayrollRecord,
+                      )
+                    }
+                    disabled={isPayrollPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete payroll"
+                    title="Delete payroll"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save payroll"
                     title="Save payroll"
@@ -3907,9 +3999,28 @@ export function WorkforcePage() {
               </label>
               <FieldMessage message={taskError} />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedTaskId ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDelete(
+                        "task",
+                        selectedTaskId,
+                        setTaskError,
+                        setIsTaskPending,
+                        deleteTask,
+                      )
+                    }
+                    disabled={isTaskPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete task"
+                    title="Delete task"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save task"
                     title="Save task"
@@ -4069,9 +4180,28 @@ export function WorkforcePage() {
               </label>
               <FieldMessage message={performanceError} />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedPerformanceId ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDelete(
+                        "performance",
+                        selectedPerformanceId,
+                        setPerformanceError,
+                        setIsPerformancePending,
+                        deletePerformanceRecord,
+                      )
+                    }
+                    disabled={isPerformancePending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete performance record"
+                    title="Delete performance record"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save performance"
                     title="Save performance"

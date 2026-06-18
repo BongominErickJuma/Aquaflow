@@ -10,7 +10,6 @@ import {
   NotebookText,
   RefreshCw,
   ShoppingCart,
-  ShieldCheck,
   TrendingUp,
   UsersRound,
   VibrateIcon,
@@ -23,7 +22,12 @@ import {
   fetchDashboardOverview,
   runDashboardAnalytics,
 } from "../lib/api/dashboard";
-import type { DashboardOverviewResponse } from "../types/dashboard";
+import type {
+  AnalyticsInvoiceRow,
+  AnalyticsTaskColumn,
+  AnalyticsTaskItem,
+  DashboardOverviewResponse,
+} from "../types/dashboard";
 
 type ModuleTileConfig = {
   label: string;
@@ -31,18 +35,6 @@ type ModuleTileConfig = {
   note: string;
   icon: typeof ShoppingCart;
   tone: string;
-};
-
-type TaskItem = {
-  title: string;
-  accent: string;
-};
-
-type InvoiceRow = {
-  invoice: string;
-  customer: string;
-  dueDate: string;
-  status: "Open" | "Draft" | "Paid";
 };
 
 function DashboardPanel({
@@ -133,19 +125,29 @@ function SalesMetricCard({
   );
 }
 
-function TaskCard({ item }: { item: TaskItem }) {
+function getTaskAccent(priority: AnalyticsTaskItem["priority"]) {
+  if (priority === "high") {
+    return "bg-rose-500";
+  }
+  if (priority === "medium") {
+    return "bg-amber-400";
+  }
+  return "bg-emerald-500";
+}
+
+function TaskCard({ item }: { item: AnalyticsTaskItem }) {
   return (
     <div className="border border-slate-200/80 bg-white px-3 py-3 shadow-[0_10px_18px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_28px_rgba(15,23,42,0.08)]">
       <p className="text-sm font-semibold text-slate-800">{item.title}</p>
       <div className="mt-4 flex items-center justify-between">
-        <span className={`h-3.5 w-3.5 ${item.accent}`} />
+        <span className={`h-3.5 w-3.5 ${getTaskAccent(item.priority)}`} />
         <span className="h-3 w-3 rounded-full bg-sky-500" />
       </div>
     </div>
   );
 }
 
-function InvoiceStatus({ status }: { status: InvoiceRow["status"] }) {
+function InvoiceStatus({ status }: { status: AnalyticsInvoiceRow["status"] }) {
   const className =
     status === "Paid"
       ? "bg-emerald-500 text-white"
@@ -301,6 +303,19 @@ function formatFullAmount(value: number) {
   }).format(value);
 }
 
+function formatDate(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-UG", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  }).format(parsed);
+}
+
 function toNumber(value: string | number | null | undefined) {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value : 0;
@@ -454,49 +469,57 @@ export function DashboardPage() {
   }
 
   const totalOrders =
-    combined.dashboard_context.sales?.total_orders ?? sales?.total_orders ?? 8;
-  const quotations = Math.max(
-    12,
-    Math.round((combined.active_kpi_count ?? 6) * 2),
-  );
-  const toInvoice = Math.max(5, combined.overdue_invoice_count + 2);
-  const toBill = Math.max(
-    5,
-    combined.dashboard_context.production?.due_maintenance_schedules ?? 5,
-  );
+    combined.dashboard_context.sales?.total_orders ?? sales?.total_orders ?? 0;
+  const quotations = combined.dashboard_context.sales?.quotations_count ?? 0;
+  const toInvoice = combined.dashboard_context.sales?.to_invoice_count ?? 0;
+  const toBill = combined.dashboard_context.sales?.to_bill_count ?? 0;
   const paidInvoices =
     combined.dashboard_context.finance?.paid_invoices ??
     finance?.paid_invoices ??
     0;
-  const totalInvoices = Math.max(finance?.total_invoices ?? 0, 12);
+  const totalInvoices =
+    combined.dashboard_context.finance?.total_invoices ??
+    finance?.total_invoices ??
+    0;
   const totalSales = toNumber(combined.total_sales_amount);
-  const revenue = toNumber(combined.revenue_amount);
-  const totalCosts = toNumber(
-    combined.dashboard_context.finance?.total_cost_amount ??
-      finance?.total_cost_amount,
+  const draftAmount = toNumber(
+    combined.dashboard_context.finance?.draft_invoice_amount,
   );
-  const draftAmount = Math.max(8200, Math.round(totalCosts || 8200));
-  const unpaidAmount = Math.max(
-    15400,
-    Math.round(Math.max(revenue - totalCosts, 0) + 15400),
+  const unpaidAmount = toNumber(
+    combined.dashboard_context.finance?.unpaid_invoice_amount,
   );
-  const paidAmount = Math.max(
-    32800,
-    Math.round(Math.max(totalSales, revenue) + 32800),
+  const paidAmount = toNumber(
+    combined.dashboard_context.finance?.paid_invoice_amount,
   );
-  const topClient =
-    combined.dashboard_context.sales?.top_clients?.[0] ??
-    sales?.top_clients?.[0] ??
-    null;
-  const lowStockItems = inventory?.low_stock_items ?? [];
-  const expiringLicenses =
-    combined.dashboard_context.business?.expiring_license_count ?? 0;
-  const complianceWatch =
-    (combined.dashboard_context.compliance?.failed_hygiene_checks ?? 0) +
-    (combined.dashboard_context.compliance?.failed_water_tests ?? 0) +
-    (combined.dashboard_context.compliance?.open_safety_records ?? 0) +
-    (combined.dashboard_context.compliance?.documents_expiring_soon ?? 0);
   const companyName = business?.context.company_names?.[0] || "IBMS Ice Ltd";
+  const activeEmployees =
+    combined.dashboard_context.workforce?.active_employees ?? 0;
+  const activeLeads = combined.dashboard_context.crm?.active_lead_count ?? 0;
+  const ordersTracked =
+    combined.dashboard_context.orders?.workflow_orders ??
+    combined.dashboard_context.sales?.workflow_orders ??
+    0;
+  const recentLogCount =
+    combined.dashboard_context.sales?.logs_recent_count ?? 0;
+  const invoiceRows = combined.dashboard_context.finance?.recent_invoices ?? [];
+  const taskColumns =
+    combined.dashboard_context.workforce?.task_columns?.length
+      ? combined.dashboard_context.workforce.task_columns
+      : ([
+          { label: "To Do", items: [] },
+          { label: "In Progress", items: [] },
+          { label: "Done", items: [] },
+        ] satisfies AnalyticsTaskColumn[]);
+  const trendPoints = (
+    combined.dashboard_context.sales?.monthly_trend ?? []
+  ).map((point) => ({
+    label: point.label,
+    value: toNumber(point.value),
+  }));
+  const monthlySalesAmount = toNumber(
+    combined.dashboard_context.sales?.monthly_sales_amount ??
+      combined.total_sales_amount,
+  );
 
   const moduleTiles: ModuleTileConfig[] = [
     {
@@ -516,35 +539,28 @@ export function DashboardPage() {
     {
       label: "Production",
       route: "/production",
-      note: `${production?.active_machines ?? 6} active lines`,
+      note: `${production?.active_machines ?? 0} active lines`,
       icon: Factory,
       tone: "bg-[linear-gradient(135deg,#cb8a2a,#c17617)]",
     },
     {
       label: "Workforce",
       route: "/workforce",
-      note: `${Math.max(expiringLicenses, 4)} active records`,
+      note: `${activeEmployees} active employees`,
       icon: UsersRound,
       tone: "bg-[linear-gradient(135deg,#8b659e,#7a4e90)]",
     },
     {
-      label: "Compliance",
-      route: "/compliance",
-      note: `${Math.max(complianceWatch, 3)} watch items`,
-      icon: ShieldCheck,
-      tone: "bg-[linear-gradient(135deg,#2ca5aa,#178e96)]",
-    },
-    {
       label: "CRM",
       route: "/crm",
-      note: "23 active leads",
+      note: `${activeLeads} active leads`,
       icon: MessagesSquare,
       tone: "bg-[linear-gradient(135deg,#4b83c5,#2f67ae)]",
     },
     {
       label: "Orders",
       route: "/orders",
-      note: `${Math.max(totalOrders, 8)} tracked`,
+      note: `${ordersTracked} tracked`,
       icon: VibrateIcon,
       tone: "bg-[linear-gradient(135deg,#7f5689,#70477a)]",
     },
@@ -558,7 +574,7 @@ export function DashboardPage() {
     {
       label: "Logs",
       route: "/sales-log",
-      note: `${Math.max(lowStockItems.length + 7, 9)} recent entries`,
+      note: `${recentLogCount} recent entries`,
       icon: NotebookText,
       tone: "bg-[linear-gradient(135deg,#d17763,#c55a4b)]",
     },
@@ -569,61 +585,6 @@ export function DashboardPage() {
       icon: Coins,
       tone: "bg-[linear-gradient(135deg,#2fa79b,#188a7f)]",
     },
-  ];
-
-  const taskColumns: Array<{ label: string; items: TaskItem[] }> = [
-    {
-      label: "To Do",
-      items: [
-        { title: "Website Update", accent: "bg-amber-400" },
-        { title: "Product Research", accent: "bg-emerald-500" },
-      ],
-    },
-    {
-      label: "In Progress",
-      items: [
-        { title: "Prepare Report", accent: "bg-amber-400" },
-        { title: "Design Prototype", accent: "bg-rose-500" },
-      ],
-    },
-    {
-      label: "Done",
-      items: [
-        { title: "Launch Campaign", accent: "bg-emerald-500" },
-        { title: "Stock Review", accent: "bg-sky-500" },
-      ],
-    },
-  ];
-
-  const invoiceRows: InvoiceRow[] = [
-    {
-      invoice: "INV/2026/001",
-      customer: topClient?.client_name || "Smith & Co",
-      dueDate: "05/15/2026",
-      status: "Open",
-    },
-    {
-      invoice: "INV/2026/002",
-      customer: "Green Ltd",
-      dueDate: "05/20/2026",
-      status: "Draft",
-    },
-    {
-      invoice: "INV/2026/003",
-      customer: lowStockItems[0]?.item_name || "BlueStar Inc.",
-      dueDate: "05/25/2026",
-      status: "Paid",
-    },
-  ];
-
-  const trendPoints = [
-    { label: "May", value: 80 },
-    { label: "Jun", value: 72 },
-    { label: "Jul", value: 310 },
-    { label: "Aug", value: 200 },
-    { label: "Sep", value: 420 },
-    { label: "Oct", value: 180 },
-    { label: "Nov", value: 360 },
   ];
 
   return (
@@ -793,7 +754,9 @@ export function DashboardPage() {
                     {row.invoice}
                   </span>
                   <span className="text-slate-600">{row.customer}</span>
-                  <span className="text-slate-600">{row.dueDate}</span>
+                  <span className="text-slate-600">
+                    {formatDate(row.due_date)}
+                  </span>
                   <InvoiceStatus status={row.status} />
                 </div>
               ))}
@@ -806,9 +769,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between gap-3">
               <div className="border border-slate-200/80 bg-slate-50/70 px-4 py-3">
                 <p className="text-[2rem] font-semibold leading-none tracking-[-0.04em] text-slate-900">
-                  {formatFullAmount(
-                    Math.max(24500, Math.round(revenue + 24500)),
-                  )}
+                  {formatFullAmount(Math.round(monthlySalesAmount))}
                 </p>
               </div>
               <div className="hidden items-center gap-2 text-sm text-slate-500 md:flex">

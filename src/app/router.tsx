@@ -3,7 +3,6 @@ import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "../components/auth/PublicOnlyRoute";
 import { AppShell } from "../components/layout/AppShell";
 import { BusinessPage } from "../pages/BusinessPage";
-import { CompliancePage } from "../pages/CompliancePage";
 import { CRMPage } from "../pages/CRMPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { FinancePage } from "../pages/FinancePage";
@@ -63,10 +62,6 @@ export const router = createBrowserRouter([
           {
             path: "workforce",
             element: <WorkforcePage />,
-          },
-          {
-            path: "compliance",
-            element: <CompliancePage />,
           },
           {
             path: "orders",

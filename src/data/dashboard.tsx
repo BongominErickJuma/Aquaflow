@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  BadgeCheck,
   BriefcaseBusiness,
   Coins,
   Factory,
@@ -81,12 +80,6 @@ export const alertItems: AlertItem[] = [
       "Two production machines are scheduled for service in the next 24 hours.",
     severity: "medium",
   },
-  {
-    title: "Compliance check pending",
-    detail:
-      "A hygiene and water-quality record still needs to be filed before shift close.",
-    severity: "low",
-  },
 ];
 
 export const moduleLinks: ModuleLink[] = [
@@ -116,13 +109,6 @@ export const moduleLinks: ModuleLink[] = [
       "Employees, attendance, shifts, tasks, payroll, and performance.",
     href: "/workforce",
     icon: UsersRound,
-  },
-  {
-    title: "Compliance",
-    description:
-      "Hygiene checks, safety records, training, and compliance documents.",
-    href: "/compliance",
-    icon: BadgeCheck,
   },
   {
     title: "Sales",
@@ -171,7 +157,6 @@ export const operationsTrend: ChartPoint[] = [
   { label: "Inventory", value: 84 },
   { label: "Production", value: 76 },
   { label: "Workforce", value: 88 },
-  { label: "Compliance", value: 71 },
   { label: "Sales", value: 79 },
   { label: "Finance", value: 68 },
 ];

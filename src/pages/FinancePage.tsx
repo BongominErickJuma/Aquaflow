@@ -547,8 +547,7 @@ function getTodayIsoDate() {
 
 export function FinancePage() {
   const { user } = useAuth();
-  const isAdmin =
-    user?.role.code === "admin" || user?.role.code === "superuser";
+  const isAdmin = Boolean(user);
 
   const [capitalRecords, setCapitalRecords] = useState<CapitalRecord[]>([]);
   const [operatingCosts, setOperatingCosts] = useState<OperatingCostRecord[]>(
@@ -1746,7 +1745,27 @@ export function FinancePage() {
               >
                 <X className="h-4 w-4" />
               </button>
-              <button
+              {selectedCapitalId ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void runDelete(
+                      () => deleteCapitalRecord(selectedCapitalId!),
+                      resetCapitalForm,
+                      setCapitalError,
+                      setCapitalPending,
+                      "Unable to delete capital record.",
+                    )
+                  }
+                  disabled={capitalPending}
+                  className="modal-icon-button modal-icon-button-danger"
+                  aria-label="Delete capital record"
+                  title="Delete capital record"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+<button
                 type="submit"
                 disabled={capitalPending}
                 className="modal-icon-button modal-icon-button-primary"
@@ -1874,7 +1893,27 @@ export function FinancePage() {
               >
                 <X className="h-4 w-4" />
               </button>
-              <button
+                            {selectedOperatingId ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void runDelete(
+                      () => deleteOperatingCost(selectedOperatingId!),
+                      resetOperatingForm,
+                      setOperatingError,
+                      setOperatingPending,
+                      "Unable to delete operating cost.",
+                    )
+                  }
+                  disabled={operatingPending}
+                  className="modal-icon-button modal-icon-button-danger"
+                  aria-label="Delete operating cost"
+                  title="Delete operating cost"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+<button
                 type="submit"
                 disabled={operatingPending}
                 className="modal-icon-button modal-icon-button-primary"
@@ -2000,7 +2039,27 @@ export function FinancePage() {
               >
                 <X className="h-4 w-4" />
               </button>
-              <button
+                            {selectedExpenseId ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void runDelete(
+                      () => deleteExpense(selectedExpenseId!),
+                      resetExpenseForm,
+                      setExpenseError,
+                      setExpensePending,
+                      "Unable to delete expense.",
+                    )
+                  }
+                  disabled={expensePending}
+                  className="modal-icon-button modal-icon-button-danger"
+                  aria-label="Delete expense"
+                  title="Delete expense"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+<button
                 type="submit"
                 disabled={expensePending}
                 className="modal-icon-button modal-icon-button-primary"
@@ -2138,7 +2197,27 @@ export function FinancePage() {
               >
                 <X className="h-4 w-4" />
               </button>
-              <button
+                            {selectedInvoiceId ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void runDelete(
+                      () => deleteInvoice(selectedInvoiceId!),
+                      resetInvoiceForm,
+                      setInvoiceError,
+                      setInvoicePending,
+                      "Unable to delete invoice.",
+                    )
+                  }
+                  disabled={invoicePending}
+                  className="modal-icon-button modal-icon-button-danger"
+                  aria-label="Delete invoice"
+                  title="Delete invoice"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+<button
                 type="submit"
                 disabled={invoicePending}
                 className="modal-icon-button modal-icon-button-primary"
@@ -2275,7 +2354,27 @@ export function FinancePage() {
               >
                 <X className="h-4 w-4" />
               </button>
-              <button
+                            {selectedReceiptId ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void runDelete(
+                      () => deleteReceipt(selectedReceiptId!),
+                      resetReceiptForm,
+                      setReceiptError,
+                      setReceiptPending,
+                      "Unable to delete receipt.",
+                    )
+                  }
+                  disabled={receiptPending}
+                  className="modal-icon-button modal-icon-button-danger"
+                  aria-label="Delete receipt"
+                  title="Delete receipt"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+<button
                 type="submit"
                 disabled={receiptPending}
                 className="modal-icon-button modal-icon-button-primary"
@@ -2465,7 +2564,27 @@ export function FinancePage() {
               >
                 <X className="h-4 w-4" />
               </button>
-              <button
+                            {selectedInsuranceId ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void runDelete(
+                      () => deleteInsuranceRecord(selectedInsuranceId!),
+                      resetInsuranceForm,
+                      setInsuranceError,
+                      setInsurancePending,
+                      "Unable to delete insurance record.",
+                    )
+                  }
+                  disabled={insurancePending}
+                  className="modal-icon-button modal-icon-button-danger"
+                  aria-label="Delete insurance record"
+                  title="Delete insurance record"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+<button
                 type="submit"
                 disabled={insurancePending}
                 className="modal-icon-button modal-icon-button-primary"
@@ -2572,7 +2691,27 @@ export function FinancePage() {
               >
                 <X className="h-4 w-4" />
               </button>
-              <button
+                            {selectedSnapshotId ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void runDelete(
+                      () => deleteProfitabilitySnapshot(selectedSnapshotId!),
+                      resetSnapshotForm,
+                      setSnapshotError,
+                      setSnapshotPending,
+                      "Unable to delete profitability snapshot.",
+                    )
+                  }
+                  disabled={snapshotPending}
+                  className="modal-icon-button modal-icon-button-danger"
+                  aria-label="Delete profitability snapshot"
+                  title="Delete profitability snapshot"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+<button
                 type="submit"
                 disabled={snapshotPending}
                 className="modal-icon-button modal-icon-button-primary"

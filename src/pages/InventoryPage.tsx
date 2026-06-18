@@ -873,8 +873,7 @@ export function InventoryPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { productId: productIdParam } = useParams();
-  const isAdmin =
-    user?.role.code === "admin" || user?.role.code === "superuser";
+  const isAdmin = Boolean(user);
   const routedProductId = parseProductRouteId(productIdParam);
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
@@ -2834,9 +2833,20 @@ export function InventoryPage() {
               </label>
               <FieldMessage message={unitError} tone="error" />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedUnitId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleUnitDelete()}
+                    disabled={isUnitPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete unit"
+                    title="Delete unit"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save unit"
                     title="Save unit"
@@ -2918,9 +2928,20 @@ export function InventoryPage() {
               </label>
               <FieldMessage message={categoryError} tone="error" />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedCategoryId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleCategoryDelete()}
+                    disabled={isCategoryPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete category"
+                    title="Delete category"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save category"
                     title="Save category"
@@ -3068,9 +3089,20 @@ export function InventoryPage() {
               </label>
               <FieldMessage message={supplierError} tone="error" />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedSupplierId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleSupplierDelete()}
+                    disabled={isSupplierPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete supplier"
+                    title="Delete supplier"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save supplier"
                     title="Save supplier"
@@ -3175,9 +3207,20 @@ export function InventoryPage() {
               </label>
               <FieldMessage message={locationError} tone="error" />
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedLocationId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleLocationDelete()}
+                    disabled={isLocationPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete warehouse"
+                    title="Delete warehouse"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save warehouse"
                     title="Save warehouse"
@@ -3347,9 +3390,20 @@ export function InventoryPage() {
 
               {/* Buttons */}
               <div className="flex flex-wrap justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
+                                {selectedRawMaterialId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleRawMaterialDelete()}
+                    disabled={isRawMaterialPending}
+                    className="modal-icon-button modal-icon-button-danger"
+                    aria-label="Delete raw material"
+                    title="Delete raw material"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+<button
+                  type="submit"
                   className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save raw material"
                     title="Save raw material"
@@ -3836,9 +3890,20 @@ export function InventoryPage() {
 
                 {/* Buttons */}
                 <div className="flex flex-wrap justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={closeModal}
+                                    {selectedStockItemId ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleStockItemDelete()}
+                      disabled={isStockItemPending}
+                      className="modal-icon-button modal-icon-button-danger"
+                      aria-label="Delete warehouse stock"
+                      title="Delete warehouse stock"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
+<button
+                    type="submit"
                     className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save warehouse stock"
                     title="Save warehouse stock"
@@ -3981,9 +4046,20 @@ export function InventoryPage() {
 
                 {/* Buttons */}
                 <div className="flex flex-wrap justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={closeModal}
+                                    {selectedMovementId ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleMovementDelete()}
+                      disabled={isMovementPending}
+                      className="modal-icon-button modal-icon-button-danger"
+                      aria-label="Delete movement"
+                      title="Delete movement"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
+<button
+                    type="submit"
                     className="modal-icon-button modal-icon-button-primary"
                     aria-label="Save movement"
                     title="Save movement"
